@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>회원가입 페이지</title>
+</head>
+<body>
+
+<form action="/board/save" method="post" enctype="multipart/form-data">
+    writer: <input type="text" name="boardWriter"> <br>
+    pass: <input type="password" name="boardPass"> <br>
+    title: <input type="text" name="boardTitle"> <br>
+    contents: <textarea name="boardContents" cols="30" rows="10"></textarea> <br>
+    file: <input type="file" name="boardFile"> <br>
+    <input type="submit" value="글작성">
+</form>
+</body>
+</html>

@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+<form action="/save" method="post" enctype="multipart/form-data">
+    제목: <input type="text" name="boardTitle"><br>
+    작성자: <input type="text" name="boardWriter"><br>
+    비밀번호: <input type="text" name="boardPassword"><br>
+    내용: <textarea name="boardContents" cols="30" rows="10"></textarea>
+<!--    단일 파일 첨부에선 multiple속성을 안써도 되고, 다중 파일 첨부에서 multiple속성을 쓴다-->
+    파일 첨부: <input type="file" name="boardFileList" multiple><br>
+    <input type="submit" value="작성">
+</form>
+</body>
+</html>

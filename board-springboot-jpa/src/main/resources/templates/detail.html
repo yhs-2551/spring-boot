@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>디테일 페이지</title>
+</head>
+<body>
+<table>
+    <tr>
+        <th>id</th>
+        <td th:text="${board.id}"></td>
+    </tr>
+    <tr>
+        <th>title</th>
+        <td th:text="${board.boardTitle}"></td>
+    </tr>
+    <tr>
+        <th>writer</th>
+        <td th:text="${board.boardWriter}"></td>
+    </tr>
+    <tr>
+        <th>date</th>
+        <td th:text="${board.boardCreatedTime}"></td>
+    </tr>
+    <tr>
+        <th>hits</th>
+        <td th:text="${board.boardHits}"></td>
+    </tr>
+    <tr>
+        <th>contents</th>
+        <td th:text="${board.boardContents}"></td>
+    </tr>
+    <tr th:if="${board.fileAttached == 1}">
+        <th>image</th>
+        <td><img th:src="@{|/upload/${board.storedFileName}|}" alt="첨부 파일"
+                                                       width="200" height="200"></td>
+    </tr>
+</table>
+
+<button onclick="showList()">목록</button>
+<button onclick="editItem()">수정</button>
+<button onclick="removeItem()">삭제</button>
+
+<script th:inline="javascript">
+
+    const showList = () => {
+        location.href = "/board/list";
+    };
+
+    const editItem = () => {
+        const id = [[${board.id}]];
+        location.href = "/board/update/" + id;
+    };
+
+    const removeItem = () => {
+        const id = [[${board.id}]];
+        location.href = "/board/delete/" + id;
+    };
+</script>
+
+</body>
+
+</html>

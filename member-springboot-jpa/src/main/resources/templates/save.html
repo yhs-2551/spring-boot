@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>회원가입 페이지</title>
+    <script
+            src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+</head>
+<body>
+<form action="/member/save" method="post">
+    이메일: <input type="email" name="memberEmail" class="memberEmail" onkeyup="debouncedEmailCheck()"> <br>
+    <p class="email-check-result"></p>
+    패스워드: <input type="password" name="memberPassword"> <br>
+    이름: <input type="text" name="memberName"> <br>
+    <input type="submit" value="회원가입">
+</form>
+
+
+<script th:inline="javascript">
+    let emailCheckTimeout;
+
+       // 사용자가 모든 입력을 마친 후 0.3초 뒤에 emailCheck 함수 실행
+       const debouncedEmailCheck = () => {
+           clearTimeout(emailCheckTimeout);
+           emailCheckTimeout = setTimeout(emailCheck, 300);
+       };
+   const emailCheck = () => {
+       const email = document.querySelector(".memberEmail").value;
+       const emailCheckResult = document.querySelector(".email-check-result");
+       $.ajax({
+           type: "post",
+           url: "/member/email-check",
+           data: {
+               memberEmail: email
+           },
+           success: (result) => {
+               if (result === "ok") {
+                   emailCheckResult.style.color = "blue";
+                   emailCheckResult.innerHTML = "사용 가능한 이메일 입니다.";
+               } else {
+                   emailCheckResult.style.color = "red";
+                   emailCheckResult.innerHTML = "이미 사용중인 이메일 입니다.";
+               }
+           },
+           error: (err) => {
+               console.log("에러", err);
+           }
+       });
+   };
+</script>
+</body>
+</html>
