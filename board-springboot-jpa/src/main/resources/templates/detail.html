@@ -3,6 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <title>디테일 페이지</title>
+    <script
+            src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
 </head>
 <body>
 <table>
@@ -30,10 +32,19 @@
         <th>contents</th>
         <td th:text="${board.boardContents}"></td>
     </tr>
+
+    <!--    아래는 단일 파일 첨부 방식  -->
+    <!--    <tr th:if="${board.fileAttached == 1}">-->
+    <!--        <th>image</th>-->
+    <!--        <td><img th:src="@{|/upload/${board.storedFileName}|}" alt="첨부 파일"-->
+    <!--                                                             width="200" height="200"></td>-->
+    <!--    </tr>-->
+
+    <!--    아래는 다중 파일 첨부 방식-->
     <tr th:if="${board.fileAttached == 1}">
         <th>image</th>
-        <td><img th:src="@{|/upload/${board.storedFileName}|}" alt="첨부 파일"
-                                                       width="200" height="200"></td>
+        <td th:each="fileName: ${board.storedFileName}"><img th:src="@{|/upload/${fileName}|}" alt="첨부 파일"
+                                                             width="200" height="200"></td>
     </tr>
 </table>
 
@@ -41,7 +52,71 @@
 <button onclick="editItem()">수정</button>
 <button onclick="removeItem()">삭제</button>
 
+<div class="comment-write">
+    <input type="text" class="commentWriter" placeholder="작성자">
+    <input type="text" class="commentContents" placeholder="내용">
+    <button class="comment-write-btn" onclick="commentWrite()">댓글 작성</button>
+</div>
+
+
+<div class="comment-list">
+    <table>
+        <tr>
+            <th>댓글번호</th>
+            <th>작성자</th>
+            <th>내용</th>
+            <th>작성시간</th>
+        </tr>
+        <tr th:each="comment: ${commentList}">
+            <td th:text="${comment.id}"></td>
+            <td th:text="${comment.commentWriter}"></td>
+            <td th:text="${comment.commentContents}"></td>
+            <td th:text="${comment.commentCreatedTime}"></td>
+        </tr>
+    </table>
+</div>
+
 <script th:inline="javascript">
+
+    const commentWrite = () => {
+        const writer = document.querySelector(".commentWriter").value;
+        const contents = document.querySelector(".commentContents").value;
+        const id = [[${board.id}]];
+
+        $.ajax({
+            type: "post",
+            url: "/comment/save",
+            data: {
+                commentWriter: writer,
+                commentContents: contents,
+                boardId: id
+            },
+            success: (res) => {
+               console.log("요청 성공");
+
+               let output = "<table>";
+               output += "<tr><th>댓글번호</th>";
+               output += "<th>작성자</th>";
+               output += "<th>내용</th>";
+               output += "<th>작성시간</th></tr>";
+               for (let i in res) {
+                   output += "<tr>";
+                   output += "<td>" + res[i].id + "</td>";
+                   output += "<td>" + res[i].commentWriter + "</td>";
+                   output += "<td>" + res[i].commentContents + "</td>";
+                   output += "<td>" + res[i].commentCreatedTime + "</td>";
+                   output += "</tr>";
+               }
+               output += "</table>";
+               document.querySelector('.comment-list').innerHTML = output;
+               document.querySelector('.commentWriter').value = '';
+               document.querySelector('.commentContents').value = '';
+            },
+            error: (e) => {
+                console.log("요청 실패", e);
+            }
+        });
+    }
 
     const showList = () => {
         location.href = "/board/list";

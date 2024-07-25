@@ -19,6 +19,7 @@ public class BoardFileEntity extends BaseEntity{
     @Column
     private String storedFileName;
 
+//    보드가 부모 보드 안에 첨부되는 파일들이 자식 1:N(보드:파일)
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "board_id")
     private BoardEntity boardEntity;
