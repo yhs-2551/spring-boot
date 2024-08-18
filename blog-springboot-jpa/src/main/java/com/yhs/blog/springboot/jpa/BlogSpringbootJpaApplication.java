@@ -2,8 +2,10 @@ package com.yhs.blog.springboot.jpa;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.data.jpa.repository.config.EnableJpaAuditing;
 
 @SpringBootApplication
+@EnableJpaAuditing
 public class BlogSpringbootJpaApplication {
 
 	public static void main(String[] args) {
