@@ -1,0 +1,107 @@
+-- 1. 사용자 테이블 (Users)
+CREATE TABLE Users (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    username VARCHAR(50) NOT NULL,
+    password VARCHAR(255) NOT NULL,
+    email VARCHAR(100) UNIQUE NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    role ENUM('USER', 'ADMIN') DEFAULT 'USER'
+);
+
+-- 인덱스: email 컬럼에 대해 유니크 인덱스가 자동으로 생성됩니다.
+-- email 컬럼에는 유니크 제약 조건이 남아있습니다.
+
+-- 2. 게시글 테이블 (Posts)
+CREATE TABLE Posts (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT,
+    title VARCHAR(255) NOT NULL,
+    content TEXT,
+    category_id INT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    public_status ENUM('PUBLIC', 'PRIVATE') DEFAULT 'PRIVATE',
+    FOREIGN KEY (user_id) REFERENCES Users(id),
+    FOREIGN KEY (category_id) REFERENCES Categories(id)
+);
+
+-- 인덱스 추가
+CREATE INDEX idx_posts_user_id ON Posts(user_id);
+CREATE INDEX idx_posts_category_id ON Posts(category_id);
+
+-- 3. 카테고리 테이블 (Categories)
+CREATE TABLE Categories (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(100) UNIQUE NOT NULL
+);
+
+-- 인덱스: name 컬럼에 대해 유니크 인덱스가 자동으로 생성됩니다.
+
+-- 4. 태그 테이블 (Tags)
+CREATE TABLE Tags (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(100) UNIQUE NOT NULL
+);
+
+-- 인덱스: name 컬럼에 대해 유니크 인덱스가 자동으로 생성됩니다.
+
+-- 5. 게시글-태그 관계 테이블 (PostTags)
+CREATE TABLE PostTags (
+    post_id INT,
+    tag_id INT,
+    PRIMARY KEY (post_id, tag_id),
+    FOREIGN KEY (post_id) REFERENCES Posts(id),
+    FOREIGN KEY (tag_id) REFERENCES Tags(id)
+);
+
+-- 인덱스 추가
+CREATE INDEX idx_post_tags_post_id ON PostTags(post_id);
+CREATE INDEX idx_post_tags_tag_id ON PostTags(tag_id);
+
+-- 6. 댓글 테이블 (Comments)
+CREATE TABLE Comments (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    post_id INT,
+    user_id INT,
+    content TEXT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (post_id) REFERENCES Posts(id),
+    FOREIGN KEY (user_id) REFERENCES Users(id)
+);
+
+-- 인덱스 추가
+CREATE INDEX idx_comments_post_id ON Comments(post_id);
+CREATE INDEX idx_comments_user_id ON Comments(user_id);
+
+-- 7. 대댓글 테이블 (Replies)
+CREATE TABLE Replies (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    comment_id INT,
+    user_id INT,
+    content TEXT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (comment_id) REFERENCES Comments(id),
+    FOREIGN KEY (user_id) REFERENCES Users(id)
+);
+
+-- 인덱스 추가
+CREATE INDEX idx_replies_comment_id ON Replies(comment_id);
+CREATE INDEX idx_replies_user_id ON Replies(user_id);
+
+-- 8. 좋아요 테이블 (Likes)
+CREATE TABLE Likes (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    post_id INT,
+    user_id INT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE (post_id, user_id),
+    FOREIGN KEY (post_id) REFERENCES Posts(id),
+    FOREIGN KEY (user_id) REFERENCES Users(id)
+);
+
+-- 인덱스 추가
+CREATE INDEX idx_likes_post_id ON Likes(post_id);
+CREATE INDEX idx_likes_user_id ON Likes(user_id);

@@ -1,0 +1,261 @@
+1. 사용자 테이블 (Users)
+java
+코드 복사
+import javax.persistence.*;
+import java.time.LocalDateTime;
+
+@Entity
+@Table(name = "Users")
+public class User {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @Column(nullable = false, length = 50)
+    private String username;
+
+    @Column(nullable = false, length = 255)
+    private String password;
+
+    @Column(nullable = false, length = 100, unique = true)
+    private String email;
+
+    @Column(name = "created_at", updatable = false)
+    private LocalDateTime createdAt = LocalDateTime.now();
+
+    @Column(name = "updated_at")
+    private LocalDateTime updatedAt = LocalDateTime.now();
+
+    @Enumerated(EnumType.STRING)
+    @Column(length = 10)
+    private UserRole role = UserRole.USER;
+
+    // Getters and setters
+    // hashCode, equals, toString methods
+}
+
+public enum UserRole {
+    USER, ADMIN
+}
+2. 게시글 테이블 (Posts)
+java
+코드 복사
+import javax.persistence.*;
+import java.time.LocalDateTime;
+
+@Entity
+@Table(name = "Posts", indexes = {
+    @Index(name = "idx_posts_user_id", columnList = "user_id"),
+    @Index(name = "idx_posts_category_id", columnList = "category_id")
+})
+public class Post {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @ManyToOne
+    @JoinColumn(name = "user_id")
+    private User user;
+
+    @Column(nullable = false, length = 255)
+    private String title;
+
+    @Lob
+    private String content;
+
+    @ManyToOne
+    @JoinColumn(name = "category_id")
+    private Category category;
+
+    @Column(name = "created_at", updatable = false)
+    private LocalDateTime createdAt = LocalDateTime.now();
+
+    @Column(name = "updated_at")
+    private LocalDateTime updatedAt = LocalDateTime.now();
+
+    @Enumerated(EnumType.STRING)
+    @Column(length = 10)
+    private PostStatus publicStatus = PostStatus.PRIVATE;
+
+    // Getters and setters
+    // hashCode, equals, toString methods
+}
+
+public enum PostStatus {
+    PUBLIC, PRIVATE
+}
+3. 카테고리 테이블 (Categories)
+java
+코드 복사
+import javax.persistence.*;
+
+@Entity
+@Table(name = "Categories")
+public class Category {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @Column(nullable = false, length = 100, unique = true)
+    private String name;
+
+    // Getters and setters
+    // hashCode, equals, toString methods
+}
+4. 태그 테이블 (Tags)
+java
+코드 복사
+import javax.persistence.*;
+
+@Entity
+@Table(name = "Tags")
+public class Tag {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @Column(nullable = false, length = 100, unique = true)
+    private String name;
+
+    // Getters and setters
+    // hashCode, equals, toString methods
+}
+5. 게시글-태그 관계 테이블 (PostTags)
+java
+코드 복사
+import javax.persistence.*;
+
+@Entity
+@Table(name = "PostTags", indexes = {
+    @Index(name = "idx_post_tags_post_id", columnList = "post_id"),
+    @Index(name = "idx_post_tags_tag_id", columnList = "tag_id")
+})
+public class PostTag {
+
+    @Id
+    @ManyToOne
+    @JoinColumn(name = "post_id")
+    private Post post;
+
+    @Id
+    @ManyToOne
+    @JoinColumn(name = "tag_id")
+    private Tag tag;
+
+    // Getters and setters
+    // hashCode, equals, toString methods
+}
+6. 댓글 테이블 (Comments)
+java
+코드 복사
+import javax.persistence.*;
+import java.time.LocalDateTime;
+
+@Entity
+@Table(name = "Comments", indexes = {
+    @Index(name = "idx_comments_post_id", columnList = "post_id"),
+    @Index(name = "idx_comments_user_id", columnList = "user_id")
+})
+public class Comment {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @ManyToOne
+    @JoinColumn(name = "post_id")
+    private Post post;
+
+    @ManyToOne
+    @JoinColumn(name = "user_id")
+    private User user;
+
+    @Lob
+    @Column(nullable = false)
+    private String content;
+
+    @Column(name = "created_at", updatable = false)
+    private LocalDateTime createdAt = LocalDateTime.now();
+
+    @Column(name = "updated_at")
+    private LocalDateTime updatedAt = LocalDateTime.now();
+
+    // Getters and setters
+    // hashCode, equals, toString methods
+}
+7. 대댓글 테이블 (Replies)
+java
+코드 복사
+import javax.persistence.*;
+import java.time.LocalDateTime;
+
+@Entity
+@Table(name = "Replies", indexes = {
+    @Index(name = "idx_replies_comment_id", columnList = "comment_id"),
+    @Index(name = "idx_replies_user_id", columnList = "user_id")
+})
+public class Reply {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @ManyToOne
+    @JoinColumn(name = "comment_id")
+    private Comment comment;
+
+    @ManyToOne
+    @JoinColumn(name = "user_id")
+    private User user;
+
+    @Lob
+    @Column(nullable = false)
+    private String content;
+
+    @Column(name = "created_at", updatable = false)
+    private LocalDateTime createdAt = LocalDateTime.now();
+
+    @Column(name = "updated_at")
+    private LocalDateTime updatedAt = LocalDateTime.now();
+
+    // Getters and setters
+    // hashCode, equals, toString methods
+}
+8. 좋아요 테이블 (Likes)
+java
+코드 복사
+import javax.persistence.*;
+
+@Entity
+@Table(name = "Likes", indexes = {
+    @Index(name = "idx_likes_post_id", columnList = "post_id"),
+    @Index(name = "idx_likes_user_id", columnList = "user_id")
+})
+public class Like {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @ManyToOne
+    @JoinColumn(name = "post_id")
+    private Post post;
+
+    @ManyToOne
+    @JoinColumn(name = "user_id")
+    private User user;
+
+    @Column(name = "created_at", updatable = false)
+    private LocalDateTime createdAt = LocalDateTime.now();
+
+    @UniqueConstraint(columnNames = {"post_id", "user_id"})
+    // 유니크 제약 조건은 @UniqueConstraint로 정의할 수 있지만, 실제 데이터베이스 생성 시 스키마 생성 툴에서 관리됩니다.
+    // 이는 @Table 어노테이션의 constraints 속성에 정의할 수 있습니다.
+
+    // Getters and setters
+    // hashCode, equals, toString methods
+}
