@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE configuration
+        PUBLIC "-//mybatis.org//DTD Config 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-config.dtd">
+
+<configuration>
+    <typeAliases>
+        <typeAlias type="com.yhs.board2.springboot.mybatis.domain.BoardDTO" alias="board"></typeAlias>
+        <typeAlias type="com.yhs.board2.springboot.mybatis.domain.Criteria" alias="criteria"></typeAlias>
+        <typeAlias type="com.yhs.board2.springboot.mybatis.domain.ReplyDTO" alias="reply"></typeAlias>
+    </typeAliases>
+</configuration>

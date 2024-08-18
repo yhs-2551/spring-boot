@@ -1,0 +1,140 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+
+<mapper namespace="com.yhs.board2.springboot.mybatis.mapper.BoardMapper">
+    <select id="getList" resultType="board">
+        select * from tbl_board where bno > 0
+    </select>
+
+    <!--    <select id="getListWithPaging" resultType="board">-->
+    <!--        &lt;!&ndash;        CDATA를 사용하는 이유는 XML의 경우 "<, >"를 태그로 인식해서 이로 인해 생기는 문제를 막기 위함이다&ndash;&gt;-->
+    <!--        <![CDATA[-->
+    <!--        select bno, title, content, writer, regdate, updatedate from (-->
+    <!--            select /*+ INDEX_DESC(tbl_board pk_board) */-->
+    <!--                bno, title, content, writer, regdate, updatedate,-->
+    <!--                ROWNUM AS rn-->
+    <!--        from tbl_board-->
+    <!--        where ROWNUM <= #{pageNum} * #{amount}-->
+    <!--        )-->
+    <!--        where rn > (#{pageNum} - 1) * #{amount}-->
+    <!--        ]]>-->
+
+    <!--    </select>-->
+
+
+    <!--    <select id="getListWithPaging" resultType="board">-->
+    <!--        &lt;!&ndash;        CDATA를 사용하는 이유는 XML의 경우 "<, >"를 태그로 인식해서 이로 인해 생기는 문제를 막기 위함이다&ndash;&gt;-->
+    <!--        <![CDATA[-->
+    <!--        select bno, title, content, writer, regdate, updatedate from (-->
+    <!--            select /*+INDEX_DESC(tbl_board pk_board) */-->
+    <!--            rownum rn, bno, title, content, writer, regdate, updatedate from tbl_board-->
+    <!--            where-->
+
+    <!--        ]]>-->
+
+    <!--        <trim prefix="(" suffix=") AND " prefixOverrides="OR">-->
+    <!--            <foreach item="type" collection="typeArr">-->
+    <!--                <trim prefix="OR">-->
+    <!--                    <choose>-->
+    <!--                        <when test="type == 'T'.toString()">-->
+    <!--                            title like '%'||#{keyword}||'%'-->
+    <!--                        </when>-->
+
+    <!--                        <when test="type == 'C'.toString()">-->
+    <!--                            content like '%'||#{keyword}||'%'-->
+    <!--                        </when>-->
+
+    <!--                        <when test="type == 'W'.toString()">-->
+    <!--                            writer like '%'||#{keyword}||'%'-->
+    <!--                        </when>-->
+    <!--                    </choose>-->
+    <!--                </trim>-->
+    <!--            </foreach>-->
+
+
+    <!--        </trim>-->
+
+    <!--        <![CDATA[-->
+    <!--        rownum <= #{pageNum} * #{amount}-->
+    <!--        )-->
+    <!--        where rn > (#{pageNum} -1) * #{amount}-->
+    <!--        ]]>-->
+
+
+    <!--    </select>-->
+
+    <sql id="criteria">
+        <trim prefix="(" suffix=") AND" prefixOverrides="OR">
+            <foreach item="type" collection="typeArr" separator=" OR ">
+                <choose>
+                    <when test="type == 'T'.toString()">
+                        title LIKE '%' || #{keyword} || '%'
+                    </when>
+                    <when test="type == 'C'.toString()">
+                        content LIKE '%' || #{keyword} || '%'
+                    </when>
+                    <when test="type == 'W'.toString()">
+                        writer LIKE '%' || #{keyword} || '%'
+                    </when>
+                </choose>
+            </foreach>
+        </trim>
+    </sql>
+
+    <select id="getListWithPaging" resultType="board">
+        <![CDATA[
+    SELECT bno, title, content, writer, regdate, updatedate
+    FROM (
+        SELECT /*+INDEX_DESC(tbl_board pk_board) */
+               rownum rn, bno, title, content, writer, regdate, updatedate
+        FROM tbl_board
+        WHERE
+    ]]>
+
+        <if test="typeArr != null and typeArr.length > 0">
+            <include refid="criteria"></include>
+        </if>
+
+        <![CDATA[
+    rownum <= #{pageNum} * #{amount}
+    )
+    WHERE rn > (#{pageNum} - 1) * #{amount}
+    ]]>
+    </select>
+
+    <select id="getTotalCount" resultType="int">
+        select count(*) from tbl_board where
+        <include refid="criteria"></include>
+        bno > 0
+    </select>
+
+    <insert id="insert" parameterType="board">
+        insert into tbl_board (bno, title, content, writer)
+        values (seq_board.nextval, #{title}, #{content}, #{writer})
+    </insert>
+
+    <insert id="insertSelectKey" parameterType="board">
+        <selectKey keyProperty="bno" order="BEFORE" resultType="long">
+            select seq_board.nextval from dual
+        </selectKey>
+        insert into tbl_board (bno, title, content, writer)
+        values (#{bno}, #{title}, #{content}, #{writer})
+    </insert>
+
+    <select id="read" resultType="board" parameterType="Long">
+        select * from tbl_board where bno = #{bno}
+    </select>
+
+    <delete id="delete" parameterType="Long">
+        delete tbl_board where bno = #{bno}
+    </delete>
+
+    <update id="update" parameterType="board">
+        update tbl_board set title = #{title}, content = #{content}, writer = #{writer}, updateDate = sysdate where bno
+        = #{bno}
+    </update>
+
+</mapper>

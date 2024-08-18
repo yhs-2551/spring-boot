@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+
+<mapper namespace="com.yhs.board2.springboot.mybatis.mapper.ReplyMapper">
+    <insert id="insert" parameterType="reply">
+        insert into tbl_reply (rno, bno, reply, replyer)
+        values (seq_reply.nextVal, ${bno}, #{reply}, #{replyer})
+    </insert>
+
+    <select id="read" resultType="reply" parameterType="Long">
+        select * from tbl_reply where rno = #{rno}
+    </select>
+
+    <update id="update" parameterType="reply">
+        update tbl_reply set reply = #{reply}, updatedate = sysdate where rno = #{rno}
+    </update>
+
+    <delete id="delete" parameterType="Long">
+        delete tbl_reply where rno = #{rno}
+    </delete>
+
+    <!--    <select id="getListWithPaging" resultType="reply" parameterType="Long">-->
+    <!--        select rno, bno, reply, replyer, replyDate, updateDate from tbl_reply where bno = #{bno} order by rno asc-->
+    <!--    </select>-->
+
+    <select id="getListWithPaging" resultType="reply">
+        <![CDATA[
+        select rno, bno, reply, replyer, replyDate, updateDate from
+        (
+        select /*INDEX(tbl_reply idx_reply) */
+        rownum rn, rno, bno, reply, replyer, replyDate, updateDate from tbl_reply
+        where bno = #{bno} and rno > 0 and rownum <= #{cri.pageNum} * #{cri.amount}
+        )
+        where rn > (#{cri.pageNum} -1) * #{cri.amount}
+            ]]>
+    </select>
+
+    <select id="getCountByBno" resultType="int">
+        <![CDATA[
+            select count(rno) from tbl_reply where bno = #{bno}
+        ]]>
+    </select>
+
+</mapper>
