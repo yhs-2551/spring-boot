@@ -7,5 +7,6 @@
     <typeAliases>
         <typeAlias type="com.yhs.board.springboot.mybatis.dto.BoardDTO" alias="board"></typeAlias>
         <typeAlias type="com.yhs.board.springboot.mybatis.dto.BoardFileDTO" alias="boardFile"></typeAlias>
+        <typeAlias type="com.yhs.board.springboot.mybatis.dto.CommentDTO" alias="comment"></typeAlias>
     </typeAliases>
 </configuration>

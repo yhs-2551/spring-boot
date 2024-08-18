@@ -11,9 +11,19 @@
         values(#{boardTitle}, #{boardWriter}, #{boardPassword}, #{boardContents}, #{fileAttached})
     </insert>
 
+    <insert id="saveComment" parameterType="comment">
+        INSERT INTO board_comment_table (boardId, commentWriter, commentContents, createdAt, parentCommentId)
+        VALUES (#{boardId}, #{commentWriter}, #{commentContents}, NOW(), #{parentCommentId})
+    </insert>
+
     <select id="findAll" resultType="board">
         select id, boardTitle, boardWriter, boardHits, date_format(createdAt, "%Y-%m-%d") as createdAt
         from board_table order by id desc
+    </select>
+
+    <select id="getCommentsByBoardId" parameterType="Long" resultType="comment">
+        select id, commentWriter, commentContents, createdAt from board_comment_table where boardId=#{boardId}
+        AND parentCommentId IS NULL ORDER BY createdAt DESC
     </select>
 
     <update id="updateHits" parameterType="Long">

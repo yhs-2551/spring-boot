@@ -2,7 +2,9 @@ package com.yhs.board.springboot.mybatis.controller;
 
 import com.yhs.board.springboot.mybatis.dto.BoardDTO;
 import com.yhs.board.springboot.mybatis.dto.BoardFileDTO;
+import com.yhs.board.springboot.mybatis.dto.CommentDTO;
 import com.yhs.board.springboot.mybatis.service.BoardService;
+import com.yhs.board.springboot.mybatis.service.CommentService;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -20,6 +22,8 @@ import java.util.List;
 @RequiredArgsConstructor
 public class BoardController {
     private final BoardService boardService;
+    private final CommentService commentService;
+
     private static final Logger logger = LoggerFactory.getLogger(BoardController.class);
 
     @GetMapping("/save")
@@ -65,7 +69,11 @@ public class BoardController {
     public String findById(@PathVariable("id") Long id, Model model) {
         boardService.updateHits(id);
         BoardDTO boardDTO = boardService.findById(id);
+
+        List<CommentDTO> commentDTOList = commentService.getCommentsByBoardId(id);
+
         model.addAttribute("board", boardDTO);
+        model.addAttribute("comments", commentDTOList);
         if (boardDTO.getFileAttached() == 1) {
             List<BoardFileDTO> boardFileDTOList = boardService.findFileList(id);
             model.addAttribute("boardFileList", boardFileDTOList);

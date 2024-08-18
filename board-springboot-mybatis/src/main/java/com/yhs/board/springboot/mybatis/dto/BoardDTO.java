@@ -25,4 +25,5 @@ public class BoardDTO {
 
 //    아래는 다중 파일 첨부 방식
     private List<MultipartFile> boardFileList;
+
 }
