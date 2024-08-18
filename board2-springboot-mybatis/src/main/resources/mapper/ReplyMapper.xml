@@ -14,14 +14,6 @@
         select * from tbl_reply where rno = #{rno}
     </select>
 
-    <update id="update" parameterType="reply">
-        update tbl_reply set reply = #{reply}, updatedate = sysdate where rno = #{rno}
-    </update>
-
-    <delete id="delete" parameterType="Long">
-        delete tbl_reply where rno = #{rno}
-    </delete>
-
     <!--    <select id="getListWithPaging" resultType="reply" parameterType="Long">-->
     <!--        select rno, bno, reply, replyer, replyDate, updateDate from tbl_reply where bno = #{bno} order by rno asc-->
     <!--    </select>-->
@@ -43,5 +35,17 @@
             select count(rno) from tbl_reply where bno = #{bno}
         ]]>
     </select>
+
+    <update id="update" parameterType="reply">
+        update tbl_reply set reply = #{reply}, updatedate = sysdate where rno = #{rno}
+    </update>
+
+    <delete id="delete" parameterType="Long">
+        delete tbl_reply where rno = #{rno}
+    </delete>
+
+
+
+
 
 </mapper>

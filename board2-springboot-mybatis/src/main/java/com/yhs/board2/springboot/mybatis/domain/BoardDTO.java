@@ -16,4 +16,6 @@ public class BoardDTO {
     private String writer;
     private Date regdate;
     private Date updateDate;
+
+    private int replyCnt;
 }

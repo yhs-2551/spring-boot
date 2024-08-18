@@ -3,6 +3,7 @@ package com.yhs.board2.springboot.mybatis.mapper;
 import com.yhs.board2.springboot.mybatis.domain.BoardDTO;
 import com.yhs.board2.springboot.mybatis.domain.Criteria;
 import org.apache.ibatis.annotations.Mapper;
+import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
 
 import java.util.List;
@@ -28,4 +29,6 @@ public interface BoardMapper {
     public int delete(long bno);
 
     public int getTotalCount(Criteria cri);
+
+    public void updateReplyCnt(@Param("bno") Long bno, @Param("amount") int amount);
 }
