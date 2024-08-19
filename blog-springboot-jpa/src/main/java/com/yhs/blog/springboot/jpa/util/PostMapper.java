@@ -1,6 +1,6 @@
 package com.yhs.blog.springboot.jpa.util;
 
-import com.yhs.blog.springboot.jpa.dto.PostDTO;
+import com.yhs.blog.springboot.jpa.dto.PostRequest;
 import com.yhs.blog.springboot.jpa.entity.Category;
 import com.yhs.blog.springboot.jpa.entity.Post;
 import com.yhs.blog.springboot.jpa.entity.User;
@@ -17,8 +17,8 @@ public class PostMapper {
                 .build();
     }
 
-    public static PostDTO toDTO(Post post) {
-        return PostDTO.builder()
+    public static PostRequest toDTO(Post post) {
+        return PostRequest.builder()
                 .id(post.getId())
                 .userId(post.getUser() != null ? post.getUser().getId() : null) // user 객체 사용
                 .userName(post.getUser() != null ? post.getUser().getUsername() : null)

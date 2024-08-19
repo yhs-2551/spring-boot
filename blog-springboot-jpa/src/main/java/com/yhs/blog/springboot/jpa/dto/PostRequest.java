@@ -7,7 +7,7 @@ import java.time.LocalDateTime;
 
 @NoArgsConstructor
 @Getter
-public class PostDTO {
+public class PostRequest {
     private Long id;             // 게시글 ID
 
     private Long userId;          // 작성자 ID
@@ -34,7 +34,7 @@ public class PostDTO {
 
 
     @Builder
-    public PostDTO(Long id, Long userId, String userName, String title, String content, Long categoryId, LocalDateTime createdAt, LocalDateTime updatedAt, String postStatus) {
+    public PostRequest(Long id, Long userId, String userName, String title, String content, Long categoryId, LocalDateTime createdAt, LocalDateTime updatedAt, String postStatus) {
         this.userId = userId;
         this.userName = userName;
         this.title = title;
