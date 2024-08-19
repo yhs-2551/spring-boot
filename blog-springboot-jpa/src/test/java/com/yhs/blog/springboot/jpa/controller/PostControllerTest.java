@@ -5,6 +5,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.yhs.blog.springboot.jpa.dto.PostRequest;
+import com.yhs.blog.springboot.jpa.dto.PostUpdateRequest;
 import com.yhs.blog.springboot.jpa.entity.Post;
 import com.yhs.blog.springboot.jpa.repository.PostRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -145,6 +146,37 @@ class PostControllerTest {
 
         Optional<Post> deletedPost = postRepository.findById(savedPost.getId());
         assertThat(deletedPost).isEmpty();
+    }
+
+    @DisplayName("updatePost: 블로그 글 수정 테스트")
+    @Test
+    public void updatePost() throws Exception {
+
+//        given
+        final String url = "/api/posts/{id}";
+        final String title = "글 제목";
+        final String content = "글 내용";
+        final String postStatus = "PRIVATE";
+
+        Post savedPost = postRepository.save(Post.builder().title(title).content(content).postStatus(Post.PostStatus.valueOf(postStatus)).build());
+
+        final String newTitle = "글 수정 테스트 제목";
+        final String newContent = "글 수정 테스트 내용";
+        final String newPostStatus = "PUBLIC";
+
+        PostUpdateRequest postUpdateRequest = new PostUpdateRequest(newTitle, newContent, newPostStatus, null);
+
+//        when
+        ResultActions result = mockMvc.perform(MockMvcRequestBuilders.patch(url, savedPost.getId()).contentType(MediaType.APPLICATION_JSON_VALUE)
+                .content(objectMapper.writeValueAsString(postUpdateRequest)));
+
+//        then
+
+        Post post = postRepository.findById(savedPost.getId()).get();
+
+        assertThat(post.getTitle()).isEqualTo(newTitle);
+        assertThat(post.getContent()).isEqualTo(newContent);
+
     }
 }
 

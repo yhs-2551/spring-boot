@@ -2,6 +2,8 @@ package com.yhs.blog.springboot.jpa.controller;
 
 import com.yhs.blog.springboot.jpa.dto.PostRequest;
 import com.yhs.blog.springboot.jpa.dto.PostResponse;
+import com.yhs.blog.springboot.jpa.dto.PostUpdateRequest;
+import com.yhs.blog.springboot.jpa.dto.PostUpdateResponse;
 import com.yhs.blog.springboot.jpa.entity.Post;
 import com.yhs.blog.springboot.jpa.service.PostService;
 import com.yhs.blog.springboot.jpa.util.PostMapper;
@@ -17,7 +19,7 @@ import java.util.List;
 @RequestMapping("/api/posts")
 public class PostController {
 
-     private final PostService postService;
+    private final PostService postService;
 
     @PostMapping
     public ResponseEntity<PostRequest> createPost(@RequestBody PostRequest postRequest) {
@@ -48,8 +50,11 @@ public class PostController {
 
     //여기부터 작성
     @PatchMapping("{id}")
-
-
+    public ResponseEntity<PostUpdateResponse> updateArticle(@PathVariable Long id, @RequestBody PostUpdateRequest postUpdateRequest) {
+        Post updatedPost = postService.updatePost(id, postUpdateRequest);
+        PostUpdateResponse postUpdateResponse = new PostUpdateResponse(updatedPost);
+        return ResponseEntity.ok().body(postUpdateResponse);
+    }
 
 
 }

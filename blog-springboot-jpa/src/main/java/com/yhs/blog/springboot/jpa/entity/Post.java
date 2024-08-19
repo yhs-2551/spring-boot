@@ -87,6 +87,13 @@ public class Post {
         this.postStatus = postStatus;
     }
 
+    public void update(String title, String content, PostStatus postStatus, Category category) {
+        this.title = title;
+        this.content = content;
+        this.postStatus = postStatus;
+        this.category = category;
+    }
+
 
 }
 
