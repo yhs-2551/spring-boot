@@ -1,6 +1,6 @@
 package com.yhs.blog.springboot.jpa.service.impl;
 
-import com.yhs.blog.springboot.jpa.dto.PostDTO;
+import com.yhs.blog.springboot.jpa.dto.PostRequest;
 import com.yhs.blog.springboot.jpa.entity.Category;
 import com.yhs.blog.springboot.jpa.entity.Post;
 import com.yhs.blog.springboot.jpa.entity.User;
@@ -14,6 +14,9 @@ import lombok.extern.log4j.Log4j2;
 import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
+import java.util.Optional;
+
 @Service
 @RequiredArgsConstructor
 @Log4j2
@@ -24,14 +27,14 @@ public class PostServiceImpl implements PostService {
     private final PostRepository postRepository;
 
     @Override
-    public Post createPost(PostDTO postDTO) {
+    public Post createPost(PostRequest postRequest) {
 
 
 
         try {
-            User user = postDTO.getUserId() != null ? userRepository.findById(postDTO.getUserId()).orElse(null) : null;
-            Category category = postDTO.getCategoryId() != null ? categoryRepository.findById(postDTO.getCategoryId()).orElse(null) : null;
-            Post post = PostMapper.toEntity(user, category, postDTO.getTitle(), postDTO.getContent(), postDTO.getPostStatus());
+            User user = postRequest.getUserId() != null ? userRepository.findById(postRequest.getUserId()).orElse(null) : null;
+            Category category = postRequest.getCategoryId() != null ? categoryRepository.findById(postRequest.getCategoryId()).orElse(null) : null;
+            Post post = PostMapper.toEntity(user, category, postRequest.getTitle(), postRequest.getContent(), postRequest.getPostStatus());
 
 
             return postRepository.save(post);
@@ -43,4 +46,20 @@ public class PostServiceImpl implements PostService {
         }
 
     }
+
+    @Override
+    public List<Post> getList() {
+        return postRepository.findAll();
+    }
+
+    @Override
+    public Post getPost(Long id) {
+        return postRepository.findById(id).orElseThrow(() -> new IllegalArgumentException("not found: " + 10));
+    }
+
+    @Override
+    public void deletePost(Long id) {
+        postRepository.deleteById(id);
+    }
+
 }
