@@ -7,6 +7,7 @@ import com.yhs.blog.springboot.jpa.dto.PostUpdateResponse;
 import com.yhs.blog.springboot.jpa.entity.Post;
 import com.yhs.blog.springboot.jpa.service.PostService;
 import com.yhs.blog.springboot.jpa.util.PostMapper;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -22,7 +23,7 @@ public class PostController {
     private final PostService postService;
 
     @PostMapping
-    public ResponseEntity<PostRequest> createPost(@RequestBody PostRequest postRequest) {
+    public ResponseEntity<PostRequest> createPost(@Valid @RequestBody PostRequest postRequest) {
         Post post = postService.createPost(postRequest);
         PostRequest responseDTO = PostMapper.toDTO(post);
 

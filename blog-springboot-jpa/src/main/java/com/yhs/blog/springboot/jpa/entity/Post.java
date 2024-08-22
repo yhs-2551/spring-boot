@@ -48,18 +48,18 @@ public class Post {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
-    @Column(name = "views", nullable = false)
+    @Column(name = "views", nullable = true)
     private int views = 0;  // 조회수 기본값은 0
 
-    @Column(name = "comment_count", nullable = false)
+    @Column(name = "comment_count", nullable = true)
     private int commentCount = 0;  // 총 댓글 수 기본값은 0
 
-    @Column(name = "reply_count", nullable = false)
+    @Column(name = "reply_count", nullable = true)
     private int replyCount = 0;  // 대댓글 수 기본값은 0
 
 
     @Enumerated(EnumType.STRING)
-    @Column(length = 10)
+    @Column(length = 10, nullable = false)
     private PostStatus postStatus;
 
 

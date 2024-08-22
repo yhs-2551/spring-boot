@@ -1,5 +1,9 @@
 package com.yhs.blog.springboot.jpa.dto;
 
+import jakarta.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Pattern;
+import jakarta.validation.constraints.Size;
 import lombok.*;
 
 import java.time.LocalDateTime;
@@ -14,8 +18,11 @@ public class PostRequest {
 
     private String userName;        // 작성자명
 
+    @NotEmpty(message = "제목을 입력하세요.")
+    @Size(max = 255, message = "제목은 총 255글자 까지 허용 됩니다.")
     private String title;         // 게시글 제목
 
+    @NotEmpty(message = "내용을 입력하세요.")
     private String content;       // 게시글 내용
 
     private Long categoryId;      // 카테고리 ID
@@ -30,6 +37,8 @@ public class PostRequest {
 
     private int replyCount;       // 대댓글 수
 
+    @NotNull(message = "공개 상태를 선택하세요.")
+    @Pattern(regexp = "PUBLIC|PRIVATE", message = "'PUBLIC' 또는 'PRIVATE' 둘 중 하나의 상태로 선택하세요.")
     private String postStatus;    // 게시글 상태 (PUBLIC, PRIVATE)
 
 
