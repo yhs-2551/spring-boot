@@ -19,7 +19,7 @@ public class PostResponse {
 
     private String content;       // 게시글 내용
 
-    private Long categoryId;      // 카테고리 ID
+    private String categoryName;      // 카테고리 ID
 
     private LocalDateTime createdAt; // 생성 일시
 
@@ -40,7 +40,7 @@ public class PostResponse {
         this.userName = post.getUser() != null ? post.getUser().getUsername() : null;
         this.title = post.getTitle();
         this.content = post.getContent();
-        this.categoryId = post.getCategory() != null ? post.getCategory().getId() : null;
+        this.categoryName = post.getCategory() != null ? post.getCategory().getName() : null;
         this.createdAt = post.getCreatedAt();
         this.updatedAt = post.getUpdatedAt();
         this.views = post.getViews();

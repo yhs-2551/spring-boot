@@ -29,6 +29,8 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>("Internal Server Error. Please try again later.", HttpStatus.INTERNAL_SERVER_ERROR);
     }
 
+
+    // @Valid 어노테이션이 붙은 DTO에 유효성 검사를 통과하지 못하면 실행.
 //    @ResponseStatus(HttpStatus.BAD_REQUEST)
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<Map<String, String>> handlePostValidationException(MethodArgumentNotValidException ex) {

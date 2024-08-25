@@ -15,13 +15,13 @@ public class PostUpdateResponse {
 
     private String postStatus;    // 게시글 상태 (PUBLIC, PRIVATE)
 
-    private Long categoryId; // 카테고리 아이디 값
+    private String categoryName; // 카테고리 아이디 값
 
 
     public PostUpdateResponse(Post post) {
         this.title = post.getTitle();
         this.content = post.getContent();
         this.postStatus = post.getPostStatus().name();
-        this.categoryId = post.getCategory() != null ? post.getCategory().getId() : null;
+        this.categoryName = post.getCategory() != null ? post.getCategory().getName() : null;
     }
 }
