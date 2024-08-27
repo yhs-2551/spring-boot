@@ -1,14 +1,20 @@
 package com.yhs.blog.springboot.jpa.entity;
 
 import jakarta.persistence.*;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.userdetails.UserDetails;
 
 import java.time.LocalDateTime;
+import java.util.Collection;
+import java.util.List;
 import java.util.Set;
 
 @EntityListeners(AuditingEntityListener.class)
@@ -17,23 +23,21 @@ import java.util.Set;
 @ToString
 @Entity
 @Table(name = "Users")
-public class User {
+public class User implements UserDetails {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    // 임시로 null 값 허용
     @Column(nullable = false, length = 50)
     private String username;
 
-    // 임시로 null 값 허용
     @Column(nullable = false, length = 255)
     private String password;
 
-    // 임시로 null 값 허용
     @Column(nullable = false, length = 100, unique = true)
     private String email;
+
 
     @CreatedDate
     @Column(name = "created_at", updatable = false)
@@ -56,8 +60,55 @@ public class User {
     @Column(length = 10, nullable = false)
     private UserRole role = UserRole.USER;
 
+    
+    // 권한 반환 SimpleGrantedAuthority는 GrantedAuthority의 구현체
+    @Override
+    public Collection<? extends GrantedAuthority> getAuthorities() {
+        return List.of(new SimpleGrantedAuthority(role.name()));
+    }
+
+    //계정 만료 여부. true는 만료 되지 않음
+    @Override
+    public boolean isAccountNonExpired() {
+        return true;
+    }
+
+    // 계정 잠금 여부. true는 잠금 되지 않음
+    @Override
+    public boolean isAccountNonLocked() {
+        return true;
+    }
+
+    // 패스워드 만료 여부 반환 true는 만료되지 않았음.
+    @Override
+    public boolean isCredentialsNonExpired() {
+        return true;
+    }
+
+    // 계정 사용 가능 여부 반환 true -> 사용 가능 
+    @Override
+    public boolean isEnabled() {
+        return true;
+    }
+
+    @Builder
+    public User(String email, String password, String auth) {
+        this.email = email;
+        this.password = password;
+    }
+
     public enum UserRole {
         USER, ADMIN
+    }
+
+    @Override
+    public String getUsername() {
+        return email;
+    }
+
+    @Override
+    public String getPassword() {
+        return password;
     }
 
 }
