@@ -92,9 +92,10 @@ public class User implements UserDetails {
     }
 
     @Builder
-    public User(String email, String password, String auth) {
+    public User(String email, String password, String username, String auth) {
         this.email = email;
         this.password = password;
+        this.username = username;
     }
 
     public enum UserRole {

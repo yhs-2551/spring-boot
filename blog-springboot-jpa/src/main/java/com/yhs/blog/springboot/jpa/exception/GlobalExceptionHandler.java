@@ -19,16 +19,19 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(ex.getMessage(), HttpStatus.NOT_FOUND);
     }
 
+
+
     @ExceptionHandler(RuntimeException.class)
     public ResponseEntity<String> postCreateException(RuntimeException ex) {
         return new ResponseEntity<>(ex.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
     }
 
-    @ExceptionHandler(Exception.class)
-    public ResponseEntity<String> generalException(Exception ex) {
-        return new ResponseEntity<>("Internal Server Error. Please try again later.", HttpStatus.INTERNAL_SERVER_ERROR);
-    }
 
+    //RuntimeException의 하위 클래스
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<String> findByEmailException(IllegalArgumentException ex) {
+        return new ResponseEntity<>(ex.getMessage(), HttpStatus.BAD_REQUEST);
+    }
 
     // @Valid 어노테이션이 붙은 DTO에 유효성 검사를 통과하지 못하면 실행.
 //    @ResponseStatus(HttpStatus.BAD_REQUEST)
@@ -42,4 +45,11 @@ public class GlobalExceptionHandler {
         });
         return ResponseEntity.badRequest().body(erros);
     }
+
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<String> generalException(Exception ex) {
+        return new ResponseEntity<>("Internal Server Error. Please try again later.", HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+
+
 }
