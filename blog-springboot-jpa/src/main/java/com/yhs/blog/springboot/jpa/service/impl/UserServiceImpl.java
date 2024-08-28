@@ -2,6 +2,7 @@ package com.yhs.blog.springboot.jpa.service.impl;
 
 import com.yhs.blog.springboot.jpa.dto.AddUserRequest;
 import com.yhs.blog.springboot.jpa.entity.User;
+import com.yhs.blog.springboot.jpa.exception.UserCreationException;
 import com.yhs.blog.springboot.jpa.repository.UserRepository;
 import com.yhs.blog.springboot.jpa.service.UserService;
 import lombok.RequiredArgsConstructor;
@@ -17,15 +18,20 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public Long createUser(AddUserRequest addUserRequest) {
-        String encodedPassword =
-                bCryptPasswordEncoder.encode(addUserRequest.getPassword());
 
-        User user = User.builder()
-                .email(addUserRequest.getEmail())
-                .password(encodedPassword)
-                .username(addUserRequest.getUsername())
-                .build();
+        try {
+            String encodedPassword =
+                    bCryptPasswordEncoder.encode(addUserRequest.getPassword());
 
-        return userRepository.save(user).getId();
+            User user = User.builder()
+                    .email(addUserRequest.getEmail())
+                    .password(encodedPassword)
+                    .username(addUserRequest.getUsername())
+                    .build();
+            return userRepository.save(user).getId();
+
+        } catch (Exception ex) {
+            throw new UserCreationException("사용자 생성 중 오류가 발생했습니다: " + ex.getMessage());
+        }
     }
 }

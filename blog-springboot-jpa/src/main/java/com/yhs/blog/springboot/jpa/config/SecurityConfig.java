@@ -27,8 +27,6 @@ public class SecurityConfig {
 
     private final UserDetailServiceImpl userDetailService;
 
-
-
     // 스프링 시큐리티 기능 비활성화. 일반적으로 정적 리소스(이미지, html 파일)
     @Bean
     public WebSecurityCustomizer configure() {
@@ -72,6 +70,7 @@ public class SecurityConfig {
                         // 인증 없이 접근 가능한 경로 설정
                         .requestMatchers(HttpMethod.GET, "/api/posts", "/api/posts/{id}").permitAll()
                         .requestMatchers(HttpMethod.POST, "/user").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/login").permitAll()
                         // 그 외의 모든 요청은 USER 또는 ADMIN 권한을 가진 사용자만 접근 가능
                         .anyRequest().hasAnyAuthority("USER", "ADMIN")
                 )
