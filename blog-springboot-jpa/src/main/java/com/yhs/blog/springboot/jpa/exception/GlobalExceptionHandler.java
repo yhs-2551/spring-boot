@@ -2,6 +2,7 @@ package com.yhs.blog.springboot.jpa.exception;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -28,9 +29,14 @@ public class GlobalExceptionHandler {
 
 
     //RuntimeException의 하위 클래스
-    @ExceptionHandler(IllegalArgumentException.class)
-    public ResponseEntity<String> findByEmailException(IllegalArgumentException ex) {
-        return new ResponseEntity<>(ex.getMessage(), HttpStatus.BAD_REQUEST);
+//    @ExceptionHandler(IllegalArgumentException.class)
+//    public ResponseEntity<String> findByEmailException(IllegalArgumentException ex) {
+//        return new ResponseEntity<>(ex.getMessage(), HttpStatus.BAD_REQUEST);
+//    }
+
+    @ExceptionHandler(UsernameNotFoundException.class)
+    public ResponseEntity<String> handleUserNotFoundException(UsernameNotFoundException ex) {
+        return new ResponseEntity<>(ex.getMessage(), HttpStatus.NOT_FOUND);
     }
 
     // @Valid 어노테이션이 붙은 DTO에 유효성 검사를 통과하지 못하면 실행.

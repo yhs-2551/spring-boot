@@ -34,7 +34,7 @@ public class SecurityConfig {
     }
 
 
-//    cors 설정 빈
+    //    cors 설정 빈
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
@@ -56,7 +56,7 @@ public class SecurityConfig {
     @Bean
     public AuthenticationManager authenticationManager(HttpSecurity http, BCryptPasswordEncoder bCryptPasswordEncoder, UserDetailsService userDetailsService) {
         DaoAuthenticationProvider daoAuthenticationProvider = new DaoAuthenticationProvider();
-        daoAuthenticationProvider.setUserDetailsService(userDetailsService);
+        daoAuthenticationProvider.setUserDetailsService(userDetailService);
         daoAuthenticationProvider.setPasswordEncoder(bCryptPasswordEncoder);
         return new ProviderManager(daoAuthenticationProvider);
     }
@@ -67,22 +67,26 @@ public class SecurityConfig {
         http
 //                /resource/**
                 .authorizeHttpRequests((authorize) -> authorize
-                        // 인증 없이 접근 가능한 경로 설정
-                        .requestMatchers(HttpMethod.GET, "/api/posts", "/api/posts/{id}").permitAll()
-                        .requestMatchers(HttpMethod.POST, "/user").permitAll()
-                        .requestMatchers(HttpMethod.POST, "/login").permitAll()
-                        // 그 외의 모든 요청은 USER 또는 ADMIN 권한을 가진 사용자만 접근 가능
-                        .anyRequest().hasAnyAuthority("USER", "ADMIN")
+                                // 인증 없이 접근 가능한 경로 설정
+                                .requestMatchers(HttpMethod.GET, "/api/posts", "/api/posts/{id}").permitAll()
+                                .requestMatchers(HttpMethod.POST, "/api/posts").permitAll()
+                                .requestMatchers(HttpMethod.PATCH, "/api/posts/{id}").permitAll()
+                                .requestMatchers(HttpMethod.DELETE, "/api/posts/{id}").permitAll()
+                                .requestMatchers(HttpMethod.POST, "/user").permitAll()
+                                .requestMatchers(HttpMethod.POST, "/login").permitAll()
+//                                .requestMatchers(HttpMethod.POST, "/api/posts").hasAnyAuthority(
+//                                        "USER", "ADMIN")
+//                                .anyRequest().authenticated()
+
+//                         그 외의 모든 요청은 USER 또는 ADMIN 권한을 가진 사용자만 접근 가능
+                                .anyRequest().hasAnyAuthority("USER", "ADMIN")
                 )
-                .formLogin(formLogin -> formLogin.loginPage("/login").defaultSuccessUrl("/"))
                 .logout(logout -> logout.logoutSuccessUrl("/login").invalidateHttpSession(true))
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .csrf(csrf -> csrf.disable());
 
         return http.build();
     }
-
-
 
 
 }

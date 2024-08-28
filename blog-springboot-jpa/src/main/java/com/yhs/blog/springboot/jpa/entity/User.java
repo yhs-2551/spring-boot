@@ -1,10 +1,7 @@
 package com.yhs.blog.springboot.jpa.entity;
 
 import jakarta.persistence.*;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.Setter;
-import lombok.ToString;
+import lombok.*;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
@@ -17,6 +14,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 
+@NoArgsConstructor
 @EntityListeners(AuditingEntityListener.class)
 @Getter
 @Setter
@@ -92,10 +90,11 @@ public class User implements UserDetails {
     }
 
     @Builder
-    public User(String email, String password, String username, String auth) {
+    public User(String email, String password, String username, UserRole role, String auth) {
         this.email = email;
         this.password = password;
         this.username = username;
+        this.role = role;
     }
 
     public enum UserRole {

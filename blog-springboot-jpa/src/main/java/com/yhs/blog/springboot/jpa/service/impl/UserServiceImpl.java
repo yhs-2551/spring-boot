@@ -24,10 +24,12 @@ public class UserServiceImpl implements UserService {
                     bCryptPasswordEncoder.encode(addUserRequest.getPassword());
 
             User user = User.builder()
+                    .username(addUserRequest.getUsername())
                     .email(addUserRequest.getEmail())
                     .password(encodedPassword)
-                    .username(addUserRequest.getUsername())
+                    .role(User.UserRole.ADMIN)
                     .build();
+
             return userRepository.save(user).getId();
 
         } catch (Exception ex) {

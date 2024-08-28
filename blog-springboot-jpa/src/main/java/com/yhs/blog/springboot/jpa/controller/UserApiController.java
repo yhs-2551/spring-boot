@@ -17,12 +17,14 @@ import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.authentication.logout.SecurityContextLogoutHandler;
 
-import org.springframework.stereotype.Controller;
-
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RestController;
 
-@Controller
+import java.util.HashMap;
+import java.util.Map;
+
+@RestController
 @RequiredArgsConstructor
 public class UserApiController {
 
@@ -35,23 +37,24 @@ public class UserApiController {
 
     @PostMapping("/user")
     public ResponseEntity<Long> signup(@RequestBody AddUserRequest addUserRequest) {
-
         Long userId = userService.createUser(addUserRequest);
         return ResponseEntity.status(HttpStatus.CREATED).body(userId);
     }
 
     @PostMapping("/login")
-    public ResponseEntity<?> login(@RequestBody LoginRequest loginRequest) {
+    public ResponseEntity<Map<String, String>> login(@RequestBody LoginRequest loginRequest) {
 
-        try {
-            UsernamePasswordAuthenticationToken usernamePasswordAuthenticationToken = new UsernamePasswordAuthenticationToken(loginRequest.getEmail(), loginRequest.getPassword());
-            Authentication authentication = authenticationManager.authenticate(usernamePasswordAuthenticationToken);
-            SecurityContextHolder.getContext().setAuthentication(authentication); // SecurityContextHolder에 인증 정보 저장
-            return ResponseEntity.ok().body("로그인 성공");
-        } catch (AuthenticationException ex) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("로그인 실패");
-        }
+        UsernamePasswordAuthenticationToken usernamePasswordAuthenticationToken = new UsernamePasswordAuthenticationToken(loginRequest.getEmail(), loginRequest.getPassword());
+        Authentication authentication = authenticationManager.authenticate(usernamePasswordAuthenticationToken);
+        SecurityContextHolder.getContext().setAuthentication(authentication); // SecurityContextHolder에 인증 정보 저장
+
+        // 그냥 일반 텍스트인 '로그인 성공' 으로 응답하면 클라이언트측에서 문자열을 JSON형식으로 파싱하려다가 SyntaxError가 발생하게 된다.
+        Map<String, String> response = new HashMap<>();
+        response.put("message", "로그인 성공");
+        return ResponseEntity.ok().body(response);
+
     }
+
 
     @PostMapping("/logout")
     public void logout(Authentication authentication, HttpServletRequest httpServletRequest,
