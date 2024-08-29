@@ -81,7 +81,11 @@ public class SecurityConfig {
 //                         그 외의 모든 요청은 USER 또는 ADMIN 권한을 가진 사용자만 접근 가능
                                 .anyRequest().hasAnyAuthority("USER", "ADMIN")
                 )
-                .logout(logout -> logout.logoutSuccessUrl("/login").invalidateHttpSession(true))
+
+//                .logout(logout -> logout.logoutSuccessUrl("/login").invalidateHttpSession(true)
+//                ) invalidateHttpSession(true)는 jwt방식을 사용할 것이기에 필요x, logout.logoutSuccessUrl
+//                ("/login")는 jsp 및 타임리프를 사용할 경우 사용
+
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .csrf(csrf -> csrf.disable());
 
