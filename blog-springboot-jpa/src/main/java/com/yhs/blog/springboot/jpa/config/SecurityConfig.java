@@ -14,11 +14,17 @@ import org.springframework.security.config.annotation.web.configuration.WebSecur
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.logout.CookieClearingLogoutHandler;
+import org.springframework.security.web.authentication.logout.HeaderWriterLogoutHandler;
+import org.springframework.security.web.authentication.logout.HttpStatusReturningLogoutSuccessHandler;
+import org.springframework.security.web.header.writers.ClearSiteDataHeaderWriter;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 import java.util.List;
+
+import static org.springframework.security.web.header.writers.ClearSiteDataHeaderWriter.Directive.COOKIES;
 
 @Configuration
 @EnableWebSecurity
@@ -74,12 +80,21 @@ public class SecurityConfig {
                                 .requestMatchers(HttpMethod.DELETE, "/api/posts/{id}").permitAll()
                                 .requestMatchers(HttpMethod.POST, "/user").permitAll()
                                 .requestMatchers(HttpMethod.POST, "/login").permitAll()
+//                                .requestMatchers(HttpMethod.POST, "/logout").permitAll()
 //                                .requestMatchers(HttpMethod.POST, "/api/posts").hasAnyAuthority(
 //                                        "USER", "ADMIN")
 //                                .anyRequest().authenticated()
 
 //                         그 외의 모든 요청은 USER 또는 ADMIN 권한을 가진 사용자만 접근 가능
                                 .anyRequest().hasAnyAuthority("USER", "ADMIN")
+
+                )
+                .logout((logout) -> logout 
+                        .logoutUrl("/logout")
+                        .permitAll() // 로그아웃 엔드포인트를 모두에게 허용
+                        .addLogoutHandler(new CookieClearingLogoutHandler("JSESSIONID")) // 쿠키 정리 핸들러 추가
+                        .addLogoutHandler(new HeaderWriterLogoutHandler(new ClearSiteDataHeaderWriter(COOKIES))) // Clear-Site-Data 헤더 추가 (쿠키만 지우기), COOKIE이외에 Cache도 지울 수 있다
+                        .logoutSuccessHandler(new HttpStatusReturningLogoutSuccessHandler()) // 로그아웃 성공 시 HTTP 상태 코드만 반환
                 )
 
 //                .logout(logout -> logout.logoutSuccessUrl("/login").invalidateHttpSession(true)
