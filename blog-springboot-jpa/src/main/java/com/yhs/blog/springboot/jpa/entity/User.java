@@ -14,7 +14,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 
-@NoArgsConstructor
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 @EntityListeners(AuditingEntityListener.class)
 @Getter
 @Setter
@@ -27,7 +27,7 @@ public class User implements UserDetails {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false, length = 50)
+    @Column(nullable = false, length = 50, unique = true)
     private String username;
 
     @Column(nullable = false, length = 255)
@@ -54,6 +54,8 @@ public class User implements UserDetails {
     @OneToMany(mappedBy = "user", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<Like> likes;
 
+    //필드의 기본값 (UserRole.USER)은 객체가 기본 생성자를 통해 생성될 때 적용된다. 반면, 빌더 패턴을 사용하거나 파라미터화된 생성자를 사용하는
+    // 경우, 해당 기본값은 적용되지 않는다.
     @Enumerated(EnumType.STRING)
     @Column(length = 10, nullable = false)
     private UserRole role = UserRole.USER;
@@ -94,7 +96,12 @@ public class User implements UserDetails {
         this.email = email;
         this.password = password;
         this.username = username;
-        this.role = role;
+        this.role = role != null ? role : UserRole.USER;
+    }
+
+    public User update(String username) {
+        this.username = username;
+        return this;
     }
 
     public enum UserRole {

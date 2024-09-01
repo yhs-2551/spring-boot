@@ -35,3 +35,6 @@ out/
 
 ### VS Code ###
 .vscode/
+
+### OAUTH2 custom properties file ###
+application-secrets.properties

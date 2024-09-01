@@ -50,10 +50,10 @@ public class UserApiController {
         Authentication authentication = authenticationManager.authenticate(usernamePasswordAuthenticationToken);
         SecurityContextHolder.getContext().setAuthentication(authentication); // SecurityContextHolder에 인증 정보 저장
 
-        // 세션 생성 및 사용자 정보 저장. JWT를 사용할 것이기에 비활성화
-        HttpSession session = request.getSession(true);
-        session.setAttribute("username", loginRequest.getEmail());
-//
+        // 세션 생성 및 사용자 정보 저장. JWT를 사용할 경우 불필요
+//        HttpSession session = request.getSession(true);
+//        session.setAttribute("username", loginRequest.getEmail());
+
         // 그냥 일반 텍스트인 '로그인 성공' 으로 응답하면 클라이언트측에서 문자열을 JSON형식으로 파싱하려다가 SyntaxError가 발생하게 된다.
         Map<String, String> response = new HashMap<>();
         response.put("message", "로그인 성공");
@@ -62,12 +62,12 @@ public class UserApiController {
     }
 
     
-//    스프링 시큐리티에서 기본적으로 세션을 무효화하고 쿠키를 삭제하는 로직. JWT방식으로 진행할 것이기 때문에 불필요
-    @PostMapping("/logout")
-    public void logout(Authentication authentication, HttpServletRequest httpServletRequest,
-                       HttpServletResponse httpServletResponse) {
-        this.logoutHandler.logout(httpServletRequest, httpServletResponse, authentication);
-
-        System.out.println("로그아웃 실행");
-    }
+//    스프링 시큐리티에서 기본적으로 세션을 무효화하고 쿠키를 삭제하는 로직. JWT방식으로 진행할 경우 불필요
+//    @PostMapping("/logout")
+//    public void logout(Authentication authentication, HttpServletRequest httpServletRequest,
+//                       HttpServletResponse httpServletResponse) {
+//        this.logoutHandler.logout(httpServletRequest, httpServletResponse, authentication);
+//
+//        System.out.println("로그아웃 실행");
+//    }
 }

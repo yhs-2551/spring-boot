@@ -29,13 +29,13 @@ import java.util.Optional;
 
 @SpringBootTest
 @AutoConfigureMockMvc
-class PostControllerTest {
+class PostApiControllerTest {
 
     @Autowired
-    private MockMvc mockMvc;
+    protected MockMvc mockMvc;
 
     @Autowired
-    ObjectMapper objectMapper;
+    protected ObjectMapper objectMapper;
 
     @Autowired
     private WebApplicationContext context;
@@ -48,8 +48,6 @@ class PostControllerTest {
         this.mockMvc = MockMvcBuilders
                 .webAppContextSetup(context)
                 .build();
-
-        postRepository.deleteAll();
     }
 
     @Transactional
@@ -148,6 +146,7 @@ class PostControllerTest {
         assertThat(deletedPost).isEmpty();
     }
 
+    @Transactional
     @DisplayName("updatePost: 블로그 글 수정 테스트")
     @Test
     public void updatePost() throws Exception {

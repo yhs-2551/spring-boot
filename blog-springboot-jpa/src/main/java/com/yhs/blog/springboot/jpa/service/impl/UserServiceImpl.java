@@ -14,19 +14,17 @@ import org.springframework.stereotype.Service;
 public class UserServiceImpl implements UserService {
 
     private final UserRepository userRepository;
-    private final BCryptPasswordEncoder bCryptPasswordEncoder;
+
 
     @Override
     public Long createUser(AddUserRequest addUserRequest) {
 
         try {
-            String encodedPassword =
-                    bCryptPasswordEncoder.encode(addUserRequest.getPassword());
-
+            BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
             User user = User.builder()
                     .username(addUserRequest.getUsername())
                     .email(addUserRequest.getEmail())
-                    .password(encodedPassword)
+                    .password(encoder.encode(addUserRequest.getPassword()))
                     .role(User.UserRole.ADMIN)
                     .build();
 
@@ -35,5 +33,17 @@ public class UserServiceImpl implements UserService {
         } catch (Exception ex) {
             throw new UserCreationException("사용자 생성 중 오류가 발생했습니다: " + ex.getMessage());
         }
+    }
+
+    @Override
+    public User findUserById(Long userId) {
+        return userRepository.findById(userId).orElseThrow(() -> new IllegalArgumentException(
+                "User not found"));
+    }
+
+    @Override
+    public User findUserByEmail(String email) {
+        return userRepository.findByEmail(email).orElseThrow(() -> new IllegalArgumentException(
+                "User not found"));
     }
 }

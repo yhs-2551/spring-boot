@@ -14,7 +14,7 @@ import java.util.Set;
 @EntityListeners(AuditingEntityListener.class)
 @Getter
 @Entity
-@NoArgsConstructor
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Table(name = "Posts", indexes = {
         @Index(name = "idx_posts_user_id", columnList = "user_id"),
         @Index(name = "idx_posts_category_id", columnList = "category_id")
