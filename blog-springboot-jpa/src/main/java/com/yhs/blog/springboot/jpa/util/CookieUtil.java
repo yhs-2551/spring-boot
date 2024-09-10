@@ -14,6 +14,8 @@ public class CookieUtil {
         cookie.setHttpOnly(true); // 쿠키를 HttpOnly로 설정하여 클라이언트측 JavaScript에서 접근 방지
 //        cookie.setSecure(true);  쿠키가 HTTPS 연결을 통해서만 전송되도록 함.
         cookie.setMaxAge(maxAge);
+
+        // 응답에 쿠키 추가
         httpServletResponse.addCookie(cookie);
     }
 

@@ -30,8 +30,8 @@ public class GlobalExceptionHandler {
 
     //RuntimeException의 하위 클래스
     @ExceptionHandler(IllegalArgumentException.class)
-    public ResponseEntity<String> findByIdAndfindByRefreshTokenException(IllegalArgumentException ex) {
-        return new ResponseEntity<>(ex.getMessage(), HttpStatus.NOT_FOUND);
+    public ResponseEntity<String> IllegalArgumentException(IllegalArgumentException ex) {
+        return new ResponseEntity<>(ex.getMessage(), HttpStatus.BAD_REQUEST);
     }
 
     @ExceptionHandler(UsernameNotFoundException.class)

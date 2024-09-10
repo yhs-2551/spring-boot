@@ -14,6 +14,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.security.Principal;
 import java.util.List;
 
 @RequiredArgsConstructor
@@ -25,12 +26,9 @@ public class PostApiController {
     private final PostService postService;
 
     @PostMapping
-    public ResponseEntity<PostRequest> createPost(@Valid @RequestBody PostRequest postRequest) {
+    public ResponseEntity<PostResponse> createPost(@Valid @RequestBody PostRequest postRequest, Principal principal) {
 
-        Post post = postService.createPost(postRequest);
-
-        //PostResponse로 수정 필요
-        PostRequest responseDTO = PostMapper.toDTO(post);
+        PostResponse responseDTO = postService.createPost(postRequest, principal);
 
         return new ResponseEntity<>(responseDTO, HttpStatus.CREATED);
     }

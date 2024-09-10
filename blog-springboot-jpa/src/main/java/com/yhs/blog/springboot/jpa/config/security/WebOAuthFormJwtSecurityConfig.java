@@ -2,6 +2,8 @@ package com.yhs.blog.springboot.jpa.config.security;
 
 import com.yhs.blog.springboot.jpa.config.jwt.TokenAuthenticationFilter;
 import com.yhs.blog.springboot.jpa.config.jwt.TokenProvider;
+import com.yhs.blog.springboot.jpa.config.oauth.OAuth2AuthorizationRequestBasedOnCookieRepository;
+import com.yhs.blog.springboot.jpa.config.oauth.OAuth2SuccessHandler;
 import com.yhs.blog.springboot.jpa.config.oauth.OAuth2UserCustomService;
 import com.yhs.blog.springboot.jpa.repository.RefreshTokenRepository;
 import com.yhs.blog.springboot.jpa.service.impl.UserDetailServiceImpl;
@@ -98,7 +100,7 @@ public class WebOAuthFormJwtSecurityConfig {
 
     @Bean
     public OAuth2AuthorizationRequestBasedOnCookieRepository oAuth2AuthorizationRequestBasedOnCookieRepository() {
-        return new OAuth2AuthorizationRequestBasedOnCookieRepository()
+        return new OAuth2AuthorizationRequestBasedOnCookieRepository();
     }
 
     @Bean
