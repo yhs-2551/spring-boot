@@ -1,7 +1,13 @@
 package com.yhs.blog.springboot.jpa.util;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.module.SimpleModule;
+import jakarta.servlet.http.Cookie;
+import org.springframework.security.oauth2.core.AuthorizationGrantType;
+import org.springframework.security.oauth2.core.endpoint.OAuth2AuthorizationResponseType;
+import org.springframework.util.SerializationUtils;
 
 import java.util.Base64;
 
@@ -19,14 +25,19 @@ public class JsonUtil {
     }
 
     // Base64로 인코딩된 JSON 문자열을 객체로 역직렬화
-    public static <T> T deserialize(String base64String, Class<T> cls) {
+    public static <T> T deserialize(Cookie cookie, Class<T> cls) {
+
         try {
-            byte[] decodedBytes = Base64.getUrlDecoder().decode(base64String);
+//            System.out.println("Base64 String: " + base64String);
+            byte[] decodedBytes = Base64.getUrlDecoder().decode(cookie.getValue());
+            System.out.println("decodedBytes: " + decodedBytes);
             String jsonString = new String(decodedBytes);
+            System.out.println("Decoded JSON String: " + jsonString);
             return objectMapper.readValue(jsonString, cls);
         } catch (Exception ex) {
             throw new RuntimeException("Deserialization error", ex);
         }
+
     }
 
 }

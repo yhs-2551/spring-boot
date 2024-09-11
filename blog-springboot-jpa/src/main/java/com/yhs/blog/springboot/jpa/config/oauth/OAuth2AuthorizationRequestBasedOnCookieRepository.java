@@ -1,5 +1,7 @@
 package com.yhs.blog.springboot.jpa.config.oauth;
 
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.yhs.blog.springboot.jpa.util.CookieUtil;
 import com.yhs.blog.springboot.jpa.util.JsonUtil;
 import jakarta.servlet.http.Cookie;
@@ -23,11 +25,9 @@ public class OAuth2AuthorizationRequestBasedOnCookieRepository implements Author
     public OAuth2AuthorizationRequest loadAuthorizationRequest(HttpServletRequest request) {
         //쿠키에서 해당 이름의 쿠키를 가져옴
         Cookie cookie = WebUtils.getCookie(request, OAUTH2_AUTHORIZATION_REQUEST_COOKIE_NAME);
-        if (cookie != null) {
-            String cookieValue = cookie.getValue();  // 쿠키의 값을 추출
-            return JsonUtil.deserialize(cookieValue, OAuth2AuthorizationRequest.class);  // String 값을 역직렬화
-        }
-        return null;
+
+        return JsonUtil.deserialize(cookie, OAuth2AuthorizationRequest.class);  // String 값을 역직렬화
+
     }
 
     @Override
