@@ -30,7 +30,8 @@ public class User implements UserDetails {
     @Column(nullable = false, length = 50, unique = true)
     private String username;
 
-    @Column(nullable = false, length = 255)
+    // OAUTH2 사용자의 경우 비밀번호를 저장할 필요가 없기 때문에 nullable true 설정
+    @Column(nullable = true, length = 255)
     private String password;
 
     @Column(nullable = false, length = 100, unique = true)

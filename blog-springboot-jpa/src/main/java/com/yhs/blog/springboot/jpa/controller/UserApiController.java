@@ -20,6 +20,7 @@ import org.springframework.security.web.authentication.logout.SecurityContextLog
 
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.HashMap;
@@ -27,6 +28,7 @@ import java.util.Map;
 
 @RestController
 @RequiredArgsConstructor
+@RequestMapping("/api/user")
 public class UserApiController {
 
     private final UserService userService;
@@ -36,7 +38,7 @@ public class UserApiController {
     SecurityContextLogoutHandler logoutHandler =
             new SecurityContextLogoutHandler();
 
-    @PostMapping("/user")
+    @PostMapping("/signup")
     public ResponseEntity<Long> signup(@RequestBody AddUserRequest addUserRequest) {
         Long userId = userService.createUser(addUserRequest);
         return ResponseEntity.status(HttpStatus.CREATED).body(userId);

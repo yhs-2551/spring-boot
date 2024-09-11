@@ -6,6 +6,7 @@ import com.yhs.blog.springboot.jpa.config.oauth.OAuth2AuthorizationRequestBasedO
 import com.yhs.blog.springboot.jpa.config.oauth.OAuth2SuccessHandler;
 import com.yhs.blog.springboot.jpa.config.oauth.OAuth2UserCustomService;
 import com.yhs.blog.springboot.jpa.repository.RefreshTokenRepository;
+import com.yhs.blog.springboot.jpa.service.impl.TokenServiceImpl;
 import com.yhs.blog.springboot.jpa.service.impl.UserDetailServiceImpl;
 import com.yhs.blog.springboot.jpa.service.impl.UserServiceImpl;
 import lombok.RequiredArgsConstructor;
@@ -42,6 +43,7 @@ public class WebOAuthFormJwtSecurityConfig {
     private final TokenProvider tokenProvider;
     private final RefreshTokenRepository refreshTokenRepository;
     private final UserServiceImpl userService;
+    private final TokenServiceImpl tokenService;
     private final UserDetailServiceImpl userDetailService;
 
 
@@ -106,12 +108,14 @@ public class WebOAuthFormJwtSecurityConfig {
     @Bean
     public OAuth2SuccessHandler oAuth2SuccessHandler() {
         return new OAuth2SuccessHandler(tokenProvider, refreshTokenRepository,
-                oAuth2AuthorizationRequestBasedOnCookieRepository(), userService);
+                oAuth2AuthorizationRequestBasedOnCookieRepository(), userService, tokenService);
     }
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
+                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+                .csrf(csrf -> csrf.disable())
                 .sessionManagement((session) -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)) // 세션 사용하지 않음
                 .httpBasic(httpBasic -> httpBasic.disable()) // jwt방식에서 http basic 방식 비활성화. 기본적으로
                 // 켜져 있음
@@ -121,11 +125,11 @@ public class WebOAuthFormJwtSecurityConfig {
                                 //SWAGGER 설정 부분
                                 // 인증 없이 접근 가능한 경로 설정
                                 .requestMatchers(SWAGGER_WHITELIST).permitAll()
-                                .requestMatchers(HttpMethod.POST, "/api/token").permitAll()
-                                .requestMatchers(HttpMethod.POST, "/user", "/login").permitAll()
-                                .requestMatchers(HttpMethod.GET, "/api/posts", "/api/posts/{id}").permitAll()
-                                //그 외 /api/** 모든 경로는 인증 필요
-                                .requestMatchers("/api/**").authenticated()
+//                                .requestMatchers(HttpMethod.POST, "/api/token").permitAll()
+//                                .requestMatchers(HttpMethod.POST, "/user", "/login").permitAll()
+//                                .requestMatchers(HttpMethod.GET, "/api/posts", "/api/posts/{id}").permitAll()
+//                                //그 외 /api/** 모든 경로는 인증 필요
+//                                .requestMatchers("/api/**").authenticated()
                                 // 나머지 경로 임시로 모두 접근 가능
                                 .anyRequest().permitAll()
                         // 그 외의 모든 요청은 USER 또는 ADMIN 권한을 가진 사용자만 접근 가능. 임시로 주석. 나중에 적용
@@ -134,21 +138,22 @@ public class WebOAuthFormJwtSecurityConfig {
 
                 )
                 // Authorization 요청과 관련된 상태 저장
-                .oauth2Login(oauth2 -> oauth2.loginPage("/login")
-                        .authorizationEndpoint((authorizationEndpointConfig) -> authorizationEndpointConfig.authorizationRequestRepository(oAuth2AuthorizationRequestBasedOnCookieRepository()))
+                .oauth2Login(oauth2 -> oauth2
+                        .authorizationEndpoint((authorizationEndpointConfig) -> authorizationEndpointConfig.authorizationRequestRepository(oAuth2AuthorizationRequestBasedOnCookieRepository())
+                        )
                         .userInfoEndpoint((userInfoEndpointConfig) -> userInfoEndpointConfig.userService(oAuth2UserCustomService))
                         //인증 성공 시 실행할 핸들러
                         .successHandler(oAuth2SuccessHandler())
+                        .redirectionEndpoint(redirectEndpointConfig -> redirectEndpointConfig.baseUri("/login/oauth2/code/*"))
 
                 )
+//                .formLogin(formLogin -> formLogin.loginProcessingUrl("/user/login").successHandler(formLoginSuccessHandler()))
                 // /api/로 시작하는 url인 경우 401 상태 코드 즉, 권한이 없다는 상태 코드를 반환하도록 예외 처리.
                 .exceptionHandling(exceptionHandling -> exceptionHandling.defaultAuthenticationEntryPointFor(
                                 new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED),
                                 new AntPathRequestMatcher("/api/**")
                         )
-                )
-                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-                .csrf(csrf -> csrf.disable());
+                );
 
         return http.build();
 
