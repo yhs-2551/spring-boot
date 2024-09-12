@@ -61,7 +61,12 @@ public class WebOAuthFormJwtSecurityConfig {
         configuration.setAllowedOrigins(List.of("http://localhost:3000"));
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "PATCH"));
         configuration.setAllowedHeaders(List.of("*"));
+
+//        클라이언트가 서버로의 요청에 인증 정보를 포함할 수 있도록 허용하는 설정. 쿠키, Authorization 헤더, TLS 인증서 등
         configuration.setAllowCredentials(true);
+
+        // 클라이언트가 접근할 수 있도록 노출할 헤더 설정. 이렇게 해야 클라이언트에서 Authorization 헤더에 접근 가능하다.
+        configuration.setExposedHeaders(List.of("Authorization"));
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);
@@ -143,8 +148,8 @@ public class WebOAuthFormJwtSecurityConfig {
                         )
                         .userInfoEndpoint((userInfoEndpointConfig) -> userInfoEndpointConfig.userService(oAuth2UserCustomService))
                         //인증 성공 시 실행할 핸들러
-                        .successHandler(oAuth2SuccessHandler())
                         .redirectionEndpoint(redirectEndpointConfig -> redirectEndpointConfig.baseUri("/login/oauth2/code/*"))
+                        .successHandler(oAuth2SuccessHandler())
 
                 )
 //                .formLogin(formLogin -> formLogin.loginProcessingUrl("/user/login").successHandler(formLoginSuccessHandler()))

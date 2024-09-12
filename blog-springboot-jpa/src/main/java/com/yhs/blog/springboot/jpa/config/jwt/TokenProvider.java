@@ -24,7 +24,9 @@ import java.util.Set;
 @RequiredArgsConstructor
 @Service
 public class TokenProvider {
+
     private final JwtProperties jwtProperties;
+    private final SecretKey secretKey = Jwts.SIG.HS256.key().build();
 
 
     public String generateToken(User user, Duration expiredAt) {
@@ -42,17 +44,23 @@ public class TokenProvider {
         return Jwts.builder().
                 header().add("typ", "JWT").add("alg", "HS256").and()
                 .issuer(jwtProperties.getIssuer()).issuedAt(now).expiration(expiry).subject(user.getEmail()).claim("id", user.getId())
-                .signWith(jwtProperties.getJwtSecretKey(), Jwts.SIG.HS256).compact();
+                .signWith(secretKey, Jwts.SIG.HS256).compact();
     }
 
     // 토큰 유효성 검사 메서드
     public boolean validToken(String token) {
         try {
-            Jwts.parser().verifyWith(jwtProperties.getJwtSecretKey()).build().parseSignedClaims(token); // JWT
+
+            System.out.println("실행 true");
+            Jwts.parser().verifyWith(secretKey).build().parseSignedClaims(token); // JWT
             // 문자열의 토큰을 파싱하고
             // 서명을 검증한다. 유효한 경우 서명이 포함된 클레임 객체를 반환한다.
             return true;
         } catch (Exception e) {
+
+            System.out.println("실행 false");
+            System.out.println("예외 메시지: " + e.getMessage());
+
             return false;
         }
 
@@ -86,7 +94,7 @@ public class TokenProvider {
 
     // 페이로드, 즉 내용(클레임) 반환 메서드
     private Claims getClaims(String token) {
-        return Jwts.parser().verifyWith(jwtProperties.getJwtSecretKey()).build().parseSignedClaims(token).getPayload();
+        return Jwts.parser().verifyWith(secretKey).build().parseSignedClaims(token).getPayload();
     }
 
 

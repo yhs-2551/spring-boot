@@ -16,6 +16,8 @@ import static org.junit.jupiter.api.Assertions.*;
 @Getter
 public class JwtFactory {
 
+    private final SecretKey secretKey = Jwts.SIG.HS256.key().build();
+
     @Autowired
     private JwtProperties jwtProperties;
 
@@ -38,7 +40,7 @@ public class JwtFactory {
 
     public String createToken(JwtProperties jwtProperties) {
         return Jwts.builder().header().add("typ", "JWT").add("alg", "HS256").and().subject(subject).issuer(jwtProperties.getIssuer())
-                .issuedAt(issuedAt).expiration(expiration).claims(claims).signWith(jwtProperties.getJwtSecretKey()
+                .issuedAt(issuedAt).expiration(expiration).claims(claims).signWith(secretKey
                         , Jwts.SIG.HS256).compact();
     }
 }

@@ -42,9 +42,13 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
 
         String getRefreshTokenCookie = getRefreshTokenCookie(request);
 
+        System.out.println("getRefreshTokenCookie >>>>" + getRefreshTokenCookie);
+
         // OAuth2에 동일한 사용자가 2번이상 로그인 & 브라우저 쿠키에 리프레시 토큰이 있을 때.
         // 해당 RefreshToken을 이용해 새로운 액세스 토큰 발급
         if (getRefreshTokenCookie != null && tokenProvider.validToken(getRefreshTokenCookie)) {
+
+            System.out.println("run11111");
 
             // 리프레시 토큰이 유효하다면 새로운 액세스 토큰 발급
             String newAccessToken = tokenService.createNewAccessToken(getRefreshTokenCookie);
@@ -52,6 +56,9 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
             handleAccessTokenCookie(request, response, newAccessToken);
 
         } else {
+
+            System.out.println("run2222");
+
 
             // else문은 OAuth2에 초기 로그인 시
 

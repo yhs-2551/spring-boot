@@ -1,9 +1,6 @@
 package com.yhs.blog.springboot.jpa.config.oauth;
 
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.yhs.blog.springboot.jpa.util.CookieUtil;
-import com.yhs.blog.springboot.jpa.util.JsonUtil;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -39,7 +36,7 @@ public class OAuth2AuthorizationRequestBasedOnCookieRepository implements Author
             return null;
         }
 
-        return JsonUtil.deserialize(cookie, OAuth2AuthorizationRequest.class);  // String 값을 역직렬화
+        return CookieUtil.deserialize(cookie, OAuth2AuthorizationRequest.class);  // String 값을 역직렬화
 
     }
 
@@ -52,7 +49,7 @@ public class OAuth2AuthorizationRequestBasedOnCookieRepository implements Author
         }
 
         CookieUtil.addCookie(response, OAUTH2_AUTHORIZATION_REQUEST_COOKIE_NAME,
-                JsonUtil.serialize(authorizationRequest), COOKIE_EXPIRE_SECONDS);
+                CookieUtil.serialize(authorizationRequest), COOKIE_EXPIRE_SECONDS);
     }
 
     @Override
