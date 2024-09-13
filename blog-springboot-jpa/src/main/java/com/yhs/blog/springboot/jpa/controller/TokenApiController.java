@@ -53,6 +53,10 @@ public class TokenApiController {
 
     @GetMapping("/check-access-token")
     public ResponseEntity<Object> checkAccessToken(HttpServletRequest request) {
+
+        System.out.println("토큰 체크 실행");
+
+
         String authorizationHeader = request.getHeader("Authorization");
 
 
@@ -65,15 +69,23 @@ public class TokenApiController {
         // "Bearer " 이후의 토큰 값만 추출
         String token = authorizationHeader.substring(7);
 
+        System.out.println("token값>>>" + token);
+
         // 토큰 유효성 검증
         if (!tokenProvider.validToken(token)) {
+            System.out.println("유효하지 않은 토큰 체크 실행");
+
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid or expired access token");
         }
 
-        Long userId = tokenProvider.getUserId(token);
-        User user = userService.findUserById(userId);
+        System.out.println("유효한 토큰 체크 실행");
 
-        return ResponseEntity.ok(user);
+//        액세스 토큰 검증이 완료되면 유효한 토큰 이라고 body에 담기만 하면 되고, user 정보를 굳이 넘겨줄 필요 없어서 아래는 주석 처리
+//        Long userId = tokenProvider.getUserId(token);
+//        System.out.println("userid 값 >>>" + userId);
+//        User user = userService.findUserById(userId);
+
+        return ResponseEntity.ok("Valid Access Token ");
 
 
     }
