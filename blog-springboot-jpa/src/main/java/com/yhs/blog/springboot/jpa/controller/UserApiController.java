@@ -1,9 +1,13 @@
 package com.yhs.blog.springboot.jpa.controller;
 
 
+import com.yhs.blog.springboot.jpa.config.jwt.TokenProvider;
 import com.yhs.blog.springboot.jpa.dto.AddUserRequest;
 import com.yhs.blog.springboot.jpa.dto.LoginRequest;
+import com.yhs.blog.springboot.jpa.repository.RefreshTokenRepository;
+import com.yhs.blog.springboot.jpa.service.RefreshTokenService;
 import com.yhs.blog.springboot.jpa.service.UserService;
+import com.yhs.blog.springboot.jpa.util.CookieUtil;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
@@ -35,8 +39,12 @@ public class UserApiController {
 
     private final AuthenticationManager authenticationManager;
 
-    SecurityContextLogoutHandler logoutHandler =
-            new SecurityContextLogoutHandler();
+    private final TokenProvider tokenProvider;
+
+    private final RefreshTokenService refreshTokenService;
+
+//    SecurityContextLogoutHandler logoutHandler =
+//            new SecurityContextLogoutHandler();
 
     @PostMapping("/signup")
     public ResponseEntity<Long> signup(@RequestBody AddUserRequest addUserRequest) {
@@ -46,7 +54,9 @@ public class UserApiController {
 
     @PostMapping("/login")
     public ResponseEntity<Map<String, String>> login(@RequestBody LoginRequest loginRequest, HttpServletRequest
-                                                      request) {
+            request) {
+
+        System.out.println("run login");
 
         UsernamePasswordAuthenticationToken usernamePasswordAuthenticationToken = new UsernamePasswordAuthenticationToken(loginRequest.getEmail(), loginRequest.getPassword());
         Authentication authentication = authenticationManager.authenticate(usernamePasswordAuthenticationToken);
@@ -63,8 +73,8 @@ public class UserApiController {
 
     }
 
-    
-//    스프링 시큐리티에서 기본적으로 세션을 무효화하고 쿠키를 삭제하는 로직. JWT방식으로 진행할 경우 불필요
+
+//    스프링 시큐리티에서 기본적으로 세션을 무효화하고 쿠키를 삭제하는 로직. (세션 방식)
 //    @PostMapping("/logout")
 //    public void logout(Authentication authentication, HttpServletRequest httpServletRequest,
 //                       HttpServletResponse httpServletResponse) {
@@ -72,4 +82,27 @@ public class UserApiController {
 //
 //        System.out.println("로그아웃 실행");
 //    }
+
+
+    // Custom logout 로직을 구현한 경우 시큐리티에서 제공하는 logout을 사용하지 않는다.
+    @PostMapping("/logout")
+    public ResponseEntity<Void> logout(HttpServletRequest request, HttpServletResponse response) {
+
+
+        CookieUtil.deleteCookie(request, response, "refresh_token");
+        CookieUtil.deleteCookie(request, response, "access_token");
+
+        System.out.println("logout controller execute");
+
+        String authorizationHeader = request.getHeader("Authorization");
+        // "Bearer " 이후의 토큰 값만 추출
+        String token = authorizationHeader.substring(7);
+
+        Long id = tokenProvider.getUserId(token);
+
+        System.out.println("log out user id >>>" + id);
+
+        refreshTokenService.deleteRefreshToken(id);
+        return ResponseEntity.ok().build();
+    }
 }

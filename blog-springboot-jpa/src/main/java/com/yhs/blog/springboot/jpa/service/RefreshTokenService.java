@@ -5,4 +5,6 @@ import com.yhs.blog.springboot.jpa.entity.RefreshToken;
 public interface RefreshTokenService {
 
     RefreshToken findRefreshToken(String refreshToken);
+
+    void deleteRefreshToken(Long userId);
 }

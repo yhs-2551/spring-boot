@@ -16,4 +16,9 @@ public class RefreshTokenServiceImpl implements RefreshTokenService {
     public RefreshToken findRefreshToken(String refreshToken) {
         return refreshTokenRepository.findByRefreshToken(refreshToken).orElseThrow(() -> new IllegalArgumentException("Refresh Token not found"));
     }
+
+    @Override
+    public void deleteRefreshToken(Long id) {
+        refreshTokenRepository.deleteById(id);
+    }
 }

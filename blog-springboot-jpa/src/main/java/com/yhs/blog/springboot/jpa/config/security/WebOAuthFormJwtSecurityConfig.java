@@ -27,6 +27,8 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.HttpStatusEntryPoint;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.web.authentication.logout.CookieClearingLogoutHandler;
+import org.springframework.security.web.authentication.logout.HttpStatusReturningLogoutSuccessHandler;
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
@@ -162,7 +164,7 @@ public class WebOAuthFormJwtSecurityConfig {
 
         return http.build();
 
-        // 로그아웃 시 만료된 리프레시 토큰을 삭제해야 할수도 있으니 logout 시큐리티 남겨둠
+        // 시큐리티를 사용한 세션 로그아웃 처리 방식
 //                .logout((logout) -> logout
 //                        .logoutUrl("/logout")
 //                        .permitAll() // 로그아웃 엔드포인트를 모두에게 허용

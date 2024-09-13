@@ -23,7 +23,6 @@ public class TokenApiController {
 
     private final TokenService tokenService;
     private final TokenProvider tokenProvider;
-    private final UserServiceImpl userService;
 
     @GetMapping("/initial-token")
     // ResponseEntity에 CreateAccessTokenResponse와 문자열 둘 다 들어가기 때문에 Object로 사용
