@@ -1,11 +1,12 @@
-package com.yhs.blog.springboot.jpa.config.oauth;
+package com.yhs.blog.springboot.jpa.config.formlogin;
+
 
 import com.yhs.blog.springboot.jpa.config.jwt.TokenProvider;
+
 import com.yhs.blog.springboot.jpa.entity.RefreshToken;
 import com.yhs.blog.springboot.jpa.entity.User;
 import com.yhs.blog.springboot.jpa.repository.RefreshTokenRepository;
 import com.yhs.blog.springboot.jpa.service.impl.TokenServiceImpl;
-import com.yhs.blog.springboot.jpa.service.impl.UserServiceImpl;
 import com.yhs.blog.springboot.jpa.util.CookieUtil;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.Cookie;
@@ -13,7 +14,6 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.security.web.authentication.SimpleUrlAuthenticationSuccessHandler;
 import org.springframework.stereotype.Component;
 
@@ -22,31 +22,27 @@ import java.time.Duration;
 
 @Component
 @RequiredArgsConstructor
-public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler {
+public class FormLoginSuccessHandler extends SimpleUrlAuthenticationSuccessHandler {
+
     public static final String REFRESH_TOKEN_COOKIE_NAME = "refresh_token";
     public static final Duration REFRESH_TOKEN_DURATION = Duration.ofDays(14);
     public static final Duration ACCESS_TOKEN_DURATION = Duration.ofHours(1);
-    public static final String REDIRECT_PATH = "http://localhost:3000/";
 
     private final TokenProvider tokenProvider;
     private final RefreshTokenRepository refreshTokenRepository;
-    private final OAuth2AuthorizationRequestBasedOnCookieRepository auth2AuthorizationRequestBasedOnCookieRepository;
-    private final UserServiceImpl userService;
     private final TokenServiceImpl tokenService;
 
-    // 토큰과 관련된 작업만 추가로 처리하기 위한 메서드
     @Override
     public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response, Authentication authentication) throws IOException, ServletException {
-        OAuth2User oAuth2User = (OAuth2User) authentication.getPrincipal();
-        User user = userService.findUserByEmail((String) oAuth2User.getAttributes().get("email"));
+
+//        SecurityContextHolder에 저장되어 있는 사용자 주체를 꺼내옴
+        User user = (User) authentication.getPrincipal();
 
         String getRefreshTokenCookie = getRefreshTokenCookie(request);
 
-        // OAuth2에 동일한 사용자가 2번이상 로그인 & 브라우저 쿠키에 리프레시 토큰이 있을 때.
+        // Form로그인을 통하여 동일한 사용자가 2번이상 로그인 & 브라우저 쿠키에 리프레시 토큰이 있을 때.
         // 해당 RefreshToken을 이용해 새로운 액세스 토큰 발급
         if (getRefreshTokenCookie != null && tokenProvider.validToken(getRefreshTokenCookie)) {
-            
-            System.out.println("실행11111");
 
             // 리프레시 토큰이 유효하다면 새로운 액세스 토큰 발급
             String newAccessToken = tokenService.createNewAccessToken(getRefreshTokenCookie);
@@ -54,8 +50,8 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
             handleAccessTokenCookie(request, response, newAccessToken);
 
         } else {
-            System.out.println("실행222222");
-            // else문은 OAuth2에 초기 로그인 시
+
+            // else문은 FormLogin에 초기 로그인 시
 
             // 리프레시 토큰 생성
             String refreshToken = tokenProvider.generateToken(user, REFRESH_TOKEN_DURATION);
@@ -72,10 +68,11 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
             // 액세스 토큰을 리다이렉트 경로에 파라미터로 추가 근데 이 방식은 보안 상 별로라 사용하지 않는다.
 //        String targetUrl = getTargetUrl(accessToken);
 
+            // 생성된 액세스 토큰을 클라이언트 측 쿠키에 저장. 응답헤더에 바로 담아서 주면 redirect로 페이지 변경 시 클라이언트측에서 응답 헤더에 바로 
+            // 접근 불가능 하기 때문
             handleAccessTokenCookie(request, response, accessToken);
         }
 
-        getRedirectStrategy().sendRedirect(request, response, REDIRECT_PATH);
     }
 
 
@@ -91,24 +88,6 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
         int cookieMaxAge = (int) REFRESH_TOKEN_DURATION.toSeconds();
         CookieUtil.deleteCookie(request, response, REFRESH_TOKEN_COOKIE_NAME);
         CookieUtil.addCookie(response, REFRESH_TOKEN_COOKIE_NAME, refreshToken, cookieMaxAge);
-    }
-
-    // 액세스 토큰을 리다이렉트 경로에 파라미터로 추가. 보안상의 이유로 일단 사용하지 않음. 헤더 방식 사용
-//    private String getTargetUrl(String token) {
-//        return UriComponentsBuilder.fromUriString(REDIRECT_PATH).queryParam("token", token).build().toUriString();
-//
-//    }
-
-
-//    부모 클래스에 다른 시그니처(매개변수와 리턴 타입)를 가진 메서드이기 때문에 override가 아닌 overloading이 된다.
-    private void clearAuthenticationAttributes(HttpServletRequest request, HttpServletResponse
-            response) {
-
-        //인증 후 세션에 남아있는 불필요한 정보 제거
-        super.clearAuthenticationAttributes(request);
-
-        // OAuth2 인증 과정에서 저장된 쿠키를 삭제하여 클라이언트 측의 인증 관련 데이터를 정리.
-        auth2AuthorizationRequestBasedOnCookieRepository.removeAuthorizationRequestCookies(request, response);
     }
 
     private String getRefreshTokenCookie(HttpServletRequest request) {
@@ -139,9 +118,8 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
 
         response.addCookie(accessTokenCookie);
 
-        //  OAuth2 인증을 위해 임시로 세션에 저장된 정보나 쿠키의 정보를 제거하여 남아있는 데이터를 정리.
         //  세션이나 쿠키에 불필요한 데이터가 남아 있지 않도록 하여 보안을 강화함.
-        clearAuthenticationAttributes(request, response);
+        super.clearAuthenticationAttributes(request);
     }
 }
 

@@ -18,7 +18,7 @@ public class RefreshTokenServiceImpl implements RefreshTokenService {
     }
 
     @Override
-    public void deleteRefreshToken(Long id) {
-        refreshTokenRepository.deleteById(id);
+    public void deleteRefreshToken(Long userId) {
+        refreshTokenRepository.deleteById(userId);
     }
 }

@@ -1,5 +1,6 @@
 package com.yhs.blog.springboot.jpa.config.security;
 
+import com.yhs.blog.springboot.jpa.config.formlogin.FormLoginSuccessHandler;
 import com.yhs.blog.springboot.jpa.config.jwt.TokenAuthenticationFilter;
 import com.yhs.blog.springboot.jpa.config.jwt.TokenProvider;
 import com.yhs.blog.springboot.jpa.config.oauth.OAuth2AuthorizationRequestBasedOnCookieRepository;
@@ -116,6 +117,12 @@ public class WebOAuthFormJwtSecurityConfig {
     public OAuth2SuccessHandler oAuth2SuccessHandler() {
         return new OAuth2SuccessHandler(tokenProvider, refreshTokenRepository,
                 oAuth2AuthorizationRequestBasedOnCookieRepository(), userService, tokenService);
+    }
+
+    @Bean
+    public FormLoginSuccessHandler formLoginSuccessHandler() {
+        return new FormLoginSuccessHandler(tokenProvider, refreshTokenRepository,
+                tokenService);
     }
 
     @Bean

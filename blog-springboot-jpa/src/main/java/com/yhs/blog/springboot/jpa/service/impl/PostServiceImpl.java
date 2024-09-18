@@ -1,5 +1,6 @@
 package com.yhs.blog.springboot.jpa.service.impl;
 
+import com.yhs.blog.springboot.jpa.config.jwt.TokenProvider;
 import com.yhs.blog.springboot.jpa.dto.PostRequest;
 import com.yhs.blog.springboot.jpa.dto.PostResponse;
 import com.yhs.blog.springboot.jpa.dto.PostUpdateRequest;
@@ -12,11 +13,16 @@ import com.yhs.blog.springboot.jpa.repository.CategoryRepository;
 import com.yhs.blog.springboot.jpa.repository.PostRepository;
 import com.yhs.blog.springboot.jpa.repository.UserRepository;
 import com.yhs.blog.springboot.jpa.service.PostService;
+import com.yhs.blog.springboot.jpa.service.UserService;
 import com.yhs.blog.springboot.jpa.util.PostMapper;
+import com.yhs.blog.springboot.jpa.util.TokenUtil;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.dao.DataAccessException;
 import org.springframework.data.crossstore.ChangeSetPersister;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
@@ -34,16 +40,22 @@ import java.util.Optional;
 public class PostServiceImpl implements PostService {
 
     private final UserRepository userRepository;
+    private final UserService userService;
     private final CategoryRepository categoryRepository;
     private final PostRepository postRepository;
+    private final TokenProvider tokenProvider;
 
 
+    @Transactional
     @Override
-    public PostResponse createPost(PostRequest postRequest, Principal principal) {
+    public PostResponse createPost(PostRequest postRequest, HttpServletRequest request) {
 
         try {
 
-            User user = extractUserFromPrincipal(principal);
+//            User user = extractUserFromPrincipal(principal);
+
+            Long userId = TokenUtil.extractUserIdFromRequestToken(request, tokenProvider);
+            User user = userService.findUserById(userId);
 
             Category category = postRequest.getCategoryId() != null ? categoryRepository.findById(postRequest.getCategoryId()).orElse(null) : null;
 
@@ -62,13 +74,17 @@ public class PostServiceImpl implements PostService {
     }
 
     @Override
-    public List<Post> getList() {
-        return postRepository.findAll();
+    @Transactional(readOnly = true)
+    public List<PostResponse> getPostList() {
+        List<Post> posts = postRepository.findAll();
+        return posts.stream().map(post -> new PostResponse(post)).toList();
     }
 
     @Override
-    public Post getPost(Long id) {
-        return postRepository.findById(id).orElseThrow(() -> new RuntimeException("Post not found with id  " + id));
+    @Transactional(readOnly = true)
+    public PostResponse getPost(Long id) {
+        Post post = postRepository.findById(id).orElseThrow(() -> new RuntimeException("Post not found with id  " + id));
+        return new PostResponse(post);
     }
 
     @Override
@@ -87,19 +103,19 @@ public class PostServiceImpl implements PostService {
         return postRepository.save(post);
     }
 
-    private User extractUserFromPrincipal(Principal principal) {
-        if (principal instanceof UsernamePasswordAuthenticationToken) {
-            //getName에서 리턴하는 값은 USerDetails에서 loadByuserName메서드에서 이메일 값으로 찾아왔기 때문에 email값을 가져오게 된다.
-            String userEmail =  ((UsernamePasswordAuthenticationToken) principal).getName();
-            return userRepository.findByEmail(userEmail).orElseThrow(() -> new UsernameNotFoundException("User not found with userEmail" + userEmail));
-        } else if (principal instanceof OAuth2AuthenticationToken) {
-            OAuth2User oAuth2User = ((OAuth2AuthenticationToken) principal).getPrincipal();
-            String userEmail = (String) oAuth2User.getAttributes().get("email");
-            return userRepository.findByEmail(userEmail).orElseThrow(() -> new UsernameNotFoundException("User not found with userEmail" + userEmail));
-        } else {
-            throw new IllegalArgumentException("Unsupported authentication type");
-        }
-    }
+//    private User extractUserFromPrincipal(Principal principal) {
+//        if (principal instanceof UsernamePasswordAuthenticationToken) {
+//            //getName에서 리턴하는 값은 USerDetails에서 loadByuserName메서드에서 이메일 값으로 찾아왔기 때문에 email값을 가져오게 된다.
+//            String userEmail =  ((UsernamePasswordAuthenticationToken) principal).getName();
+//            return userRepository.findByEmail(userEmail).orElseThrow(() -> new UsernameNotFoundException("User not found with userEmail" + userEmail));
+//        } else if (principal instanceof OAuth2AuthenticationToken) {
+//            OAuth2User oAuth2User = ((OAuth2AuthenticationToken) principal).getPrincipal();
+//            String userEmail = (String) oAuth2User.getAttributes().get("email");
+//            return userRepository.findByEmail(userEmail).orElseThrow(() -> new UsernameNotFoundException("User not found with userEmail" + userEmail));
+//        } else {
+//            throw new IllegalArgumentException("Unsupported authentication type");
+//        }
+//    }
 
 
 

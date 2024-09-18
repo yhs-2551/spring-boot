@@ -25,7 +25,7 @@ public class UserServiceImpl implements UserService {
                     .username(addUserRequest.getUsername())
                     .email(addUserRequest.getEmail())
                     .password(encoder.encode(addUserRequest.getPassword()))
-                    .role(User.UserRole.ADMIN)
+//                    .role(User.UserRole.ADMIN) 일단 기본값인 user로 사용
                     .build();
 
             return userRepository.save(user).getId();
