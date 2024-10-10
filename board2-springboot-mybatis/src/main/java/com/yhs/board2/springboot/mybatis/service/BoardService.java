@@ -1,5 +1,6 @@
 package com.yhs.board2.springboot.mybatis.service;
 
+import com.yhs.board2.springboot.mybatis.domain.BoardAttachDTO;
 import com.yhs.board2.springboot.mybatis.domain.BoardDTO;
 import com.yhs.board2.springboot.mybatis.domain.Criteria;
 
@@ -20,5 +21,7 @@ public interface BoardService {
     public boolean remove(Long bno);
 
     public int getTotal(Criteria cri);
+
+    public List<BoardAttachDTO> getAttachList(Long bno);
 
 }

@@ -5,6 +5,7 @@ import lombok.Setter;
 import lombok.ToString;
 
 import java.util.Date;
+import java.util.List;
 
 @ToString
 @Getter
@@ -18,4 +19,6 @@ public class BoardDTO {
     private Date updateDate;
 
     private int replyCnt;
+
+    private List<BoardAttachDTO> attachDTOList;
 }

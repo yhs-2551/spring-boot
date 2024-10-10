@@ -29,13 +29,13 @@ public class Criteria {
     }
 
 
-//    public String getListLink() {
-//        UriComponentsBuilder builder = UriComponentsBuilder.fromPath("")
-//                .queryParam("pageNum", this.pageNum)
-//                .queryParam("pageNum", this.getAmount())
-//                .queryParam("pageNum", this.getType())
-//                .queryParam("pageNum", this.getKeyword());
-//
-//        return builder.toUriString();
-//    }
+    public String getListLink() {
+        UriComponentsBuilder builder = UriComponentsBuilder.fromPath("")
+                .queryParam("pageNum", this.pageNum)
+                .queryParam("pageNum", this.getAmount())
+                .queryParam("pageNum", this.getType())
+                .queryParam("pageNum", this.getKeyword());
+
+        return builder.toUriString();
+    }
 }

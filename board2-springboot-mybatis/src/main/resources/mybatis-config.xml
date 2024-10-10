@@ -8,5 +8,10 @@
         <typeAlias type="com.yhs.board2.springboot.mybatis.domain.BoardDTO" alias="board"></typeAlias>
         <typeAlias type="com.yhs.board2.springboot.mybatis.domain.Criteria" alias="criteria"></typeAlias>
         <typeAlias type="com.yhs.board2.springboot.mybatis.domain.ReplyDTO" alias="reply"></typeAlias>
+        <typeAlias type="com.yhs.board2.springboot.mybatis.domain.BoardAttachDTO" alias="boardAttach"></typeAlias>
+        <typeAlias type="com.yhs.board2.springboot.mybatis.domain.MemberDTO"
+                   alias="member"></typeAlias>
+        <typeAlias type="com.yhs.board2.springboot.mybatis.domain.MemberAuthDTO"
+                   alias="memberAuth"></typeAlias>
     </typeAliases>
 </configuration>
