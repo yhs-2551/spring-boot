@@ -44,8 +44,7 @@ public class TokenAuthenticationFilter extends OncePerRequestFilter {
         }
 
         // POST 요청에 대한 예외 처리
-        if (method.equals("POST") && requestURI.startsWith("/api/user/")) {
-            // 이 경로에 대해서는 필터를 적용하지 않고 다음 필터로 넘김
+        if (method.equals("POST") && (requestURI.startsWith("/api/user/") || requestURI.equals("/api/posts/files/upload"))) {            // 이 경로에 대해서는 필터를 적용하지 않고 다음 필터로 넘김
             filterChain.doFilter(request, response);
             return;
         }

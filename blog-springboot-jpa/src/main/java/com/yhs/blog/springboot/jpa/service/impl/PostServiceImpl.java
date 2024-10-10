@@ -4,11 +4,9 @@ import com.yhs.blog.springboot.jpa.config.jwt.TokenProvider;
 import com.yhs.blog.springboot.jpa.dto.PostRequest;
 import com.yhs.blog.springboot.jpa.dto.PostResponse;
 import com.yhs.blog.springboot.jpa.dto.PostUpdateRequest;
-import com.yhs.blog.springboot.jpa.dto.PostUpdateResponse;
 import com.yhs.blog.springboot.jpa.entity.Category;
 import com.yhs.blog.springboot.jpa.entity.Post;
 import com.yhs.blog.springboot.jpa.entity.User;
-import com.yhs.blog.springboot.jpa.exception.ResourceNotFoundException;
 import com.yhs.blog.springboot.jpa.repository.CategoryRepository;
 import com.yhs.blog.springboot.jpa.repository.PostRepository;
 import com.yhs.blog.springboot.jpa.repository.UserRepository;
@@ -20,19 +18,9 @@ import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.dao.DataAccessException;
-import org.springframework.data.crossstore.ChangeSetPersister;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
-import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
-import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.security.Principal;
 import java.util.List;
-import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
