@@ -35,8 +35,10 @@ public class TokenAuthenticationFilter extends OncePerRequestFilter {
         String method = request.getMethod();
 
         // GET 요청에 대한 예외 처리
-        if (method.equals("GET") && (requestURI.equals("/api/token/initial-token") ||  // 초기 토큰을 가져오는 GET 요청
-                requestURI.startsWith("/api/posts")// 특정 게시글 조회 (GET /api/posts/{id})
+        if (method.equals("GET") && (requestURI.equals("/api/token/initial-token") ||  // 초기 토큰을
+                // 가져오는 GET 요청이 필요 없음
+                requestURI.startsWith("/api/posts")// 특정 게시글 조회 (GET /api/posts/{id}) 및 게시글 목록
+                // 조회는 토큰 검증이 필요 없음
         )) {
             // 이 경로에 대해서는 필터를 적용하지 않고 다음 필터로 넘김
             filterChain.doFilter(request, response);
@@ -44,11 +46,10 @@ public class TokenAuthenticationFilter extends OncePerRequestFilter {
         }
 
         // POST 요청에 대한 예외 처리
-        if (method.equals("POST") && (requestURI.startsWith("/api/user/") || requestURI.equals("/api/posts/files/upload"))) {            // 이 경로에 대해서는 필터를 적용하지 않고 다음 필터로 넘김
+        if (method.equals("POST") && (requestURI.startsWith("/api/user/") || requestURI.equals("/api/token/new-token"))) {
             filterChain.doFilter(request, response);
             return;
         }
-
 
         String authorizationHeader = request.getHeader(HEADER_AUTHORIZATION);
 

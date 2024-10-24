@@ -3,6 +3,8 @@ package com.yhs.blog.springboot.jpa.config.jwt;
 
 import com.yhs.blog.springboot.jpa.entity.User;
 import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.ExpiredJwtException;
+import io.jsonwebtoken.Jwt;
 import io.jsonwebtoken.Jwts;
 
 
@@ -103,7 +105,13 @@ public class TokenProvider {
 
     // 페이로드, 즉 내용(클레임) 반환 메서드
     private Claims getClaims(String token) {
+        try {
+
         return Jwts.parser().verifyWith(jwtProperties.getJwtSecretKey()).build().parseSignedClaims(token).getPayload();
+        } catch (ExpiredJwtException e) {
+            return e.getClaims(); // 만료된 토큰에서도 클레임 반환
+
+        }
     }
 
 

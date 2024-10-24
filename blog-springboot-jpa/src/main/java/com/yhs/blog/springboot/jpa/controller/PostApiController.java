@@ -1,10 +1,7 @@
 package com.yhs.blog.springboot.jpa.controller;
 
 import com.yhs.blog.springboot.jpa.config.jwt.TokenProvider;
-import com.yhs.blog.springboot.jpa.dto.PostRequest;
-import com.yhs.blog.springboot.jpa.dto.PostResponse;
-import com.yhs.blog.springboot.jpa.dto.PostUpdateRequest;
-import com.yhs.blog.springboot.jpa.dto.PostUpdateResponse;
+import com.yhs.blog.springboot.jpa.dto.*;
 import com.yhs.blog.springboot.jpa.entity.Post;
 import com.yhs.blog.springboot.jpa.service.PostService;
 import com.yhs.blog.springboot.jpa.service.S3Service;
@@ -39,8 +36,7 @@ public class PostApiController {
     private final S3Service s3Service;
 
     @PostMapping
-    public ResponseEntity<Object> createPost(@Valid @RequestBody PostRequest postRequest,
-                                             HttpServletRequest request) {
+    public ResponseEntity<Object> createPost(@Valid @RequestBody PostRequest postRequest, HttpServletRequest request) {
 
         // TokenAuthenticationFilter를 security에 등록해두었기 때문에, TokenAuthenticationFilter의
         // SecurityContextHolder.getContext().setAuthentication(authentication)로 저장해둔 인증 정보를 가져옴
@@ -68,8 +64,7 @@ public class PostApiController {
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<String> deleteArticle(@PathVariable("id") Long id,
-                                           HttpServletRequest request) {
+    public ResponseEntity<String> deleteArticle(@PathVariable("id") Long id, HttpServletRequest request) {
 
 //        TokenAuthenticationFilter에서 유효성 검사 실패하면 return 으로 모두 처리해두었기 때문에 불필요
 //        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
@@ -85,14 +80,12 @@ public class PostApiController {
         }
 
         postService.deletePost(id);
-        return ResponseEntity.ok().build();
+        return ResponseEntity.ok("File deleted successfully");
     }
 
     //여기부터 작성
     @PatchMapping("/{id}")
-    public ResponseEntity<Object> updateArticle(@PathVariable Long id,
-                                           @RequestBody PostUpdateRequest postUpdateRequest,
-                                                HttpServletRequest request) {
+    public ResponseEntity<Object> updateArticle(@PathVariable Long id, @RequestBody PostUpdateRequest postUpdateRequest, HttpServletRequest request) {
 
         Long userId = TokenUtil.extractUserIdFromRequestToken(request, tokenProvider);
         PostResponse postResponseDTO = postService.getPost(id);
@@ -106,8 +99,8 @@ public class PostApiController {
         return ResponseEntity.ok().body(postUpdateResponse);
     }
 
-    @PostMapping("/files/upload")
-    public ResponseEntity<String> uploadFile(@RequestParam("file") MultipartFile file) {
+    @PostMapping("temp/files/upload")
+    public ResponseEntity<String> uploadFile(@RequestParam("file") MultipartFile file, @RequestParam(value = "featured", required = false) String featured) {
         try {
             if (Objects.requireNonNull(file.getContentType()).startsWith("image/") && file.getSize() > 5 * 1024 * 1024) { // 5MB
                 // limit for image files
@@ -116,8 +109,7 @@ public class PostApiController {
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("File size exceeds the limit of 10MB");
             }
 
-            String fileUrl = s3Service.uploadFile(file);
-
+            String fileUrl = s3Service.tempUploadFile(file, featured);
 
             return ResponseEntity.ok(fileUrl);
         } catch (Exception e) {
@@ -125,6 +117,40 @@ public class PostApiController {
         }
 
     }
+
+//    @PostMapping("/files/delete-temp-files")
+//    public ResponseEntity<String> deleteTempFiles(@RequestBody Map<String, List<String>> fileUrls) {
+//        log.info("fileUrls: " + fileUrls);
+//        try {
+//            List<String> urls = fileUrls.get("urls");
+//            log.info("urls: " + urls);
+//            for (String fileUrl : urls) {
+//                log.info("실행");
+//                s3Service.tempDeleteFile(fileUrl, null);
+//            }
+//            return ResponseEntity.ok("Files deleted successfully");
+//        } catch (Exception e) {
+//            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Failed to delete files");
+//        }
+//
+//    }
+//
+//    @PostMapping("/file/delete-temp-featured-file")
+//    public ResponseEntity<String> deleteFeaturedFile(@RequestBody Map<String,
+//            String > payload) {
+//
+//        try {
+//            String url = payload.get("url");
+//            String featuredString =  payload.get("featured");
+//            log.info("urls: " + url);
+//
+//            s3Service.tempDeleteFile(url, featuredString);
+//            return ResponseEntity.ok("Featured File deleted successfully");
+//        } catch (Exception e) {
+//            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Failed to delete" + " featured file");
+//        }
+//
+//    }
 
 
 }

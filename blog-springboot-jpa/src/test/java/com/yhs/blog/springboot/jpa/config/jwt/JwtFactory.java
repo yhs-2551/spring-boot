@@ -1,6 +1,7 @@
 package com.yhs.blog.springboot.jpa.config.jwt;
 
 import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.security.Keys;
 import lombok.Builder;
 import lombok.Getter;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -37,7 +38,8 @@ public class JwtFactory {
     }
 
     public String createToken(JwtProperties jwtProperties) {
+        SecretKey key = Keys.hmacShaKeyFor(jwtProperties.getSecretKeyString().getBytes());
         return Jwts.builder().header().add("typ", "JWT").add("alg", "HS256").and().subject(subject).issuer(jwtProperties.getIssuer())
-                .issuedAt(issuedAt).expiration(expiration).claims(claims).signWith(jwtProperties.getJwtSecretKey()).compact();
+                .issuedAt(issuedAt).expiration(expiration).claims(claims).signWith(key).compact();
     }
 }

@@ -1,7 +1,7 @@
 package com.yhs.blog.springboot.jpa.config.security;
 
-import com.yhs.blog.springboot.jpa.config.formlogin.FormLoginSuccessHandler;
 import com.yhs.blog.springboot.jpa.config.jwt.TokenAuthenticationFilter;
+import com.yhs.blog.springboot.jpa.config.jwt.TokenManagementService;
 import com.yhs.blog.springboot.jpa.config.jwt.TokenProvider;
 import com.yhs.blog.springboot.jpa.config.oauth.OAuth2AuthorizationRequestBasedOnCookieRepository;
 import com.yhs.blog.springboot.jpa.config.oauth.OAuth2SuccessHandler;
@@ -13,7 +13,6 @@ import com.yhs.blog.springboot.jpa.service.impl.UserServiceImpl;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.ProviderManager;
@@ -44,6 +43,7 @@ public class WebOAuthFormJwtSecurityConfig {
 
     private final OAuth2UserCustomService oAuth2UserCustomService;
     private final TokenProvider tokenProvider;
+    private final TokenManagementService tokenManagementService;
     private final RefreshTokenRepository refreshTokenRepository;
     private final UserServiceImpl userService;
     private final TokenServiceImpl tokenService;
@@ -115,15 +115,10 @@ public class WebOAuthFormJwtSecurityConfig {
 
     @Bean
     public OAuth2SuccessHandler oAuth2SuccessHandler() {
-        return new OAuth2SuccessHandler(tokenProvider, refreshTokenRepository,
+        return new OAuth2SuccessHandler(tokenProvider, tokenManagementService,
                 oAuth2AuthorizationRequestBasedOnCookieRepository(), userService, tokenService);
     }
 
-    @Bean
-    public FormLoginSuccessHandler formLoginSuccessHandler() {
-        return new FormLoginSuccessHandler(tokenProvider, refreshTokenRepository,
-                tokenService);
-    }
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {

@@ -7,16 +7,21 @@ import jakarta.validation.constraints.Size;
 import lombok.*;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 
 @NoArgsConstructor
 @Getter
+@ToString
+// 유효성 검사 프론트랑 맞추기 위해 추가 및 수정 필요
 public class PostRequest {
     private Long id;             // 게시글 ID
 
     private Long userId;          // 작성자 ID
 
     private String userName;        // 작성자명
+
+    private Long categoryId;      // 카테고리 ID
 
     @NotEmpty(message = "제목을 입력하세요.")
     @Size(max = 255, message = "제목은 총 255글자 까지 허용 됩니다.")
@@ -25,11 +30,19 @@ public class PostRequest {
     @NotEmpty(message = "내용을 입력하세요.")
     private String content;       // 게시글 내용
 
-    private Long categoryId;      // 카테고리 ID
+    private List<String> tags;   // 태그
 
-    private LocalDateTime createdAt; // 생성 일시
+    private List<FileRequest> files; // 첨부파일
 
-    private LocalDateTime updatedAt; // 수정 일시
+    private List<String> deleteTempImageUrls; // 최종 발행 시 클라우드 저장소에 저장되어 있는 사용되지 않는 이미지 및 파일 삭제하는 URL
+
+//    @NotNull(message = "공개 상태를 선택하세요.")
+//    @Pattern(regexp = "PUBLIC|PRIVATE", message = "'PUBLIC' 또는 'PRIVATE' 둘 중 하나의 상태로 선택하세요.")
+    private String postStatus;    // 게시글 상태 (PUBLIC, PRIVATE)
+
+    private String commentsEnabled; // 댓글 허용 여부
+
+    private FeaturedImageRequest featuredImage; // 대표 이미지
 
     private int views;            // 조회수
 
@@ -37,19 +50,24 @@ public class PostRequest {
 
     private int replyCount;       // 대댓글 수
 
-    @NotNull(message = "공개 상태를 선택하세요.")
-    @Pattern(regexp = "PUBLIC|PRIVATE", message = "'PUBLIC' 또는 'PRIVATE' 둘 중 하나의 상태로 선택하세요.")
-    private String postStatus;    // 게시글 상태 (PUBLIC, PRIVATE)
-
-
     @Builder
-    public PostRequest(Long id, Long userId, String userName, String title, String content, Long categoryId, LocalDateTime createdAt, LocalDateTime updatedAt, String postStatus) {
+    public PostRequest(Long id, Long userId, String userName, Long categoryId, String title,
+                       String content, List<String> tags, List<FileRequest> files,
+                       List<String> deleteTempImageUrls, String postStatus,
+                       String commentsEnabled, FeaturedImageRequest featuredImageRequest
+                       ) {
         this.userId = userId;
         this.userName = userName;
+        this.categoryId = categoryId;
         this.title = title;
         this.content = content;
-        this.categoryId = categoryId;
+        this.tags = tags;
+        this.files = files;
+        this.deleteTempImageUrls = deleteTempImageUrls;
         this.postStatus = postStatus;
+        this.commentsEnabled = commentsEnabled;
+        this.featuredImage = featuredImageRequest;
+
     }
 
 }
