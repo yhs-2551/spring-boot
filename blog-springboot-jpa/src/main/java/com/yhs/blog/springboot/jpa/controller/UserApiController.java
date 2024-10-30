@@ -156,7 +156,7 @@ public class UserApiController extends SimpleUrlAuthenticationSuccessHandler {
             return ResponseEntity.ok("Successfully logged out with expired token.");
 
         } catch (Exception e) {
-            // 유효하지 않은 토큰(서명이 잘못되거나 변조된 경우 등)이면 거부 한다.
+            // 유효하지 않은 토큰(서명이 잘못되거나 변조된 경우 등 즉 비정상적인 토큰일 경우)이면 거부 한다.
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid token.");
         }
     }

@@ -26,6 +26,8 @@ public class PostUpdateRequest {
 
     private List<String> tags;   // 태그
 
+    private List<String> editPageDeletedTags;
+
     private List<FileRequest> files; // 첨부파일
 
     private List<String> deleteTempImageUrls; // 최종 발행 시 클라우드 저장소에 저장되어 있는 사용되지 않는 이미지 및 파일 삭제하는 URL

@@ -7,6 +7,7 @@ import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Set;
 
 //나중에 첨부파일 컬럼도 추가해야 한다.
@@ -49,8 +50,9 @@ public class Post extends BaseEntity{
 
 
     // 하나의 게시글이 여러 태그를 가질 수 있음
+    // 태그의 경우 글 작성시와 글 조회시 순서가 보장되어야 하기 때문에 List로 정의.
     @OneToMany(mappedBy = "post", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
-    private Set<PostTag> postTags;
+    private List<PostTag> postTags;
 
 
     @Enumerated(EnumType.STRING)
@@ -107,7 +109,8 @@ public class Post extends BaseEntity{
         this.featuredImage = featuredImage;
     }
 
-    public void update(Category category, String title, String content, Set<File> newFiles, Set<PostTag> newPostTags,
+    public void update(Category category, String title, String content, Set<File> newFiles,
+                       List<PostTag> newPostTags,
                        PostStatus postStatus,
                        CommentsEnabled commentsEnabled,
                        FeaturedImage featuredImage

@@ -16,6 +16,7 @@ import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -252,7 +253,17 @@ public class PostServiceImpl implements PostService {
         Category category = postUpdateRequest.getCategoryId() != null ? categoryRepository.findById(postUpdateRequest.getCategoryId()).orElse(null) : null;
 
         Set<File> newFiles = processFiles(post, postUpdateRequest.getFiles());
-        Set<PostTag> newPostTags = processTags(post, postUpdateRequest.getTags());
+        List<PostTag> newPostTags = processTags(post, postUpdateRequest.getTags());
+
+        if (postUpdateRequest.getEditPageDeletedTags() != null && !postUpdateRequest.getEditPageDeletedTags().isEmpty()) {
+
+            List<Tag> unusedTags =
+                    tagRepository.findUnusedTagsNotUsedByOtherPosts(postUpdateRequest.getEditPageDeletedTags(), id);
+
+            tagRepository.deleteAll(unusedTags);
+        }
+
+
         FeaturedImage featuredImage = processFeaturedImage(postUpdateRequest.getFeaturedImage());
 
         post.update(category, postUpdateRequest.getTitle(), postUpdateRequest.getContent(), newFiles, newPostTags, Post.PostStatus.valueOf(postUpdateRequest.getPostStatus().toUpperCase()), Post.CommentsEnabled.valueOf(postUpdateRequest.getCommentsEnabled().toUpperCase()), featuredImage);
@@ -276,10 +287,10 @@ public class PostServiceImpl implements PostService {
                         .fileUrl(updatedFileUrl)
                         .fileSize(fileRequest.getFileSize())
                         .width(fileRequest.getFileType().startsWith("image/")
-                                ? (fileRequest.getWidth() != null ? fileRequest.getWidth() : 880)
+                                ? (fileRequest.getWidth() != null ? fileRequest.getWidth() : null)
                                 : null)
                         .height(fileRequest.getFileType().startsWith("image/")
-                                ? (fileRequest.getHeight() != null ? fileRequest.getHeight() : 495)
+                                ? (fileRequest.getHeight() != null ? fileRequest.getHeight() : null)
                                 : null)
                         .post(post)
                         .build();
@@ -290,8 +301,9 @@ public class PostServiceImpl implements PostService {
     }
 
 
-    private Set<PostTag> processTags(Post post, List<String> tagNames) {
-        Set<PostTag> postTags = new HashSet<>();
+    private List<PostTag> processTags(Post post, List<String> tagNames) {
+
+        List<PostTag> postTags = new ArrayList<>();
         if (tagNames != null && !tagNames.isEmpty()) {
             for (String tagName : tagNames) {
                 Tag tag = tagRepository.findByName(tagName).orElseGet(() -> Tag.create(tagName));
