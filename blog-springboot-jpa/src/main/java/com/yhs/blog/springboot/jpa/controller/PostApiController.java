@@ -36,7 +36,7 @@ public class PostApiController {
     private final S3Service s3Service;
 
     @PostMapping
-    public ResponseEntity<Object> createPost(@Valid @RequestBody PostRequest postRequest, HttpServletRequest request) {
+    public ResponseEntity<PostResponse> createPost(@Valid @RequestBody PostRequest postRequest, HttpServletRequest request) {
 
         // TokenAuthenticationFilter를 security에 등록해두었기 때문에, TokenAuthenticationFilter의
         // SecurityContextHolder.getContext().setAuthentication(authentication)로 저장해둔 인증 정보를 가져옴

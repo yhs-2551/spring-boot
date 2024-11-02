@@ -17,7 +17,7 @@ public class TokenManagementService {
 
     public static final String REFRESH_TOKEN_COOKIE_NAME = "refresh_token";
     public static final Duration REFRESH_TOKEN_DURATION = Duration.ofDays(14);
-    public static final Duration ACCESS_TOKEN_DURATION = Duration.ofSeconds(10);
+    public static final Duration ACCESS_TOKEN_DURATION = Duration.ofHours(1);
 
     private final RefreshTokenRepository refreshTokenRepository;
 

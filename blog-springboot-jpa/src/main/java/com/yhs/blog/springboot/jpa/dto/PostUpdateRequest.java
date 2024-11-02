@@ -15,7 +15,7 @@ import java.util.List;
 @AllArgsConstructor
 public class PostUpdateRequest {
 
-    private Long categoryId;      // 카테고리 ID
+    private String categoryId;      // 카테고리 ID
 
     @NotEmpty(message = "제목을 입력하세요.")
     @Size(max = 255, message = "제목은 총 255글자 까지 허용 됩니다.")

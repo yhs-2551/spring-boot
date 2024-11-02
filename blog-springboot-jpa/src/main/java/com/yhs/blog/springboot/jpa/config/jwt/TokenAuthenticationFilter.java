@@ -47,7 +47,9 @@ public class TokenAuthenticationFilter extends OncePerRequestFilter {
 
         // POST 요청에 대한 예외 처리
         // 로그아웃은 필터에서는 통과 시키고 컨트롤러에서 따로 처리.
-        if (method.equals("POST") && (requestURI.startsWith("/api/user/") || requestURI.equals("/api/token/new-token"))) {
+        if (method.equals("POST") && (requestURI.equals("/api/user/signup") || requestURI.equals(
+                "/api/user/login") || requestURI.equals("/api/user/logout") || requestURI.equals(
+                        "/api/token/new-token"))) {
             filterChain.doFilter(request, response);
             return;
         }

@@ -16,10 +16,7 @@ import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 @Service
 @RequiredArgsConstructor
@@ -33,100 +30,6 @@ public class PostServiceImpl implements PostService {
     private final FeaturedImageRepository featuredImageRepository;
     private final TagRepository tagRepository;
     private final S3Service s3Service;
-
-
-//    @Transactional
-//    @Override
-//    public PostResponse createPost(PostRequest postRequest, HttpServletRequest request) {
-//
-//        try {
-//
-//            log.info("PostRequest >>>> " + postRequest);
-//
-////            User user = extractUserFromPrincipal(principal);
-//
-//            Long userId = TokenUtil.extractUserIdFromRequestToken(request, tokenProvider);
-//            User user = userService.findUserById(userId);
-//
-//            Category category = postRequest.getCategoryId() != null ? categoryRepository.findById(postRequest.getCategoryId()).orElse(null) : null;
-//
-//            FeaturedImage featuredImage = null;
-//
-//            if (postRequest.getFeaturedImage() != null) {
-//
-//
-//                // 최종적으로 post를 저장시에 aws 파일 저장 위치를 temp -> final로 변경하기 때문에 final로 변경하는 로직 추가. 따라서
-//                // db에 final 경로로 저장한다
-//                String updatedFileUrl = postRequest.getFeaturedImage().getFileUrl().replace(
-//                        "/temp/", "/final/");
-//
-//
-//                featuredImage = FeaturedImage.builder()
-//                        .fileName(postRequest.getFeaturedImage().getFileName())
-//                        .fileUrl(updatedFileUrl)
-//                        .fileType(postRequest.getFeaturedImage().getFileType())
-//                        .fileSize(postRequest.getFeaturedImage().getFileSize())
-//                        .build();
-//
-//                featuredImageRepository.save(featuredImage);
-//            }
-//
-//
-//            // 포스트 생성 시 user를 넘겨주면 외래키 연관관계 설정으로 인해 posts테이블에 user_id 값이 자동으로 들어간다.
-//            // category, featuredImage또한 마찬가지.
-//            Post post = PostMapper.toEntity(user, category, postRequest.getTitle(),
-//                    postRequest.getContent(), postRequest.getPostStatus(),
-//                    postRequest.getCommentsEnabled(), featuredImage);
-//
-//
-//            if (postRequest.getFiles() != null && !postRequest.getFiles().isEmpty()) {
-//                Set<File> files = new HashSet<>();
-//                for (FileRequest fileRequest : postRequest.getFiles()) {
-//
-//                    // 최종적으로 post를 저장시에 aws 파일 저장 위치를 temp -> final로 변경하기 때문에 final로 변경하는 로직 추가.
-//                    // 따라서 db에 final 경로로 저장한다.
-//                    String updatedFileUrl = fileRequest.getFileUrl().replace("/temp/", "/final/");
-//
-//                    File file = File.builder()
-//                            .fileName(fileRequest.getFileName())
-//                            .filetType(fileRequest.getFileType())
-//                            .fileUrl(updatedFileUrl)
-//                            .fileSize(fileRequest.getFileSize())
-//                            .post(post)
-//                            .build();
-//                    files.add(file);
-//
-//                }
-//
-//                log.info("filse >>>>>>>> {}", files);
-//
-//                post.setFiles(files);
-//            }
-//
-//            if (postRequest.getTags() != null && !postRequest.getTags().isEmpty()) {
-//                Set<PostTag> postTags = new HashSet<>();
-//                for (String tagName : postRequest.getTags()) {
-//                    Tag tag = tagRepository.findByName(tagName).orElseGet(() -> Tag.create(tagName));
-//                    PostTag postTag = PostTag.create(post, tag);
-//                    postTags.add(postTag);
-//                }
-//                post.setPostTags(postTags);
-//            }
-//
-//            postRepository.save(post);
-//
-//            // s3 Temp 파일 관련 작업은 비동기로 처리. 사용자에게 빠르게 응답하기 위함
-//            s3Service.processCreatePostS3TempOperation(postRequest);
-//
-//            return new PostResponse(post);
-//
-////            throw new DataAccessException("Simulated database exception") {};
-//
-//        } catch (DataAccessException ex) {
-//            throw new RuntimeException("A server error occurred while creating the post.", ex);
-//        }
-//
-//    }
 
     @Override
     @Transactional(readOnly = true)
@@ -157,7 +60,8 @@ public class PostServiceImpl implements PostService {
             log.info("PostRequest >>>> " + postRequest);
             Long userId = TokenUtil.extractUserIdFromRequestToken(request, tokenProvider);
             User user = userService.findUserById(userId);
-            Category category = postRequest.getCategoryId() != null ? categoryRepository.findById(postRequest.getCategoryId()).orElse(null) : null;
+            Category category = postRequest.getCategoryId() != null ?
+                    categoryRepository.findById(postRequest.getCategoryId()).orElse(null) : null;
 
             FeaturedImage featuredImage = processFeaturedImage(postRequest.getFeaturedImage());
 
@@ -179,78 +83,13 @@ public class PostServiceImpl implements PostService {
         }
     }
 
-//    @Transactional
-//    @Override
-//    public Post updatePost(Long id, PostUpdateRequest postUpdateRequest) {
-//
-//        Post post = postRepository.findById(id).orElseThrow(() -> new RuntimeException("Post not found with id  " + id));
-//        Category category = postUpdateRequest.getCategoryId() != null ? categoryRepository.findById(postUpdateRequest.getCategoryId()).orElse(null) : null;
-//
-//        Set<File> newFiles = new HashSet<>();
-//
-//        if (postUpdateRequest.getFiles() != null && !postUpdateRequest.getFiles().isEmpty()) {
-//
-//            for (FileRequest fileRequest : postUpdateRequest.getFiles()) {
-//
-////                수정 시에 에디터에 새롭게 올라갈 파일들 temp -> final로 경로 변경해서 DB에 저장
-//                String updatedFileUrl = fileRequest.getFileUrl().replace("/temp/", "/final/");
-//
-//                File file = File.builder()
-//                        .fileName(fileRequest.getFileName())
-//                        .filetType(fileRequest.getFileType())
-//                        .fileUrl(updatedFileUrl)
-//                        .fileSize(fileRequest.getFileSize())
-//                        .post(post)
-//                        .build();
-//                newFiles.add(file);
-//
-//            }
-//        }
-//
-//        Set<PostTag> newPostTags = new HashSet<>();
-//
-//        if (postUpdateRequest.getTags() != null && !postUpdateRequest.getTags().isEmpty()) {
-//
-//            for (String tagName : postUpdateRequest.getTags()) {
-//                Tag tag = tagRepository.findByName(tagName).orElseGet(() -> Tag.create(tagName));
-//                tagRepository.save(tag);
-//                PostTag postTag = PostTag.create(post, tag);
-//
-//                newPostTags.add(postTag);
-//            }
-//        }
-//
-//        FeaturedImage featuredImage = null;
-//
-//        if (postUpdateRequest.getFeaturedImage() != null) {
-//
-//            featuredImage = FeaturedImage.builder()
-//                    .fileName(postUpdateRequest.getFeaturedImage().getFileName())
-//                    .fileUrl(postUpdateRequest.getFeaturedImage().getFileUrl())
-//                    .fileType(postUpdateRequest.getFeaturedImage().getFileType())
-//                    .fileSize(postUpdateRequest.getFeaturedImage().getFileSize())
-//                    .build();
-//
-//            featuredImageRepository.save(featuredImage);
-//        }
-//
-//        post.update(category, postUpdateRequest.getTitle(), postUpdateRequest.getContent(),
-//                newFiles,
-//                newPostTags,
-//                Post.PostStatus.valueOf(postUpdateRequest.getPostStatus().toUpperCase()),
-//                Post.CommentsEnabled.valueOf(postUpdateRequest.getCommentsEnabled().toUpperCase()), featuredImage
-//        );
-//
-//        s3Service.processUpdatePostS3TempOperation(postUpdateRequest);
-//
-//        return postRepository.save(post);
-//    }
-
     @Transactional
     @Override
     public Post updatePost(Long id, PostUpdateRequest postUpdateRequest) {
         Post post = postRepository.findById(id).orElseThrow(() -> new RuntimeException("Post not found with id " + id));
-        Category category = postUpdateRequest.getCategoryId() != null ? categoryRepository.findById(postUpdateRequest.getCategoryId()).orElse(null) : null;
+        Category category = postUpdateRequest.getCategoryId() != null ?
+                categoryRepository.findById(postUpdateRequest.getCategoryId()).orElse(null) :
+                null;
 
         Set<File> newFiles = processFiles(post, postUpdateRequest.getFiles());
         List<PostTag> newPostTags = processTags(post, postUpdateRequest.getTags());

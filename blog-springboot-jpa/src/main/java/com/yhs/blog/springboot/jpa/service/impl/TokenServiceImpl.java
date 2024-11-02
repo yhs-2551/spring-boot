@@ -27,6 +27,6 @@ public class TokenServiceImpl implements TokenService {
 
         Long userId = refreshTokenService.findRefreshToken(refreshToken).getUserId();
         User user = userService.findUserById(userId);
-        return tokenProvider.generateToken(user, Duration.ofMinutes(1));
+        return tokenProvider.generateToken(user, Duration.ofHours(1));
     }
 }

@@ -3,8 +3,10 @@ package com.yhs.blog.springboot.jpa.controller;
 import com.yhs.blog.springboot.jpa.config.jwt.TokenManagementService;
 import com.yhs.blog.springboot.jpa.config.jwt.TokenProvider;
 import com.yhs.blog.springboot.jpa.dto.AddUserRequest;
+import com.yhs.blog.springboot.jpa.dto.CategoryResponse;
 import com.yhs.blog.springboot.jpa.dto.LoginRequest;
 import com.yhs.blog.springboot.jpa.entity.User;
+import com.yhs.blog.springboot.jpa.service.CategoryService;
 import com.yhs.blog.springboot.jpa.service.RefreshTokenService;
 import com.yhs.blog.springboot.jpa.service.TokenService;
 import com.yhs.blog.springboot.jpa.service.UserService;
@@ -25,13 +27,11 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 
 import org.springframework.security.web.authentication.SimpleUrlAuthenticationSuccessHandler;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 @Log4j2
@@ -45,11 +45,10 @@ public class UserApiController extends SimpleUrlAuthenticationSuccessHandler {
     private final TokenProvider tokenProvider;
     private final RefreshTokenService refreshTokenService;
     private final TokenManagementService tokenManagementService;
-    ;
     private final TokenService tokenService;
 
-//    SecurityContextLogoutHandler logoutHandler =
-//            new SecurityContextLogoutHandler();
+    private final CategoryService categoryService;
+
 
     @PostMapping("/signup")
     public ResponseEntity<Long> signup(@RequestBody AddUserRequest addUserRequest) {
@@ -65,13 +64,6 @@ public class UserApiController extends SimpleUrlAuthenticationSuccessHandler {
         UsernamePasswordAuthenticationToken usernamePasswordAuthenticationToken = new UsernamePasswordAuthenticationToken(loginRequest.getEmail(), loginRequest.getPassword());
         Authentication authentication = authenticationManager.authenticate(usernamePasswordAuthenticationToken);
         SecurityContextHolder.getContext().setAuthentication(authentication); // SecurityContextHolder에 인증 정보 저장
-
-        // 세션 생성 및 사용자 정보 저장. JWT를 사용할 경우 불필요
-//        HttpSession session = request.getSession(true);
-//        session.setAttribute("username", loginRequest.getEmail());
-
-//        formLoginSuccessHandler.onAuthenticationSuccess(httpServletRequest, httpServletResponse, authentication);
-
 
 //        SecurityContextHolder에 저장되어 있는 사용자 주체를 꺼내옴
         User user = (User) authentication.getPrincipal();
@@ -117,17 +109,6 @@ public class UserApiController extends SimpleUrlAuthenticationSuccessHandler {
         return ResponseEntity.ok().headers(headers).body("Login Success");
 
     }
-
-
-//    스프링 시큐리티에서 기본적으로 세션을 무효화하고 쿠키를 삭제하는 로직. (세션 방식)
-//    @PostMapping("/logout")
-//    public void logout(Authentication authentication, HttpServletRequest httpServletRequest,
-//                       HttpServletResponse httpServletResponse) {
-//        this.logoutHandler.logout(httpServletRequest, httpServletResponse, authentication);
-//
-//        System.out.println("로그아웃 실행");
-//    }
-
 
     // Custom logout 로직을 구현한 경우 시큐리티에서 제공하는 logout을 사용하지 않는다.
     @PostMapping("/logout")

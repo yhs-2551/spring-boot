@@ -44,7 +44,6 @@ public class Post extends BaseEntity{
     private String content;
 
 
-    @Setter
     @OneToMany(mappedBy = "post", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<File> files;
 

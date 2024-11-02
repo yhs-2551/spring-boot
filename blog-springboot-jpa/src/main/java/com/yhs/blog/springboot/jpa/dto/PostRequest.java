@@ -21,7 +21,7 @@ public class PostRequest {
 
     private String userName;        // 작성자명
 
-    private Long categoryId;      // 카테고리 ID
+    private String categoryId;      // 카테고리 ID
 
     @NotEmpty(message = "제목을 입력하세요.")
     @Size(max = 255, message = "제목은 총 255글자 까지 허용 됩니다.")
@@ -51,7 +51,7 @@ public class PostRequest {
     private int replyCount;       // 대댓글 수
 
     @Builder
-    public PostRequest(Long id, Long userId, String userName, Long categoryId, String title,
+    public PostRequest(Long id, Long userId, String userName, String categoryId, String title,
                        String content, List<String> tags, List<FileRequest> files,
                        List<String> deleteTempImageUrls, String postStatus,
                        String commentsEnabled, FeaturedImageRequest featuredImageRequest
