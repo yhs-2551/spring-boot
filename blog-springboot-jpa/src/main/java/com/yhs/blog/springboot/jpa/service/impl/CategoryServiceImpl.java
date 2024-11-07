@@ -123,24 +123,17 @@ public class CategoryServiceImpl implements CategoryService {
 
     // 새롭게 요청으로 추가된 최상위 카테고리 저장 및 자식은 재귀적으로 저장.
     private Category createSingleCategory(CategoryRequest categoryRequest, long orderIndex) {
-        User user = extractUserFromToken();
 
-        // 부모 카테고리 생성 및 저장
-        Category parentCategory = categoryRequest.getCategoryUuidParent() != null
-                ? Category.builder().id(categoryRequest.getCategoryUuidParent()).build()
-                : null;
+        User user = extractUserFromToken();
 
         Category category = Category.builder()
                 .id(categoryRequest.getCategoryUuid())
                 .user(user)
                 .name(categoryRequest.getName())
-                .parent(parentCategory)
+                .parent(null)
                 .orderIndex(orderIndex)
                 .children(Collections.emptyList()) // 초기에는 빈 리스트로 설정
                 .build();
-
-        // 부모 카테고리 및 자식 카테고리 저장. 부모는 맨처음에 저장, 자식은 재귀적으로 저장
-        Category savedCategory = categoryRepository.save(category);
 
         // 자식 카테고리 생성 및 저장
         if (categoryRequest.getChildren() != null && !categoryRequest.getChildren().isEmpty()) {
@@ -148,16 +141,17 @@ public class CategoryServiceImpl implements CategoryService {
             List<Category> childCategories = new ArrayList<>();
             for (CategoryRequest childRequest : categoryRequest.getChildren()) {
                 Category childCategory = createSingleCategory(childRequest, childOrderIndex);
+                childCategory.setParent(category);
                 childCategories.add(childCategory);
                 childOrderIndex++;
             }
 
-            savedCategory.setChildren(childCategories);
-            categoryRepository.save(savedCategory); // 자식 카테고리 설정 후 다시 저장
+            category.setChildren(childCategories);
+
         }
 
 
-        return savedCategory;
+        return category;// 자식 카테고리 설정 후 다시 저장
     }
 
     private Category saveCategoryHierarchy(CategoryRequest categoryRequest, long orderIndex) {
@@ -191,7 +185,7 @@ public class CategoryServiceImpl implements CategoryService {
 
         } else {
             // Call createSingleCategory for new Category object
-            return createSingleCategory(categoryRequest, orderIndex);
+            category = createSingleCategory(categoryRequest, orderIndex);
         }
 
         return categoryRepository.save(category);
