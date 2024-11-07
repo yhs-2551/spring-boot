@@ -41,14 +41,11 @@ public class CategoryServiceImpl implements CategoryService {
         if (categoryRequestPayLoad.getCategoryToDelete() != null && !categoryRequestPayLoad.getCategoryToDelete().isEmpty()) {
             categoryRequestPayLoad.getCategoryToDelete().forEach(this::deleteCategory);
         }
-//
-//        return categoryRequestPayLoad.getCategories().stream()
-//                .map(this::saveOrUpdateCategory)
-//                .collect(Collectors.toList());
 
         // 모든 엔티티 먼저 일괄 저장
         List<Category> savedCategories = new ArrayList<>();
-        long orderIndex = 0L;
+        long orderIndex = 0L; // 프론트측에서 요청이 오는 순서대로 orderIndex 값을 설정한다.
+        // 최종적으로 프론트에서 설정한 카테고리 구조를 그대로 화면에 보여주기 위함.
         for (CategoryRequest categoryRequest : categoryRequestPayLoad.getCategories()) {
             savedCategories.add(saveCategoryHierarchy(categoryRequest, orderIndex));
             orderIndex++;
@@ -75,6 +72,26 @@ public class CategoryServiceImpl implements CategoryService {
     }
 
 
+    private CategoryResponse convertToResponseDTO(Category category) {
+
+        return new CategoryResponse(
+                category.getId(),
+                category.getName(),
+                null,
+                category.getChildren() != null && !category.getChildren().isEmpty() ?
+                        category.getChildren().stream()
+                                .map(subCategory -> new CategoryResponse(
+                                        subCategory.getId(),
+                                        subCategory.getName(),
+                                        category.getId(),
+                                        Collections.emptyList())) // 2단계 자식은 자식이 존재하지 않으니 빈배열로
+                                .collect(Collectors.toList()) : Collections.emptyList() // 최상위 자식이 없으면 빈배열로 반환
+                // 자식이 없으면 빈배열로 반환
+        );
+    }
+
+
+
     @Transactional
     private void deleteCategory(String categoryUuid) {
         Long userId = TokenUtil.extractUserIdFromRequestToken(request, tokenProvider);
@@ -88,6 +105,12 @@ public class CategoryServiceImpl implements CategoryService {
     }
 
 
+    private User extractUserFromToken() {
+        Long userId = TokenUtil.extractUserIdFromRequestToken(request, tokenProvider);
+        return userService.findUserById(userId);
+    }
+
+
     private List<Category> saveChildrenCategories(List<CategoryRequest> childrenRequests) {
         long childOrderIndex = 0;
         List<Category> childCategories = new ArrayList<>();
@@ -98,9 +121,46 @@ public class CategoryServiceImpl implements CategoryService {
         return childCategories;
     }
 
-    private Category saveCategoryHierarchy(CategoryRequest categoryRequest, long orderIndex) {
+    // 새롭게 요청으로 추가된 최상위 카테고리 저장 및 자식은 재귀적으로 저장.
+    private Category createSingleCategory(CategoryRequest categoryRequest, long orderIndex) {
+        User user = extractUserFromToken();
 
-        log.info("categoryRequest >>>>>>> " + categoryRequest);
+        // 부모 카테고리 생성 및 저장
+        Category parentCategory = categoryRequest.getCategoryUuidParent() != null
+                ? Category.builder().id(categoryRequest.getCategoryUuidParent()).build()
+                : null;
+
+        Category category = Category.builder()
+                .id(categoryRequest.getCategoryUuid())
+                .user(user)
+                .name(categoryRequest.getName())
+                .parent(parentCategory)
+                .orderIndex(orderIndex)
+                .children(Collections.emptyList()) // 초기에는 빈 리스트로 설정
+                .build();
+
+        // 부모 카테고리 및 자식 카테고리 저장. 부모는 맨처음에 저장, 자식은 재귀적으로 저장
+        Category savedCategory = categoryRepository.save(category);
+
+        // 자식 카테고리 생성 및 저장
+        if (categoryRequest.getChildren() != null && !categoryRequest.getChildren().isEmpty()) {
+            long childOrderIndex = 0;
+            List<Category> childCategories = new ArrayList<>();
+            for (CategoryRequest childRequest : categoryRequest.getChildren()) {
+                Category childCategory = createSingleCategory(childRequest, childOrderIndex);
+                childCategories.add(childCategory);
+                childOrderIndex++;
+            }
+
+            savedCategory.setChildren(childCategories);
+            categoryRepository.save(savedCategory); // 자식 카테고리 설정 후 다시 저장
+        }
+
+
+        return savedCategory;
+    }
+
+    private Category saveCategoryHierarchy(CategoryRequest categoryRequest, long orderIndex) {
 
         User user = extractUserFromToken();
 
@@ -134,112 +194,7 @@ public class CategoryServiceImpl implements CategoryService {
             return createSingleCategory(categoryRequest, orderIndex);
         }
 
-
-//        category.update(parentCategory, newChildren);
-
         return categoryRepository.save(category);
     }
-
-
-
-    private User extractUserFromToken() {
-        Long userId = TokenUtil.extractUserIdFromRequestToken(request, tokenProvider);
-        return userService.findUserById(userId);
-    }
-
-
-    // 새롭게 요청으로 추가된 최상위 카테고리 저장 및 자식은 재귀적으로 저장.
-    private Category createSingleCategory(CategoryRequest categoryRequest, long orderIndex) {
-        User user = extractUserFromToken();
-
-        // 부모 카테고리 생성 및 저장
-        Category parentCategory = categoryRequest.getCategoryUuidParent() != null
-                ? Category.builder().id(categoryRequest.getCategoryUuidParent()).build()
-                : null;
-
-        Category category = Category.builder()
-                .id(categoryRequest.getCategoryUuid())
-                .user(user)
-                .name(categoryRequest.getName())
-                .parent(parentCategory)
-                .orderIndex(orderIndex)
-                .children(Collections.emptyList()) // 초기에는 빈 리스트로 설정
-                .build();
-
-        // 부모 카테고리 및 자식 카테고리 저장. 부모는 맨처음에 저장, 자식은 재귀적으로 저장
-        Category savedCategory = categoryRepository.save(category);
-
-        // 자식 카테고리 생성 및 저장
-        if (categoryRequest.getChildren() != null && !categoryRequest.getChildren().isEmpty()) {
-            long childOrderIndex = 0;
-            List<Category> childCategories = new ArrayList<>();
-            for (CategoryRequest childRequest : categoryRequest.getChildren()) {
-                Category childCategory = createSingleCategory(childRequest, childOrderIndex);
-//                childCategory.setParent(savedCategory);
-                childCategories.add(childCategory);
-                childOrderIndex++;
-            }
-
-            savedCategory.setChildren(childCategories);
-            categoryRepository.save(savedCategory); // 자식 카테고리 설정 후 다시 저장
-        }
-
-
-        return savedCategory;
-    }
-
-//    private Category convertToEntityForSubCategory(CategoryRequest categoryRequest) {
-//        log.info("실행ㅇㅇㅇㅇㅇㅇㅇㅇㅇ3444444444444ㅇㅇㅇㅇ");
-//
-//        User user = extractUserFromToken();
-//
-//        // Check if the category exists
-//        Optional<Category> existingCategory = categoryRepository.findById(categoryRequest.getCategoryUuid());
-//        Category category;
-//
-//        if (existingCategory.isPresent()) {
-//            category = existingCategory.get();
-//        } else {
-//            // Create a new Category object
-//            category = Category.builder()
-//                    .id(categoryRequest.getCategoryUuid())
-//                    .user(user)
-//                    .name(categoryRequest.getName())
-//                    .build();
-//        }
-//
-//        // Set new parent category if it exists
-//        Category parentCategory = categoryRequest.getCategoryUuidParent() != null
-//                ? Category.builder().id(categoryRequest.getCategoryUuidParent()).build()
-//                : null;
-//        category.setParent(parentCategory);
-//
-//        // Set new children categories
-//        List<Category> newChildren = Collections.emptyList();
-//        category.setChildren(newChildren);
-//
-//        return category;
-//    }
-
-    private CategoryResponse convertToResponseDTO(Category category) {
-
-
-        log.info("실행ㅇㅇㅇㅇㅇㅇㅇㅇㅇ55555555555ㅇㅇㅇㅇㅇㅇ");
-        return new CategoryResponse(
-                category.getId(),
-                category.getName(),
-                null,
-                category.getChildren() != null && !category.getChildren().isEmpty() ?
-                        category.getChildren().stream()
-                                .map(subCategory -> new CategoryResponse(
-                                        subCategory.getId(),
-                                        subCategory.getName(),
-                                        category.getId(),
-                                        Collections.emptyList())) // 2단계 자식은 자식이 존재하지 않으니 빈배열로
-                                .collect(Collectors.toList()) : Collections.emptyList() // 최상위 자식이 없으면 빈배열로 반환
-                // 자식이 없으면 빈배열로 반환
-        );
-    }
-
 
 }

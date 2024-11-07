@@ -33,15 +33,4 @@ public class CategoryMapper {
         return dto;
     }
 
-//    public static Category toEntity(CategoryResponse dto) {
-//        if (dto == null) {
-//            return null;
-//        }
-//
-//        Category category = new Category();
-//        category.setId(dto.getId());
-//        category.setName(dto.getName());
-//        // Parent and children should be set separately to avoid circular references
-//        return category;
-//    }
 }

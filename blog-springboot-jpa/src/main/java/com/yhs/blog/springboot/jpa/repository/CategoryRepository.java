@@ -16,7 +16,6 @@ public interface CategoryRepository extends JpaRepository<Category, String> {
     // 또한 해당 사용자의 카테고리를 가져오며, cateogry 엔티티에 orderIndex를 따로 부여해 프론트에서 요청하는 순서 및 insert로 삽입되는 순서
     // 그대로 조회딜 수 있도록 한다.
     @Query("SELECT c FROM Category c LEFT JOIN FETCH c.children ch WHERE c.parent IS NULL AND c.user.id = :userId ORDER BY c.orderIndex ASC, ch.orderIndex ASC")
-
     List<Category> findAllWithChildrenByUserId(@Param("userId") Long userId);
 
     Optional<Category> findByIdAndUserId(String id, Long userId);

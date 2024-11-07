@@ -22,10 +22,6 @@ import java.util.UUID;
 @Setter
 @ToString
 public class Category extends BaseEntity {
-//
-//    @Id
-//    @GeneratedValue(strategy = GenerationType.IDENTITY)
-//    private Long id;
 
     @Id
     @Column(nullable = false, length = 36, unique = true)
@@ -56,18 +52,4 @@ public class Category extends BaseEntity {
 
     @Column(name = "order_index", nullable = false)
     private Long orderIndex;
-
-    // 이전 참조 해제하고, 새로운 참조를 등록하기 위해 사용. A collection with cascade="all-delete-orphan" was no
-    // longer referenced by the owning entity instance 오류 방지를 위함. 외부에서 getChildren으로 가져온 후 clear를
-    // 하게되면 getChildren()을 통해 불필요하게 데이터 요청이 생기게 되어 이를 방지하기 위함.
-    // children은 fetch가 LAZY이기 때문에 그 순간 여러 자식들이 불필요하게 호출된다면 성능상 이슈가 발생할 수 있다.
-//    public void update(Category parentCategory, List<Category> newChildren) {
-//        // 이전 참조를 clear
-//        this.parent = null;
-//        this.children.clear();
-//
-//        // 새로운 참조를 설정
-//        this.parent = parentCategory;
-//        this.children.addAll(newChildren);
-//    }
 }
