@@ -2,9 +2,7 @@ package com.yhs.blog.springboot.jpa.controller;
 
 import com.yhs.blog.springboot.jpa.config.jwt.TokenManagementService;
 import com.yhs.blog.springboot.jpa.config.jwt.TokenProvider;
-import com.yhs.blog.springboot.jpa.dto.AddUserRequest;
-import com.yhs.blog.springboot.jpa.dto.CategoryResponse;
-import com.yhs.blog.springboot.jpa.dto.LoginRequest;
+import com.yhs.blog.springboot.jpa.dto.*;
 import com.yhs.blog.springboot.jpa.entity.User;
 import com.yhs.blog.springboot.jpa.service.CategoryService;
 import com.yhs.blog.springboot.jpa.service.RefreshTokenService;
@@ -17,6 +15,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
+import org.springframework.http.CacheControl;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -33,6 +32,7 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 @Log4j2
 @RestController
@@ -141,4 +141,30 @@ public class UserApiController extends SimpleUrlAuthenticationSuccessHandler {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid token.");
         }
     }
+
+    // 특정 사용자가 존재하는지 프론트측에서 미들웨어로 확인
+    @GetMapping("/{userIdentifier}/availability")
+    public ResponseEntity<ApiResponse> checkUserExists(@PathVariable("userIdentifier") String userIdentifier) {
+
+        log.info("userIdentifier: " + userIdentifier);
+
+        if (userService.existsByUserIdentifier(userIdentifier)) {
+            return ResponseEntity.ok()
+                    .cacheControl(CacheControl.maxAge(1, TimeUnit.DAYS))
+                    .body(new SuccessResponse<>("User exists"));
+        }
+
+        return ResponseEntity
+                .status(HttpStatus.NOT_FOUND)
+                .body(new ErrorResponse("User not found.", 404));
+    }
+
+    // 나중에 사용
+    @DeleteMapping("/{userIdentifier}/availability/invalidation")
+    public ResponseEntity<Void> invalidateUserCache(@PathVariable String userIdentifier) {
+
+        userService.invalidateUserCache(userIdentifier);
+        return ResponseEntity.noContent().build();
+    }
+
 }

@@ -14,6 +14,7 @@ public interface S3Service {
 //    void moveTempFilesToFinal(String tempFileUrl, String finalFolder) throws IOException;
     @Async
     void processCreatePostS3TempOperation(PostRequest postRequest);
+    @Async
     void processUpdatePostS3TempOperation(PostUpdateRequest postUpdateRequest);
 
 }

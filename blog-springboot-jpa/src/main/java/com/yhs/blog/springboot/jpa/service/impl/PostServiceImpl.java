@@ -33,28 +33,29 @@ public class PostServiceImpl implements PostService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<PostResponse> getPostList() {
-        List<Post> posts = postRepository.findAll();
+    public List<PostResponse> getPostListByUserId(Long userId) {
+        List<Post> posts = postRepository.findByUserId(userId);
         return posts.stream().map(PostResponse::new).toList();
     }
 
     @Override
     @Transactional(readOnly = true)
-    public PostResponse getPost(Long id) {
-        Post post = postRepository.findById(id).orElseThrow(() -> new RuntimeException("Post not found with id  " + id));
+    public PostResponse getPostByPostId(Long postId) {
+        Post post =  postRepository.findById(postId)
+                .orElseThrow(() -> new RuntimeException("Post not found with id " + postId));
 
         return new PostResponse(post);
     }
 
     @Override
-    public void deletePost(Long id) {
-        postRepository.deleteById(id);
+    public void deletePostByPostId(Long postId) {
+        postRepository.deleteById(postId);
     }
 
 
     @Transactional
     @Override
-    public PostResponse createPost(PostRequest postRequest, HttpServletRequest request) {
+    public PostResponse createNewPost(PostRequest postRequest, HttpServletRequest request) {
         try {
 
             log.info("PostRequest >>>> " + postRequest);
@@ -68,8 +69,8 @@ public class PostServiceImpl implements PostService {
             // 포스트 생성 시 user를 넘겨주면 외래키 연관관계 설정으로 인해 posts테이블에 user_id 값이 자동으로 들어간다.
             // category, featuredImage또한 마찬가지.
             Post post = PostMapper.toEntity(user, category, postRequest.getTitle(), postRequest.getContent(), postRequest.getPostStatus(), postRequest.getCommentsEnabled(), featuredImage);
-            post.setFiles(processFiles(post, postRequest.getFiles()));
-            post.setPostTags(processTags(post, postRequest.getTags()));
+            post.setFiles(processFiles(post, postRequest.getFiles(), user));
+            post.setPostTags(processTags(post, postRequest.getTags(), user));
 
             postRepository.save(post);
 
@@ -85,19 +86,23 @@ public class PostServiceImpl implements PostService {
 
     @Transactional
     @Override
-    public Post updatePost(Long id, PostUpdateRequest postUpdateRequest) {
-        Post post = postRepository.findById(id).orElseThrow(() -> new RuntimeException("Post not found with id " + id));
+    public Post updatePostByPostId(Long postId, Long userId, PostUpdateRequest postUpdateRequest) {
+
+        User user = userService.findUserById(userId);
+
+        Post post = postRepository.findById(postId)
+                .orElseThrow(() -> new RuntimeException("Post not found with id " + postId));
         Category category = postUpdateRequest.getCategoryId() != null ?
                 categoryRepository.findById(postUpdateRequest.getCategoryId()).orElse(null) :
                 null;
 
-        Set<File> newFiles = processFiles(post, postUpdateRequest.getFiles());
-        List<PostTag> newPostTags = processTags(post, postUpdateRequest.getTags());
+        Set<File> newFiles = processFiles(post, postUpdateRequest.getFiles(), user);
+        List<PostTag> newPostTags = processTags(post, postUpdateRequest.getTags(), user);
 
         if (postUpdateRequest.getEditPageDeletedTags() != null && !postUpdateRequest.getEditPageDeletedTags().isEmpty()) {
 
             List<Tag> unusedTags =
-                    tagRepository.findUnusedTagsNotUsedByOtherPosts(postUpdateRequest.getEditPageDeletedTags(), id);
+                    tagRepository.findUnusedTagsNotUsedByOtherPostsAndOtherUsers(postUpdateRequest.getEditPageDeletedTags(), postId, userId);
 
             tagRepository.deleteAll(unusedTags);
         }
@@ -112,7 +117,7 @@ public class PostServiceImpl implements PostService {
 
     //아래쪽은 헬퍼 메서드
 
-    private Set<File> processFiles(Post post, List<FileRequest> fileRequests) {
+    private Set<File> processFiles(Post post, List<FileRequest> fileRequests, User user) {
         Set<File> files = new HashSet<>();
         if (fileRequests != null && !fileRequests.isEmpty()) {
             for (FileRequest fileRequest : fileRequests) {
@@ -132,6 +137,7 @@ public class PostServiceImpl implements PostService {
                                 ? (fileRequest.getHeight() != null ? fileRequest.getHeight() : null)
                                 : null)
                         .post(post)
+                        .user(user)
                         .build();
                 files.add(file);
             }
@@ -140,14 +146,14 @@ public class PostServiceImpl implements PostService {
     }
 
 
-    private List<PostTag> processTags(Post post, List<String> tagNames) {
+    private List<PostTag> processTags(Post post, List<String> tagNames, User user) {
 
         List<PostTag> postTags = new ArrayList<>();
         if (tagNames != null && !tagNames.isEmpty()) {
             for (String tagName : tagNames) {
                 Tag tag = tagRepository.findByName(tagName).orElseGet(() -> Tag.create(tagName));
                 tagRepository.save(tag);
-                PostTag postTag = PostTag.create(post, tag);
+                PostTag postTag = PostTag.create(post, tag, user);
                 postTags.add(postTag);
             }
         }
@@ -172,20 +178,6 @@ public class PostServiceImpl implements PostService {
         return null;
     }
 
-
-//    private User extractUserFromPrincipal(Principal principal) {
-//        if (principal instanceof UsernamePasswordAuthenticationToken) {
-//            //getName에서 리턴하는 값은 USerDetails에서 loadByuserName메서드에서 이메일 값으로 찾아왔기 때문에 email값을 가져오게 된다.
-//            String userEmail =  ((UsernamePasswordAuthenticationToken) principal).getName();
-//            return userRepository.findByEmail(userEmail).orElseThrow(() -> new UsernameNotFoundException("User not found with userEmail" + userEmail));
-//        } else if (principal instanceof OAuth2AuthenticationToken) {
-//            OAuth2User oAuth2User = ((OAuth2AuthenticationToken) principal).getPrincipal();
-//            String userEmail = (String) oAuth2User.getAttributes().get("email");
-//            return userRepository.findByEmail(userEmail).orElseThrow(() -> new UsernameNotFoundException("User not found with userEmail" + userEmail));
-//        } else {
-//            throw new IllegalArgumentException("Unsupported authentication type");
-//        }
-//    }
 
 
 }

@@ -14,4 +14,5 @@ import java.io.Serializable;
 public class PostTagId implements Serializable {
     private Long post;
     private Long tag;
+    private Long user;
 }

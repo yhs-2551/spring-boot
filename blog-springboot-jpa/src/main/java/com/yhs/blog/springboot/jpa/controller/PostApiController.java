@@ -3,6 +3,8 @@ package com.yhs.blog.springboot.jpa.controller;
 import com.yhs.blog.springboot.jpa.config.jwt.TokenProvider;
 import com.yhs.blog.springboot.jpa.dto.*;
 import com.yhs.blog.springboot.jpa.entity.Post;
+import com.yhs.blog.springboot.jpa.entity.User;
+import com.yhs.blog.springboot.jpa.repository.UserRepository;
 import com.yhs.blog.springboot.jpa.service.PostService;
 import com.yhs.blog.springboot.jpa.service.S3Service;
 import com.yhs.blog.springboot.jpa.util.PostMapper;
@@ -13,9 +15,11 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -34,67 +38,80 @@ public class PostApiController {
     private final PostService postService;
     private final TokenProvider tokenProvider;
     private final S3Service s3Service;
+    private final UserRepository userRepository;
 
-    @PostMapping
-    public ResponseEntity<PostResponse> createPost(@Valid @RequestBody PostRequest postRequest, HttpServletRequest request) {
+    //ResponseEntity의 <?>와일드 카드 대신 sealed 클래스를 사용해 특정 클래스들만 상속하게 제한함
+    @PostMapping(
+            value = "/{userIdentifier}",
+            produces = MediaType.APPLICATION_JSON_VALUE,
+            consumes = MediaType.APPLICATION_JSON_VALUE
+    )
+    public ResponseEntity<?> createNewPost(@PathVariable("userIdentifier") String userIdentifier,
+                                                     @Valid @RequestBody PostRequest postRequest,
+                                                     HttpServletRequest request) {
+        log.info("실행입니다");
+        
+        String userIdentifierFromAccessToken =
+                TokenUtil.extractUserIdentifierFromRequestToken(request,
+                        tokenProvider);
 
-        // TokenAuthenticationFilter를 security에 등록해두었기 때문에, TokenAuthenticationFilter의
-        // SecurityContextHolder.getContext().setAuthentication(authentication)로 저장해둔 인증 정보를 가져옴
-        // 근데 TokenAuthenticationFilter에서 유효성 검사 통과하지 못하면 return 으로 모두 처리해두었기 때문에 불필요한 것 같아 주석 처리
-//        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-//        if (authentication == null || !authentication.isAuthenticated()) {
-//            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Unauthorized User");
-//        }
-        PostResponse responseDTO = postService.createPost(postRequest, request);
-        return new ResponseEntity<>(responseDTO, HttpStatus.CREATED);
+        if (!userIdentifier.equals(userIdentifierFromAccessToken)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(new ErrorResponse("You are not authorized to create this post.", 403));
+        }
+
+        PostResponse responseDTO = postService.createNewPost(postRequest, request);
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(new SuccessResponse<PostResponse>(responseDTO, "Success create new post."));
     }
 
-    @GetMapping
-    public ResponseEntity<List<PostResponse>> findAllPosts() {
-        List<PostResponse> postResponses = postService.getPostList();
+    @GetMapping("/{userIdentifier}")
+    public ResponseEntity<List<PostResponse>> findAllPosts(@PathVariable("userIdentifier") String userIdentifier, HttpServletRequest request) {
+
+        // 게시글 전체는 특정 사용자 즉 정확한 해당 사용자의 게시글만 조회 가능하도록 구현(userIdentifier 사용)
+        User user = userRepository.findByUserIdentifier(userIdentifier)
+                .orElseThrow(() -> new RuntimeException("User not found with user identifier " + userIdentifier));
+        Long userId = user.getId();
+
+        List<PostResponse> postResponses = postService.getPostListByUserId(userId);
         return ResponseEntity.ok().body(postResponses);
 //        return new ResponseEntity<>(postResponses, HttpStatus.OK);
     }
 
-    @GetMapping("/{id}")
-    public ResponseEntity<PostResponse> findPostById(@PathVariable("id") Long postId) {
+    @GetMapping("/post/{postId}")
+    public ResponseEntity<?> findPostByPostId(@PathVariable("postId") Long postId) {
 
-        PostResponse postResponse = postService.getPost(postId);
+        PostResponse postResponse = postService.getPostByPostId(postId);
         return ResponseEntity.ok().body(postResponse);
     }
 
-    @DeleteMapping("/{id}")
-    public ResponseEntity<String> deleteArticle(@PathVariable("id") Long id, HttpServletRequest request) {
-
-//        TokenAuthenticationFilter에서 유효성 검사 실패하면 return 으로 모두 처리해두었기 때문에 불필요
-//        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-//        if (authentication == null || !authentication.isAuthenticated()) {
-//            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Unauthorized User");
-//        }
+    @DeleteMapping("/post/{postId}")
+    public ResponseEntity<String> deletePostById(@PathVariable("postId") Long postId,
+                                                 HttpServletRequest request) {
 
         Long userId = TokenUtil.extractUserIdFromRequestToken(request, tokenProvider);
-        PostResponse postResponseDTO = postService.getPost(id);
+        PostResponse postResponseDTO = postService.getPostByPostId(postId);
 
         if (!postResponseDTO.getUserId().equals(userId)) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body("You are not authorized to delete this post.");
         }
 
-        postService.deletePost(id);
+        postService.deletePostByPostId(postId);
         return ResponseEntity.ok("File deleted successfully");
     }
 
-    //여기부터 작성
-    @PatchMapping("/{id}")
-    public ResponseEntity<Object> updateArticle(@PathVariable Long id, @RequestBody PostUpdateRequest postUpdateRequest, HttpServletRequest request) {
+    @PatchMapping("/post/{postId}")
+    public ResponseEntity<Object> updatePostByPostId(@PathVariable("postId") Long postId,
+                                                     @RequestBody PostUpdateRequest postUpdateRequest, HttpServletRequest request) {
 
         Long userId = TokenUtil.extractUserIdFromRequestToken(request, tokenProvider);
-        PostResponse postResponseDTO = postService.getPost(id);
+        PostResponse postResponseDTO = postService.getPostByPostId(postId);
 
         if (!postResponseDTO.getUserId().equals(userId)) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body("You are not authorized to update this post.");
         }
 
-        Post updatedPost = postService.updatePost(id, postUpdateRequest);
+        Post updatedPost = postService.updatePostByPostId(postId, userId, postUpdateRequest);
         PostUpdateResponse postUpdateResponse = new PostUpdateResponse(updatedPost);
         return ResponseEntity.ok().body(postUpdateResponse);
     }
@@ -117,40 +134,6 @@ public class PostApiController {
         }
 
     }
-
-//    @PostMapping("/files/delete-temp-files")
-//    public ResponseEntity<String> deleteTempFiles(@RequestBody Map<String, List<String>> fileUrls) {
-//        log.info("fileUrls: " + fileUrls);
-//        try {
-//            List<String> urls = fileUrls.get("urls");
-//            log.info("urls: " + urls);
-//            for (String fileUrl : urls) {
-//                log.info("실행");
-//                s3Service.tempDeleteFile(fileUrl, null);
-//            }
-//            return ResponseEntity.ok("Files deleted successfully");
-//        } catch (Exception e) {
-//            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Failed to delete files");
-//        }
-//
-//    }
-//
-//    @PostMapping("/file/delete-temp-featured-file")
-//    public ResponseEntity<String> deleteFeaturedFile(@RequestBody Map<String,
-//            String > payload) {
-//
-//        try {
-//            String url = payload.get("url");
-//            String featuredString =  payload.get("featured");
-//            log.info("urls: " + url);
-//
-//            s3Service.tempDeleteFile(url, featuredString);
-//            return ResponseEntity.ok("Featured File deleted successfully");
-//        } catch (Exception e) {
-//            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Failed to delete" + " featured file");
-//        }
-//
-//    }
 
 
 }
