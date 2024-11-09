@@ -46,7 +46,7 @@ public class TokenProvider {
         // 헤더 부분은 굳이 명시적으로 추가하지 않아도 된다.
         return Jwts.builder()
                 .issuer(jwtProperties.getIssuer()).issuedAt(now).expiration(expiry).subject(user.getEmail())
-                .claim("id", user.getId()).claim("roles", roles)
+                .claim("id", user.getId()).claim("userIdentifier", user.getUserIdentifier()).claim("roles", roles)
                 .signWith(jwtProperties.getJwtSecretKey()).compact();
     }
 
@@ -102,12 +102,21 @@ public class TokenProvider {
         return claims.get("id", Long.class);
     }
 
+    public String getEmailFromToken(String token) {
+        Claims claims = getClaims(token);
+        return claims.getSubject(); // sub 클레임에서 이메일 추출
+    }
+
+    public String getUserIdentifier(String token) {
+        Claims claims = getClaims(token);
+        return claims.get("userIdentifier", String.class);
+    }
+
 
     // 페이로드, 즉 내용(클레임) 반환 메서드
     private Claims getClaims(String token) {
         try {
-
-        return Jwts.parser().verifyWith(jwtProperties.getJwtSecretKey()).build().parseSignedClaims(token).getPayload();
+            return Jwts.parser().verifyWith(jwtProperties.getJwtSecretKey()).build().parseSignedClaims(token).getPayload();
         } catch (ExpiredJwtException e) {
             return e.getClaims(); // 만료된 토큰에서도 클레임 반환
 

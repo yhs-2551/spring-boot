@@ -66,7 +66,8 @@ public class CategoryServiceImpl implements CategoryService {
 
         List<Category> categories = categoryRepository.findAllWithChildrenByUserId(userId);
         if (categories.isEmpty()) {
-            throw new ResourceNotFoundException("No categories found for user ID: " + userId);
+            log.info("No categories found for user ID: {}", userId);
+            return Collections.emptyList();  // 불변 빈 배열 반환
         }
         return categories.stream().map(this::convertToResponseDTO).collect(Collectors.toList());
     }
@@ -130,7 +131,7 @@ public class CategoryServiceImpl implements CategoryService {
                 .id(categoryRequest.getCategoryUuid())
                 .user(user)
                 .name(categoryRequest.getName())
-                .parent(null)
+                .parent(null) // 초기에 부모 설정은 null
                 .orderIndex(orderIndex)
                 .children(Collections.emptyList()) // 초기에는 빈 리스트로 설정
                 .build();
@@ -141,7 +142,7 @@ public class CategoryServiceImpl implements CategoryService {
             List<Category> childCategories = new ArrayList<>();
             for (CategoryRequest childRequest : categoryRequest.getChildren()) {
                 Category childCategory = createSingleCategory(childRequest, childOrderIndex);
-                childCategory.setParent(category);
+                childCategory.setParent(category); // 자식에서 부모 설정
                 childCategories.add(childCategory);
                 childOrderIndex++;
             }
@@ -151,7 +152,7 @@ public class CategoryServiceImpl implements CategoryService {
         }
 
 
-        return category;// 자식 카테고리 설정 후 다시 저장
+        return category;// 최종적으로 부모 카테고리 리턴
     }
 
     private Category saveCategoryHierarchy(CategoryRequest categoryRequest, long orderIndex) {
@@ -184,10 +185,11 @@ public class CategoryServiceImpl implements CategoryService {
 
 
         } else {
-            // Call createSingleCategory for new Category object
+            // 새로운 부모 및 자식 카테고리 생성
             category = createSingleCategory(categoryRequest, orderIndex);
         }
 
+        // 새롭게 생성 시 또는 수정 시 한번의 save 메서드로 처리 CASCADE.PERSIST를 이용하여 부모가 저장될때 자식도 같이 저장되게 처리
         return categoryRepository.save(category);
     }
 

@@ -30,6 +30,9 @@ public class User implements UserDetails {
     @Column(nullable = false, length = 50, unique = true)
     private String username;
 
+    @Column(nullable = false, length = 50, unique = true)
+    private String userIdentifier;
+
     // OAUTH2 사용자의 경우 비밀번호를 저장할 필요가 없기 때문에 nullable true 설정
     @Column(nullable = true, length = 255)
     private String password;
@@ -51,6 +54,13 @@ public class User implements UserDetails {
 
     @OneToMany(mappedBy = "user", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<Category> categories;
+
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    private Set<File> files;
+
+    @OneToMany(mappedBy = "user", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval =
+            true)
+    private Set<PostTag> postTags;
 
 
     @OneToMany(mappedBy = "user", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
@@ -97,10 +107,12 @@ public class User implements UserDetails {
     }
 
     @Builder
-    public User(String email, String password, String username, UserRole role, String auth) {
+    public User(String email, String password, String username, String userIdentifier,
+                UserRole role, String auth) {
         this.email = email;
         this.password = password;
         this.username = username;
+        this.userIdentifier = userIdentifier;
         this.role = role != null ? role : UserRole.USER;
     }
 

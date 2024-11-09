@@ -11,14 +11,14 @@ import java.util.List;
 
 public interface PostService {
 
-    PostResponse createPost(PostRequest postRequest, HttpServletRequest request);
+    PostResponse createNewPost(PostRequest postRequest, HttpServletRequest request);
 
-    List<PostResponse> getPostList();
+    List<PostResponse> getPostListByUserId(Long UserId);
 
-    PostResponse getPost(Long id);
+    PostResponse getPostByPostId(Long postId);
 
-    void deletePost(Long id);
+    void deletePostByPostId(Long postId);
 
-    Post updatePost(Long id, PostUpdateRequest postUpdateRequest);
+    Post updatePostByPostId(Long postId, Long userId, PostUpdateRequest postUpdateRequest);
 
 }

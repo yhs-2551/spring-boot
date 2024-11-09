@@ -27,8 +27,8 @@ public interface TagRepository extends JpaRepository<Tag, Long> {
                 SELECT pt FROM PostTag pt
                 WHERE pt.tag = t
                 AND pt.post.id <> :postId
+                AND pt.user.id <> :userId
             )
             """)
-    List<Tag> findUnusedTagsNotUsedByOtherPosts(@Param("tagNames") List<String> tagNames, @Param(
-            "postId") Long postId);
+    List<Tag> findUnusedTagsNotUsedByOtherPostsAndOtherUsers(@Param("tagNames") List<String> tagNames, @Param("postId") Long postId, @Param("userId") Long userId);
 }

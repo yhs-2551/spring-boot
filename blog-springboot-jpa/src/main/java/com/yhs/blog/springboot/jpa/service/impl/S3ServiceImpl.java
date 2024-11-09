@@ -1,10 +1,13 @@
 package com.yhs.blog.springboot.jpa.service.impl;
 
+import com.yhs.blog.springboot.jpa.config.jwt.TokenProvider;
 import com.yhs.blog.springboot.jpa.dto.FileRequest;
 import com.yhs.blog.springboot.jpa.dto.PostRequest;
 import com.yhs.blog.springboot.jpa.dto.PostResponse;
 import com.yhs.blog.springboot.jpa.dto.PostUpdateRequest;
 import com.yhs.blog.springboot.jpa.service.S3Service;
+import com.yhs.blog.springboot.jpa.util.TokenUtil;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Value;
@@ -30,20 +33,32 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class S3ServiceImpl implements S3Service {
     private final S3Client s3Client;
+    private final TokenProvider tokenProvider;
+    private final HttpServletRequest request;
 
     @Value("${aws.s3.bucketName}")
     private String buketName;
 
+    private String getUserFolder() {
+        String email = TokenUtil.extractEmailFromRequestToken(request, tokenProvider);
+        return email.substring(0, email.indexOf('@'));
+    }
+
     public String tempUploadFile(MultipartFile file, String folder) throws IOException {
+
+        String userFolder = getUserFolder();
+
+        log.info("userFolder >>>> " + userFolder);
 
         // 대표 이미지 구분하기 위함
         if (folder == null || folder.isEmpty()) {
             folder = Objects.requireNonNull(file.getContentType()).startsWith("image/") ?
-                    "temp/images/" : "temp/files/";
+                    userFolder + "/temp/images/" : userFolder + "/temp/files/";
         } else if (folder.equals("featured")) {
-            folder = "temp/" + folder + "/";
+            folder = userFolder + "/temp/" + folder + "/";
         }
         String fileName = folder + UUID.randomUUID() + "-" + file.getOriginalFilename();
+        log.info("fileName >>>> " + fileName);
         try {
             PutObjectRequest putObjectRequest = PutObjectRequest.builder()
                     .bucket(buketName)
@@ -65,8 +80,9 @@ public class S3ServiceImpl implements S3Service {
     public void processCreatePostS3TempOperation(PostRequest postRequest) {
         try {
 
-            // AWS S3 final 폴더에 최종 업로드 및 temp 폴더에 저장되어 있는 불필요한 이미지 및 파일 삭제 처리 로직
+            String userFolder = getUserFolder();
 
+            // AWS S3 final 폴더에 최종 업로드 및 temp 폴더에 저장되어 있는 불필요한 이미지 및 파일 삭제 처리 로직
             List<String> tempfileUrls =
                     postRequest.getFiles().stream().map(FileRequest::getFileUrl).toList();
 
@@ -74,10 +90,8 @@ public class S3ServiceImpl implements S3Service {
 
             if (postRequest.getFeaturedImage() != null) {
                 moveTempFilesToFinal(postRequest.getFeaturedImage().getFileUrl(),
-                        "final/featured/");
+                        userFolder + "/final/featured/");
             }
-
-            log.info("getDeleteTempImageUrls: ", postRequest.getDeleteTempImageUrls());
 
             for (String tempFileUrl : postRequest.getDeleteTempImageUrls()) {
                 tempDeleteFile(tempFileUrl);
@@ -94,6 +108,8 @@ public class S3ServiceImpl implements S3Service {
 
         try {
 
+            String userFolder = getUserFolder();
+
             // AWS S3 final 폴더에 최종 업로드 및 temp 폴더에 저장되어 있는 불필요한 이미지 및 파일 삭제 처리 로직
 
             // 수정 요청을 했을때 수정 페이지에 기존에 존재하던(글 작성 시 발행된) final 경로 파일들은 제외하고 에디터에 새롭게 등록되는, 즉 파일 경로에
@@ -107,10 +123,8 @@ public class S3ServiceImpl implements S3Service {
 
             if (postUpdateRequest.getFeaturedImage() != null) {
                 moveTempFilesToFinal(postUpdateRequest.getFeaturedImage().getFileUrl(),
-                        "final/featured/");
+                        userFolder + "/final/featured/");
             }
-
-            log.info("getDeleteTempImageUrls: ", postUpdateRequest.getDeleteTempImageUrls());
 
             for (String tempFileUrl : postUpdateRequest.getDeleteTempImageUrls()) {
                 tempDeleteFile(tempFileUrl);
@@ -122,12 +136,15 @@ public class S3ServiceImpl implements S3Service {
     }
 
     private void processTempFilesToFinal(List<String> tempfileUrls) throws IOException {
+
+        String userFolder = getUserFolder();
+
         for (String tempFileUrl : tempfileUrls) {
             String finalFolder;
             if (tempFileUrl.contains("/images/")) {
-                finalFolder = "final/images/";
+                finalFolder = userFolder + "/final/images/";
             } else {
-                finalFolder = "final/files/";
+                finalFolder = userFolder + "/final/files/";
             }
             moveTempFilesToFinal(tempFileUrl, finalFolder);
         }
@@ -135,30 +152,25 @@ public class S3ServiceImpl implements S3Service {
 
 
     private void moveTempFilesToFinal(String tempFileUrl, String finalFolder) throws IOException {
-        String fileName = tempFileUrl.substring(tempFileUrl.lastIndexOf("/") + 1);
 
-        log.info("fileName: " + fileName);
+        String userFolder = getUserFolder();
+
+        String fileName = tempFileUrl.substring(tempFileUrl.lastIndexOf("/") + 1);
 
         fileName = URLDecoder.decode(fileName, StandardCharsets.UTF_8);
         String tempFolder;
 
         if (tempFileUrl.contains("/images/")) {
-            tempFolder = "temp/images/";
+            tempFolder = userFolder + "/temp/images/";
         } else if (tempFileUrl.contains("/files/")) {
-            tempFolder = "temp/files/";
+            tempFolder = userFolder + "/temp/files/";
         } else {
-            tempFolder = "temp/featured/";
+            tempFolder = userFolder + "/temp/featured/";
         }
 
         String tempFullPath = tempFolder + fileName;
         String finalFullPath = finalFolder + fileName;
 
-
-        log.info("tempFullPath: " + tempFullPath);
-        log.info("finalFullPath: " + finalFullPath);
-
-
-        log.info("buketName: " + buketName);
 
         try {
             CopyObjectRequest copyObjectRequest = CopyObjectRequest.builder()
@@ -184,24 +196,25 @@ public class S3ServiceImpl implements S3Service {
     }
 
     private void tempDeleteFile(String fileUrl) {
-        log.info("fileUrl: " + fileUrl);
+
+        String userFolder = getUserFolder();
+
         String fileName = fileUrl.substring(fileUrl.lastIndexOf("/") + 1);
         fileName = URLDecoder.decode(fileName, StandardCharsets.UTF_8);
-        log.info("fileName: " + fileName);
 
         String folder;
         if (fileUrl.contains("temp/featured/")) {
-            folder = "temp/featured/";
+            folder = userFolder + "/temp/featured/";
         } else if (fileUrl.contains("temp/images/")) {
-            folder = "temp/images/";
+            folder = userFolder + "/temp/images/";
         } else if (fileUrl.contains("temp/files/")) {
-            folder = "temp/files/";
+            folder = userFolder + "/temp/files/";
         } else if (fileUrl.contains("final/featured/")) {
-            folder = "final/featured/";
+            folder = userFolder + "/final/featured/";
         } else if (fileUrl.contains("final/images/")) {
-            folder = "final/images/";
+            folder = userFolder + "/final/images/";
         } else {
-            folder = "final/files/";
+            folder = userFolder + "/final/files/";
         }
         String fullPath = folder + fileName;
 

@@ -87,7 +87,7 @@ public class TokenApiController {
 
         Long uesrId = TokenUtil.extractUserIdFromRequestToken(request, tokenProvider);
 
-        PostResponse postResponseDTO = postService.getPost(postId);
+        PostResponse postResponseDTO = postService.getPostByPostId(postId);
 
         boolean isAuthor = postResponseDTO.getUserId().equals(uesrId);
 
