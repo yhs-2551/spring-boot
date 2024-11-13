@@ -78,24 +78,6 @@ public class TokenApiController {
         return ResponseEntity.ok("Valid Access Token ");
     }
 
-
-    @GetMapping("/{id}/verify-author")
-    public ResponseEntity<Map<String, Boolean>> verifyAuthor(HttpServletRequest request,
-                                                             @PathVariable("id") Long postId) {
-
-        System.out.println("실행verFiy");
-
-        Long uesrId = TokenUtil.extractUserIdFromRequestToken(request, tokenProvider);
-
-        PostResponse postResponseDTO = postService.getPostByPostId(postId);
-
-        boolean isAuthor = postResponseDTO.getUserId().equals(uesrId);
-
-        Map<String, Boolean> response = new HashMap<>();
-        response.put("isAuthor", isAuthor);
-        return ResponseEntity.ok(response);
-    }
-
     @PostMapping("/new-token")
     public ResponseEntity<String> createNewAccessRefreshToken(HttpServletRequest request,
                                                               HttpServletResponse response

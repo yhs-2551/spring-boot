@@ -37,7 +37,6 @@ import java.util.concurrent.TimeUnit;
 @Log4j2
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/api/user")
 public class UserApiController extends SimpleUrlAuthenticationSuccessHandler {
 
     private final UserService userService;
@@ -50,13 +49,13 @@ public class UserApiController extends SimpleUrlAuthenticationSuccessHandler {
     private final CategoryService categoryService;
 
 
-    @PostMapping("/signup")
+    @PostMapping("/api/users/signup")
     public ResponseEntity<Long> signup(@RequestBody AddUserRequest addUserRequest) {
         Long userId = userService.createUser(addUserRequest);
         return ResponseEntity.status(HttpStatus.CREATED).body(userId);
     }
 
-    @PostMapping("/login")
+    @PostMapping("/api/users/login")
     public ResponseEntity<String> login(@RequestBody LoginRequest loginRequest,
                                         HttpServletRequest request,
                                         HttpServletResponse response) throws ServletException, IOException {
@@ -111,7 +110,7 @@ public class UserApiController extends SimpleUrlAuthenticationSuccessHandler {
     }
 
     // Custom logout 로직을 구현한 경우 시큐리티에서 제공하는 logout을 사용하지 않는다.
-    @PostMapping("/logout")
+    @PostMapping("/api/users/logout")
     public ResponseEntity<String> logout(HttpServletRequest request, HttpServletResponse response) {
 
         System.out.println("실행 로그아웃");
@@ -143,14 +142,13 @@ public class UserApiController extends SimpleUrlAuthenticationSuccessHandler {
     }
 
     // 특정 사용자가 존재하는지 프론트측에서 미들웨어로 확인
-    @GetMapping("/{userIdentifier}/availability")
+    @GetMapping("/api/{userIdentifier}/availability")
     public ResponseEntity<ApiResponse> checkUserExists(@PathVariable("userIdentifier") String userIdentifier) {
 
         log.info("userIdentifier: " + userIdentifier);
 
         if (userService.existsByUserIdentifier(userIdentifier)) {
             return ResponseEntity.ok()
-                    .cacheControl(CacheControl.maxAge(1, TimeUnit.DAYS))
                     .body(new SuccessResponse<>("User exists"));
         }
 
@@ -160,7 +158,7 @@ public class UserApiController extends SimpleUrlAuthenticationSuccessHandler {
     }
 
     // 나중에 사용
-    @DeleteMapping("/{userIdentifier}/availability/invalidation")
+    @DeleteMapping("/api/{userIdentifier}/availability/invalidation")
     public ResponseEntity<Void> invalidateUserCache(@PathVariable String userIdentifier) {
 
         userService.invalidateUserCache(userIdentifier);

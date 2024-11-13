@@ -38,9 +38,10 @@ public class TokenAuthenticationFilter extends OncePerRequestFilter {
         // 초기 토큰을 가져오는 GET 요청의 경우 검증 필요 없음
         if (method.equals("GET") && (requestURI.equals("/api/token/initial-token") ||
                 //특정 게시글 조회 (GET /api/posts/{id}) 및 게시글 목록 조회는 토큰 검증이 필요 없음
-                requestURI.startsWith("/api/posts") ||
+                requestURI.matches("/api/[^/]+/posts") ||
+                requestURI.matches("/api/[^/]+/posts/[^/]+") ||
                 // 사용자가 존재하는지에 관한 userIdentifier로 조회하는 경우에도 토큰 검증이 필요 없음
-                requestURI.startsWith("/api/user")
+                requestURI.matches("/api/[^/]+/availability")
         )) {
             // 이 경로에 대해서는 필터를 적용하지 않고 다음 필터로 넘김
             filterChain.doFilter(request, response);
@@ -49,8 +50,8 @@ public class TokenAuthenticationFilter extends OncePerRequestFilter {
 
         // POST 요청에 대한 예외 처리
         // 로그아웃은 필터에서는 통과 시키고 컨트롤러에서 따로 처리.
-        if (method.equals("POST") && (requestURI.equals("/api/user/signup") || requestURI.equals(
-                "/api/user/login") || requestURI.equals("/api/user/logout") || requestURI.equals(
+        if (method.equals("POST") && (requestURI.equals("/api/users/signup") || requestURI.equals(
+                "/api/users/login") || requestURI.equals("/api/users/logout") || requestURI.equals(
                         "/api/token/new-token"))) {
             filterChain.doFilter(request, response);
             return;

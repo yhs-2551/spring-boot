@@ -31,7 +31,7 @@ import java.util.Objects;
 
 @RequiredArgsConstructor
 @RestController
-@RequestMapping("/api/posts")
+@RequestMapping("/api/{userIdentifier}/posts")
 @Log4j2
 public class PostApiController {
 
@@ -42,15 +42,14 @@ public class PostApiController {
 
     //ResponseEntity의 <?>와일드 카드 대신 sealed 클래스를 사용해 특정 클래스들만 상속하게 제한함
     @PostMapping(
-            value = "/{userIdentifier}",
             produces = MediaType.APPLICATION_JSON_VALUE,
             consumes = MediaType.APPLICATION_JSON_VALUE
     )
-    public ResponseEntity<?> createNewPost(@PathVariable("userIdentifier") String userIdentifier,
+    public ResponseEntity<ApiResponse> createNewPost(@PathVariable("userIdentifier") String userIdentifier,
                                                      @Valid @RequestBody PostRequest postRequest,
                                                      HttpServletRequest request) {
         log.info("실행입니다");
-        
+
         String userIdentifierFromAccessToken =
                 TokenUtil.extractUserIdentifierFromRequestToken(request,
                         tokenProvider);
@@ -61,11 +60,12 @@ public class PostApiController {
         }
 
         PostResponse responseDTO = postService.createNewPost(postRequest, request);
+        // 아래 응답에서 일단 responseDTO를 사용하고 있지만, 나중에는 그냥 문자열로만 응답하도록 수정할수도 있음.
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(new SuccessResponse<PostResponse>(responseDTO, "Success create new post."));
     }
 
-    @GetMapping("/{userIdentifier}")
+    @GetMapping
     public ResponseEntity<List<PostResponse>> findAllPosts(@PathVariable("userIdentifier") String userIdentifier, HttpServletRequest request) {
 
         // 게시글 전체는 특정 사용자 즉 정확한 해당 사용자의 게시글만 조회 가능하도록 구현(userIdentifier 사용)
@@ -78,21 +78,49 @@ public class PostApiController {
 //        return new ResponseEntity<>(postResponses, HttpStatus.OK);
     }
 
-    @GetMapping("/post/{postId}")
-    public ResponseEntity<?> findPostByPostId(@PathVariable("postId") Long postId) {
+    @GetMapping("/{postId}")
+    public ResponseEntity<PostResponse> findPostByPostId(@PathVariable("postId") Long postId) {
 
         PostResponse postResponse = postService.getPostByPostId(postId);
         return ResponseEntity.ok().body(postResponse);
     }
 
-    @DeleteMapping("/post/{postId}")
+    @GetMapping("/{postId}/verify-author")
+    public ResponseEntity<Map<String, Boolean>> verifyAuthor(HttpServletRequest request,
+                                                             @PathVariable("postId") Long postId,
+                                                             @PathVariable("userIdentifier") String userIdentifier
+    ) {
+
+
+        // url 경로에서 받은 userIdentifier을 통해 정확히 해당 사용자의 게시글을 가져오기 위함
+        Long userId = userRepository.findByUserIdentifier(userIdentifier)
+                .orElseThrow(() -> new RuntimeException("User not found with user identifier " + userIdentifier)).getId();
+
+        // 로그인한 사용자의 userId
+        Long userIdFromAccessToken = TokenUtil.extractUserIdFromRequestToken(request,
+                tokenProvider);
+
+        // 로그인한 사용자와 실제 게시글 작성자가 같은지 최종적으로 확인
+        boolean isAuthor = userId.equals(userIdFromAccessToken);
+
+        Map<String, Boolean> response = new HashMap<>();
+        response.put("isAuthor", isAuthor);
+        return ResponseEntity.ok(response);
+    }
+
+
+    @DeleteMapping("/{postId}")
     public ResponseEntity<String> deletePostById(@PathVariable("postId") Long postId,
-                                                 HttpServletRequest request) {
+                                                 @PathVariable("userIdentifier") String userIdentifier,
+                                                 HttpServletRequest request
+    ) {
 
-        Long userId = TokenUtil.extractUserIdFromRequestToken(request, tokenProvider);
-        PostResponse postResponseDTO = postService.getPostByPostId(postId);
+        Long userId = userRepository.findByUserIdentifier(userIdentifier)
+                .orElseThrow(() -> new RuntimeException("User not found with user identifier " + userIdentifier)).getId();
 
-        if (!postResponseDTO.getUserId().equals(userId)) {
+        Long userIdFromAccessToken = TokenUtil.extractUserIdFromRequestToken(request, tokenProvider);
+
+        if (!userId.equals(userIdFromAccessToken)) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body("You are not authorized to delete this post.");
         }
 
@@ -100,25 +128,45 @@ public class PostApiController {
         return ResponseEntity.ok("File deleted successfully");
     }
 
-    @PatchMapping("/post/{postId}")
-    public ResponseEntity<Object> updatePostByPostId(@PathVariable("postId") Long postId,
-                                                     @RequestBody PostUpdateRequest postUpdateRequest, HttpServletRequest request) {
+    @PatchMapping("/{postId}")
+    public ResponseEntity<ApiResponse> updatePostByPostId(@PathVariable("postId") Long postId,
+                                                          @PathVariable("userIdentifier") String userIdentifier,
+                                                          @RequestBody PostUpdateRequest postUpdateRequest, HttpServletRequest request) {
 
-        Long userId = TokenUtil.extractUserIdFromRequestToken(request, tokenProvider);
-        PostResponse postResponseDTO = postService.getPostByPostId(postId);
+        Long userId = userRepository.findByUserIdentifier(userIdentifier)
+                .orElseThrow(() -> new RuntimeException("User not found with user identifier " + userIdentifier)).getId();
 
-        if (!postResponseDTO.getUserId().equals(userId)) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("You are not authorized to update this post.");
+        Long userIdFromAccessToken = TokenUtil.extractUserIdFromRequestToken(request, tokenProvider);
+
+        if (!userId.equals(userIdFromAccessToken)) {
+
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(new ErrorResponse("You are not authorized to update this post.", 403));
         }
 
-        Post updatedPost = postService.updatePostByPostId(postId, userId, postUpdateRequest);
+        Post updatedPost = postService.updatePostByPostId(postId, userId,
+                postUpdateRequest);
         PostUpdateResponse postUpdateResponse = new PostUpdateResponse(updatedPost);
-        return ResponseEntity.ok().body(postUpdateResponse);
+
+        return ResponseEntity.status(HttpStatus.OK)
+                .body(new SuccessResponse<PostUpdateResponse>(postUpdateResponse, "Success update post" +
+                        "."));
     }
 
     @PostMapping("temp/files/upload")
-    public ResponseEntity<String> uploadFile(@RequestParam("file") MultipartFile file, @RequestParam(value = "featured", required = false) String featured) {
+    public ResponseEntity<String> uploadFile(
+            @RequestParam("file") MultipartFile file,
+            @RequestParam(value = "featured", required = false) String featured,
+            @PathVariable("userIdentifier") String userIdentifier, HttpServletRequest request) {
+
         try {
+            String userIdentifierFromRequestToken = TokenUtil.extractUserIdentifierFromRequestToken(request,
+                    tokenProvider);
+
+            if (!userIdentifierFromRequestToken.equals(userIdentifier)) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).body("You are not authorized to upload files for this user.");
+            }
+
             if (Objects.requireNonNull(file.getContentType()).startsWith("image/") && file.getSize() > 5 * 1024 * 1024) { // 5MB
                 // limit for image files
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Image file size exceeds the limit of 5MB");
@@ -126,7 +174,7 @@ public class PostApiController {
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("File size exceeds the limit of 10MB");
             }
 
-            String fileUrl = s3Service.tempUploadFile(file, featured);
+            String fileUrl = s3Service.tempUploadFile(file, featured, userIdentifier);
 
             return ResponseEntity.ok(fileUrl);
         } catch (Exception e) {

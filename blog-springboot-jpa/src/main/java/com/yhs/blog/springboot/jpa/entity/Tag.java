@@ -10,6 +10,7 @@ import java.util.Set;
 @Entity
 @Table(name = "Tags")
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
+@ToString
 public class Tag {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

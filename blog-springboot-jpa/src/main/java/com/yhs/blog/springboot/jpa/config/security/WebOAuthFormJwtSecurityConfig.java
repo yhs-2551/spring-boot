@@ -13,6 +13,7 @@ import com.yhs.blog.springboot.jpa.service.impl.UserServiceImpl;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.ProviderManager;
@@ -134,13 +135,18 @@ public class WebOAuthFormJwtSecurityConfig {
                                 //SWAGGER 설정 부분
                                 // 인증 없이 접근 가능한 경로 설정
                                 .requestMatchers(SWAGGER_WHITELIST).permitAll()
-//                                .requestMatchers(HttpMethod.POST, "/api/token").permitAll()
-//                                .requestMatchers(HttpMethod.POST, "/user", "/login").permitAll()
-//                                .requestMatchers(HttpMethod.GET, "/api/posts", "/api/posts/{id}").permitAll()
-//                                //그 외 /api/** 모든 경로는 인증 필요
-//                                .requestMatchers("/api/**").authenticated()
-                                // 나머지 경로 임시로 모두 접근 가능
-                                .anyRequest().permitAll()
+                                // GET 요청 permitAll
+                                .requestMatchers(HttpMethod.GET, "/api/token/initial-token").permitAll()
+                                .requestMatchers(HttpMethod.GET, "/api/*/posts").permitAll()
+                                .requestMatchers(HttpMethod.GET, "/api/*/posts/*").permitAll()
+                                .requestMatchers(HttpMethod.GET, "/api/*/availability").permitAll()
+                                // POST 요청 permitAll
+                                .requestMatchers(HttpMethod.POST, "/api/users/signup").permitAll()
+                                .requestMatchers(HttpMethod.POST, "/api/users/login").permitAll()
+                                .requestMatchers(HttpMethod.POST, "/api/users/logout").permitAll()
+                                .requestMatchers(HttpMethod.POST, "/api/token/new-token").permitAll()
+                                // 나머지는 인증 필요
+                                .anyRequest().authenticated()
                         // 그 외의 모든 요청은 USER 또는 ADMIN 권한을 가진 사용자만 접근 가능. 임시로 주석. 나중에 적용
 //                                .anyRequest().hasAnyAuthority("USER", "ADMIN")
 

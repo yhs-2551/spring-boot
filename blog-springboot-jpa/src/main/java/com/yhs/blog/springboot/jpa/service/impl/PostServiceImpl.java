@@ -29,6 +29,7 @@ public class PostServiceImpl implements PostService {
     private final TokenProvider tokenProvider;
     private final FeaturedImageRepository featuredImageRepository;
     private final TagRepository tagRepository;
+    private final PostTagRepository postTagRepository;
     private final S3Service s3Service;
 
     @Override
@@ -47,9 +48,30 @@ public class PostServiceImpl implements PostService {
         return new PostResponse(post);
     }
 
+    @Transactional
     @Override
     public void deletePostByPostId(Long postId) {
+        Post post = postRepository.findById(postId)
+                .orElseThrow(() -> new RuntimeException("Post not found with id " + postId));
+        Long userId = post.getUser().getId();
+
+        // 삭제될 포스트의 태그 정보 미리 저장
+        List<Long> postTagIds = postTagRepository.findTagIdsByPostId(postId);
+
+        // Post를 삭제하면서 cascade효과로 인해 관련된 PostTag 삭제.
         postRepository.deleteById(postId);
+
+        // 해당 사용자와 포스트에서만 사용된 태그 삭제
+        if (!postTagIds.isEmpty()) {
+            tagRepository.deleteUnusedTags(postTagIds, postId, userId);
+        }
+
+        // tag 먼저 삭제하고 posttag를 삭제하면,  외래키 오류나고,
+        // posttag 먼저 삭제하고 tag를 삭제하면 tag에서 PostTag 엔티티 관련된 JPQL Query문 실행 시 posttag가 영속성 컨텍스트에서
+        // 삭제되었기 PostTag엔티티 관련된 JPQL실행이 제대로 되지 않아서이다.
+
+
+
     }
 
 
@@ -75,7 +97,7 @@ public class PostServiceImpl implements PostService {
             postRepository.save(post);
 
             // s3 Temp 파일 관련 작업은 비동기로 처리. 사용자에게 빠르게 응답하기 위함
-            s3Service.processCreatePostS3TempOperation(postRequest);
+            s3Service.processCreatePostS3TempOperation(postRequest, user.getUserIdentifier());
 
             return new PostResponse(post);
 
@@ -86,7 +108,8 @@ public class PostServiceImpl implements PostService {
 
     @Transactional
     @Override
-    public Post updatePostByPostId(Long postId, Long userId, PostUpdateRequest postUpdateRequest) {
+    public Post updatePostByPostId(Long postId, Long userId,
+                                   PostUpdateRequest postUpdateRequest) {
 
         User user = userService.findUserById(userId);
 
@@ -101,9 +124,14 @@ public class PostServiceImpl implements PostService {
 
         if (postUpdateRequest.getEditPageDeletedTags() != null && !postUpdateRequest.getEditPageDeletedTags().isEmpty()) {
 
+            log.info("gdgdgd {} >>>> ", postUpdateRequest.getEditPageDeletedTags());
+
             List<Tag> unusedTags =
                     tagRepository.findUnusedTagsNotUsedByOtherPostsAndOtherUsers(postUpdateRequest.getEditPageDeletedTags(), postId, userId);
 
+            log.info("unusedTags입니다다아아아아아아 " +  unusedTags);
+            log.info("postId {} ", postId);
+            log.info("userId {} >>>> ", userId);
             tagRepository.deleteAll(unusedTags);
         }
 
@@ -111,7 +139,7 @@ public class PostServiceImpl implements PostService {
         FeaturedImage featuredImage = processFeaturedImage(postUpdateRequest.getFeaturedImage());
 
         post.update(category, postUpdateRequest.getTitle(), postUpdateRequest.getContent(), newFiles, newPostTags, Post.PostStatus.valueOf(postUpdateRequest.getPostStatus().toUpperCase()), Post.CommentsEnabled.valueOf(postUpdateRequest.getCommentsEnabled().toUpperCase()), featuredImage);
-        s3Service.processUpdatePostS3TempOperation(postUpdateRequest);
+        s3Service.processUpdatePostS3TempOperation(postUpdateRequest, user.getUserIdentifier());
         return postRepository.save(post);
     }
 

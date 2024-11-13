@@ -28,7 +28,7 @@ public class User implements UserDetails {
     private Long id;
 
     @Column(nullable = false, length = 50, unique = true)
-    private String username;
+    private String userName;
 
     @Column(nullable = false, length = 50, unique = true)
     private String userIdentifier;
@@ -111,13 +111,13 @@ public class User implements UserDetails {
                 UserRole role, String auth) {
         this.email = email;
         this.password = password;
-        this.username = username;
+        this.userName = username;
         this.userIdentifier = userIdentifier;
         this.role = role != null ? role : UserRole.USER;
     }
 
     public User update(String username) {
-        this.username = username;
+        this.userName = username;
         return this;
     }
 
@@ -127,7 +127,7 @@ public class User implements UserDetails {
 
     @Override
     public String getUsername() {
-        return username;
+        return userName;
     }
 
     @Override

@@ -6,7 +6,8 @@ import com.yhs.blog.springboot.jpa.dto.CategoryResponse;
 import java.util.List;
 
 public interface CategoryService {
-    List<CategoryResponse> createCategory(CategoryRequestPayLoad categoryRequestPayLoad);
-    List<CategoryResponse> getAllCategoriesWithChildrenByUserId();
+    List<CategoryResponse> createCategory(CategoryRequestPayLoad categoryRequestPayLoad,
+                                          String userIdentifier);
+    List<CategoryResponse> getAllCategoriesWithChildrenByUserId(String userIdentifier);
 
 }

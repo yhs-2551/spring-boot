@@ -19,6 +19,7 @@ public interface PostService {
 
     void deletePostByPostId(Long postId);
 
-    Post updatePostByPostId(Long postId, Long userId, PostUpdateRequest postUpdateRequest);
+    Post updatePostByPostId(Long postI, Long userId,
+                            PostUpdateRequest postUpdateRequest);
 
 }
