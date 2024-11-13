@@ -45,6 +45,9 @@ public class CategoryController {
         List<CategoryResponse> categoryResponse =
                 categoryService.createCategory(categoryRequestPayLoad, userIdentifier);
 
+        log.info("categoryResponse >>>>>>> " + categoryResponse);
+
+
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(new SuccessResponse<List<CategoryResponse>>(categoryResponse, "Success " +
                         "create new category."));

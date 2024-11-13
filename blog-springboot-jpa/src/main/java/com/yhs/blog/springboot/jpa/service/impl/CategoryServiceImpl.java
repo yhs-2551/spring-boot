@@ -52,6 +52,17 @@ public class CategoryServiceImpl implements CategoryService {
         for (CategoryRequest categoryRequest : categoryRequestPayLoad.getCategories()) {
             savedCategories.add(saveCategoryHierarchy(userIdentifier, categoryRequest, orderIndex));
             orderIndex++;
+
+        }
+
+        // In service
+        for (Category category : savedCategories) {
+            log.info("Category saved: id={}, name={}, parentId={}, childrenCount={}",
+                    category.getId(),
+                    category.getName(),
+                    category.getParent() != null ? category.getParent().getId() : "null",
+                    category.getChildren() != null ? category.getChildren().size() : 0
+            );
         }
         // DTO로 변환. 변환 중에 Map을 이용해 캐시 사용
         Map<String, CategoryResponse> cache = new HashMap<>();
@@ -130,13 +141,19 @@ public class CategoryServiceImpl implements CategoryService {
     // 새롭게 요청으로 추가된 최상위 카테고리 저장 및 자식은 재귀적으로 저장.
     private Category createSingleCategory(User user, CategoryRequest categoryRequest,
                                           long orderIndex) {
-
+        Category parentCategory;
+        if (categoryRequest.getCategoryUuidParent() != null) {
+             parentCategory = categoryRepository.findById(categoryRequest.getCategoryUuidParent())
+                    .orElse(null);
+        } else {
+            parentCategory = null;
+        }
 
         Category category = Category.builder()
                 .id(categoryRequest.getCategoryUuid())
                 .user(user)
                 .name(categoryRequest.getName())
-                .parent(null) // 초기에 부모 설정은 null
+                .parent(parentCategory) // 초기에 부모 설정은 null
                 .orderIndex(orderIndex)
                 .children(Collections.emptyList()) // 초기에는 빈 리스트로 설정
                 .build();
@@ -187,7 +204,6 @@ public class CategoryServiceImpl implements CategoryService {
             category.setChildren(newChildren);
             category.setOrderIndex(orderIndex);
 
-
         } else {
 
             User user = userRepository.findByUserIdentifier(userIdentifier)
@@ -195,7 +211,9 @@ public class CategoryServiceImpl implements CategoryService {
 
             // 새로운 부모 및 자식 카테고리 생성
             category = createSingleCategory(user, categoryRequest, orderIndex);
+
         }
+
 
         // 새롭게 생성 시 또는 수정 시 한번의 save 메서드로 처리 CASCADE.PERSIST를 이용하여 부모가 저장될때 자식도 같이 저장되게 처리
         return categoryRepository.save(category);
