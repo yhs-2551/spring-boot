@@ -11,9 +11,8 @@ import java.util.Set;
 import java.util.UUID;
 
 @Entity
-@Table(name = "Categories", uniqueConstraints = {
-        @UniqueConstraint(columnNames = {"name", "user_id"})
-})
+@Table(name = "Categories", uniqueConstraints = {@UniqueConstraint(columnNames = {"name", "user_id"}),
+}, indexes = {@Index(name = "idx_user_id_name", columnList = "name, user_id")})
 @EntityListeners(AuditingEntityListener.class)
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
@@ -37,7 +36,8 @@ public class Category extends BaseEntity {
 
     @ToString.Exclude
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "parent_id", nullable = true) // 여러 자식이 동일한 부모 id값을 가질 수 있기 때문에 unique = true 제약조건을 걸지 않음.
+    @JoinColumn(name = "parent_id", nullable = true)
+    // 여러 자식이 동일한 부모 id값을 가질 수 있기 때문에 unique = true 제약조건을 걸지 않음.
     private Category parent;
 
     @ToString.Exclude

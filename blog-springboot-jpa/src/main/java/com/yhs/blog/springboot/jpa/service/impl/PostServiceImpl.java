@@ -83,8 +83,14 @@ public class PostServiceImpl implements PostService {
             log.info("PostRequest >>>> " + postRequest);
             Long userId = TokenUtil.extractUserIdFromRequestToken(request, tokenProvider);
             User user = userService.findUserById(userId);
-            Category category = postRequest.getCategoryId() != null ?
-                    categoryRepository.findById(postRequest.getCategoryId()).orElse(null) : null;
+
+            Category category;
+            if (postRequest.getCategoryName() != null) {
+                category = categoryRepository.findByNameAndUserId(postRequest.getCategoryName(), userId)
+                        .orElse(null);
+            } else {
+                category = null;
+            }
 
             FeaturedImage featuredImage = processFeaturedImage(postRequest.getFeaturedImage());
 
@@ -115,23 +121,23 @@ public class PostServiceImpl implements PostService {
 
         Post post = postRepository.findById(postId)
                 .orElseThrow(() -> new RuntimeException("Post not found with id " + postId));
-        Category category = postUpdateRequest.getCategoryId() != null ?
-                categoryRepository.findById(postUpdateRequest.getCategoryId()).orElse(null) :
-                null;
+
+        Category category;
+        if (postUpdateRequest.getCategoryName() != null) {
+            category = categoryRepository.findByNameAndUserId(postUpdateRequest.getCategoryName(), userId)
+                    .orElse(null);
+        } else {
+            category = null;
+        }
 
         Set<File> newFiles = processFiles(post, postUpdateRequest.getFiles(), user);
         List<PostTag> newPostTags = processTags(post, postUpdateRequest.getTags(), user);
 
         if (postUpdateRequest.getEditPageDeletedTags() != null && !postUpdateRequest.getEditPageDeletedTags().isEmpty()) {
 
-            log.info("gdgdgd {} >>>> ", postUpdateRequest.getEditPageDeletedTags());
-
             List<Tag> unusedTags =
                     tagRepository.findUnusedTagsNotUsedByOtherPostsAndOtherUsers(postUpdateRequest.getEditPageDeletedTags(), postId, userId);
 
-            log.info("unusedTags입니다다아아아아아아 " +  unusedTags);
-            log.info("postId {} ", postId);
-            log.info("userId {} >>>> ", userId);
             tagRepository.deleteAll(unusedTags);
         }
 

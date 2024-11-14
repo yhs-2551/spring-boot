@@ -18,6 +18,6 @@ public interface CategoryRepository extends JpaRepository<Category, String> {
     @Query("SELECT c FROM Category c LEFT JOIN FETCH c.children ch WHERE c.parent IS NULL AND c.user.id = :userId ORDER BY c.orderIndex ASC, ch.orderIndex ASC")
     List<Category> findAllWithChildrenByUserId(@Param("userId") Long userId);
 
-    Optional<Category> findByIdAndUserId(String id, Long userId);
+    Optional<Category> findByNameAndUserId(String name, Long userId);
 
 }

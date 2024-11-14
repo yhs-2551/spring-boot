@@ -31,12 +31,10 @@ public class CategoryServiceImpl implements CategoryService {
     private final UserService userService;
     private final TokenProvider tokenProvider;
     private final HttpServletRequest request;
-    private final UserRepository userRepository;
 
     @Override
     @Transactional
-    public List<CategoryResponse> createCategory(CategoryRequestPayLoad categoryRequestPayLoad,
-                                                 String userIdentifier) {
+    public List<CategoryResponse> createCategory(CategoryRequestPayLoad categoryRequestPayLoad) {
 
         log.info("categoryRequestPayLoad >>>>>>> " + categoryRequestPayLoad);
 
@@ -50,7 +48,7 @@ public class CategoryServiceImpl implements CategoryService {
         long orderIndex = 0L; // 프론트측에서 요청이 오는 순서대로 orderIndex 값을 설정한다.
         // 최종적으로 프론트에서 설정한 카테고리 구조를 그대로 화면에 보여주기 위함.
         for (CategoryRequest categoryRequest : categoryRequestPayLoad.getCategories()) {
-            savedCategories.add(saveCategoryHierarchy(userIdentifier, categoryRequest, orderIndex));
+            savedCategories.add(saveCategoryHierarchy(categoryRequest, orderIndex));
             orderIndex++;
 
         }
@@ -71,27 +69,21 @@ public class CategoryServiceImpl implements CategoryService {
                 .collect(Collectors.toList());
     }
 
-
     @Override
     @Transactional(readOnly = true)
-    public List<CategoryResponse> getAllCategoriesWithChildrenByUserId(String userIdentifier) {
+    public List<CategoryResponse> getAllCategoriesWithChildrenByUserId() {
 
-        Optional<User> userOptional = userRepository.findByUserIdentifier(userIdentifier);
+        Long userId = TokenUtil.extractUserIdFromRequestToken(request, tokenProvider);
 
-        if (userOptional.isPresent()) {
-            Long userId = userOptional.get().getId();
+        List<Category> categories = categoryRepository.findAllWithChildrenByUserId(userId);
 
-            List<Category> categories = categoryRepository.findAllWithChildrenByUserId(userId);
-
-            if (categories.isEmpty()) {
-                log.info("No categories found for user ID: {}", userId);
-                return Collections.emptyList();  // 불변 빈 배열 반환
-            }
-            return categories.stream().map(this::convertToResponseDTO).collect(Collectors.toList());
-
-        } else {
-            throw new ResourceNotFoundException("User not found with user identifier: " + userIdentifier);
+        if (categories.isEmpty()) {
+            log.info("No categories found for user ID: {}", userId);
+            return Collections.emptyList();  // 불변 빈 배열 반환
         }
+        return categories.stream().map(this::convertToResponseDTO).collect(Collectors.toList());
+
+
     }
 
 
@@ -126,12 +118,17 @@ public class CategoryServiceImpl implements CategoryService {
         }
     }
 
-    private List<Category> saveChildrenCategories(String userIdentifier,
-                                                  List<CategoryRequest> childrenRequests) {
+
+    private User extractUserFromToken() {
+        Long userId = TokenUtil.extractUserIdFromRequestToken(request, tokenProvider);
+        return userService.findUserById(userId);
+    }
+
+    private List<Category> saveChildrenCategories(List<CategoryRequest> childrenRequests) {
         long childOrderIndex = 0;
         List<Category> childCategories = new ArrayList<>();
         for (CategoryRequest childRequest : childrenRequests) {
-            childCategories.add(saveCategoryHierarchy(userIdentifier, childRequest,
+            childCategories.add(saveCategoryHierarchy(childRequest,
                     childOrderIndex));
             childOrderIndex++;
         }
@@ -139,9 +136,13 @@ public class CategoryServiceImpl implements CategoryService {
     }
 
     // 새롭게 요청으로 추가된 최상위 카테고리 저장 및 자식은 재귀적으로 저장.
-    private Category createSingleCategory(User user, CategoryRequest categoryRequest,
+    private Category createSingleCategory(CategoryRequest categoryRequest,
                                           long orderIndex) {
+
+        User user = extractUserFromToken();
+
         Category parentCategory;
+
         if (categoryRequest.getCategoryUuidParent() != null) {
              parentCategory = categoryRepository.findById(categoryRequest.getCategoryUuidParent())
                     .orElse(null);
@@ -163,7 +164,7 @@ public class CategoryServiceImpl implements CategoryService {
             long childOrderIndex = 0;
             List<Category> childCategories = new ArrayList<>();
             for (CategoryRequest childRequest : categoryRequest.getChildren()) {
-                Category childCategory = createSingleCategory(user, childRequest, childOrderIndex);
+                Category childCategory = createSingleCategory(childRequest, childOrderIndex);
                 childCategory.setParent(category); // 자식에서 부모 설정
                 childCategories.add(childCategory);
                 childOrderIndex++;
@@ -177,7 +178,7 @@ public class CategoryServiceImpl implements CategoryService {
         return category;// 최종적으로 부모 카테고리 리턴
     }
 
-    private Category saveCategoryHierarchy(String userIdentifier, CategoryRequest categoryRequest,
+    private Category saveCategoryHierarchy(CategoryRequest categoryRequest,
                                            long orderIndex) {
 
         // Check if the category exists
@@ -196,7 +197,7 @@ public class CategoryServiceImpl implements CategoryService {
 
             // Set new children categories with incremented orderIndex
             List<Category> newChildren = categoryRequest.getChildren() != null && !categoryRequest.getChildren().isEmpty()
-                    ? saveChildrenCategories(userIdentifier, categoryRequest.getChildren())
+                    ? saveChildrenCategories(categoryRequest.getChildren())
                     : Collections.emptyList();
 
 
@@ -205,12 +206,8 @@ public class CategoryServiceImpl implements CategoryService {
             category.setOrderIndex(orderIndex);
 
         } else {
-
-            User user = userRepository.findByUserIdentifier(userIdentifier)
-                    .orElseThrow(() -> new ResourceNotFoundException("User not found with user identifier: " + userIdentifier));
-
             // 새로운 부모 및 자식 카테고리 생성
-            category = createSingleCategory(user, categoryRequest, orderIndex);
+            category = createSingleCategory(categoryRequest, orderIndex);
 
         }
 

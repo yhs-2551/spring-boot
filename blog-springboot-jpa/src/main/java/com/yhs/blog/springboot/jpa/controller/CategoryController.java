@@ -43,7 +43,7 @@ public class CategoryController {
         }
 
         List<CategoryResponse> categoryResponse =
-                categoryService.createCategory(categoryRequestPayLoad, userIdentifier);
+                categoryService.createCategory(categoryRequestPayLoad);
 
         log.info("categoryResponse >>>>>>> " + categoryResponse);
 
@@ -71,7 +71,7 @@ public class CategoryController {
                     .body(new ErrorResponse("You are not authorized to get categories.", 403));
         }
 
-        List<CategoryResponse> categories = categoryService.getAllCategoriesWithChildrenByUserId(userIdentifier);
+        List<CategoryResponse> categories = categoryService.getAllCategoriesWithChildrenByUserId();
 
         return ResponseEntity.status(HttpStatus.OK)
                 .body(new SuccessResponse<List<CategoryResponse>>(categories, "Success " +
