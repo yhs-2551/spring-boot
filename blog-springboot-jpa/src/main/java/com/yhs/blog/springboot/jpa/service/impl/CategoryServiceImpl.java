@@ -53,15 +53,6 @@ public class CategoryServiceImpl implements CategoryService {
 
         }
 
-        // In service
-        for (Category category : savedCategories) {
-            log.info("Category saved: id={}, name={}, parentId={}, childrenCount={}",
-                    category.getId(),
-                    category.getName(),
-                    category.getParent() != null ? category.getParent().getId() : "null",
-                    category.getChildren() != null ? category.getChildren().size() : 0
-            );
-        }
         // DTO로 변환. 변환 중에 Map을 이용해 캐시 사용
         Map<String, CategoryResponse> cache = new HashMap<>();
         return savedCategories.stream()
@@ -99,20 +90,37 @@ public class CategoryServiceImpl implements CategoryService {
                                         subCategory.getId(),
                                         subCategory.getName(),
                                         category.getId(),
-                                        Collections.emptyList())) // 2단계 자식은 자식이 존재하지 않으니 빈배열로
-                                .collect(Collectors.toList()) : Collections.emptyList() // 최상위 자식이 없으면 빈배열로 반환
-                // 자식이 없으면 빈배열로 반환
+                                        Collections.emptyList(), // 2단계 자식은 자식이 존재하지 않으니 빈배열로
+                                        0, // 2단계 자식은 자식이 존재하지 않으니 값은 항상 0
+                                        subCategory.getPosts() != null && !subCategory.getPosts().isEmpty() ?
+                                                subCategory.getPosts().size() : 0
+                                ))
+                                .collect(Collectors.toList()) : Collections.emptyList(), // 최상위에자식이 없으면 빈배열로 반환
+                category.getChildren() != null && !category.getChildren().isEmpty() ?
+                        category.getChildren().size() : 0,
+                category.getPosts() != null && !category.getPosts().isEmpty() ?
+                        category.getPosts().size() : 0
+
         );
     }
-
 
 
     @Transactional
     private void deleteCategory(String categoryUuid) {
         Optional<Category> categoryOptional = categoryRepository.findById(categoryUuid);
         if (categoryOptional.isPresent()) {
+
+            Category category = categoryOptional.get();
+
+            if (category.getChildren() != null && !category.getChildren().isEmpty()) {
+                throw new IllegalStateException("Category with UUID: " + categoryUuid + " cannot be deleted because it has child categories.");
+            }
+            if (category.getPosts() != null && !category.getPosts().isEmpty()) {
+                throw new IllegalStateException("Category with UUID: " + categoryUuid + " cannot be deleted because it has posts.");
+            }
             log.info("Deleting category with UUID: {}", categoryUuid);
-            categoryRepository.delete(categoryOptional.get());
+            categoryRepository.delete(category);
+
         } else {
             throw new ResourceNotFoundException("Category not found for UUID: " + categoryUuid);
         }
@@ -144,7 +152,7 @@ public class CategoryServiceImpl implements CategoryService {
         Category parentCategory;
 
         if (categoryRequest.getCategoryUuidParent() != null) {
-             parentCategory = categoryRepository.findById(categoryRequest.getCategoryUuidParent())
+            parentCategory = categoryRepository.findById(categoryRequest.getCategoryUuidParent())
                     .orElse(null);
         } else {
             parentCategory = null;

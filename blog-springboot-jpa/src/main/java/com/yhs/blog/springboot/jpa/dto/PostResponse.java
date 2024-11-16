@@ -17,8 +17,8 @@ public class PostResponse {
 
     private String userName;        // 작성자명
 
-    private String categoryName;
-    // 카테고리 ID
+    private String categoryName;  // 카테고리 이름
+
     private String title;         // 게시글 제목
 
     private String content;       // 게시글 내용

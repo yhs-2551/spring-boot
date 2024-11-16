@@ -34,18 +34,16 @@ public class Category extends BaseEntity {
     @Column(nullable = false, length = 100)
     private String name;
 
-    @ToString.Exclude
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "parent_id", nullable = true)
     // 여러 자식이 동일한 부모 id값을 가질 수 있기 때문에 unique = true 제약조건을 걸지 않음.
     private Category parent;
 
-    @ToString.Exclude
     @OneToMany(mappedBy = "parent", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
     private List<Category> children;
 
-//    @OneToMany(mappedBy = "category", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
-//    private Set<Post> posts;
+    @OneToMany(mappedBy = "category", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+    private Set<Post> posts;
 
     @LastModifiedDate
     @Column(name = "updated_at")

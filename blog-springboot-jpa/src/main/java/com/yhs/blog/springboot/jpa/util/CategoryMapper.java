@@ -26,7 +26,11 @@ public class CategoryMapper {
                 category.getChildren() != null && (!category.getChildren().isEmpty()) ?
                         category.getChildren().stream()
                                 .map(child -> toDTO(child, cache))
-                                .collect(Collectors.toList()) : Collections.emptyList()
+                                .collect(Collectors.toList()) : Collections.emptyList(),
+                category.getChildren() != null && !category.getChildren().isEmpty() ?
+                        category.getChildren().size() : 0,
+                category.getPosts() != null && !category.getPosts().isEmpty() ?
+                        category.getPosts().size() : 0
         );
 
         cache.put(category.getId(), dto);
