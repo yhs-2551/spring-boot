@@ -4,10 +4,10 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.yhs.blog.springboot.jpa.dto.PostRequest;
-import com.yhs.blog.springboot.jpa.dto.PostUpdateRequest;
-import com.yhs.blog.springboot.jpa.entity.Post;
-import com.yhs.blog.springboot.jpa.repository.PostRepository;
+import com.yhs.blog.springboot.jpa.domain.post.dto.request.PostRequest;
+import com.yhs.blog.springboot.jpa.domain.post.dto.request.PostUpdateRequest;
+import com.yhs.blog.springboot.jpa.domain.post.entity.Post;
+import com.yhs.blog.springboot.jpa.domain.post.repository.PostRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;

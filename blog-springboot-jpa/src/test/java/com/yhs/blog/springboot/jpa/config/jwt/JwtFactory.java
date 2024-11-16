@@ -1,5 +1,6 @@
 package com.yhs.blog.springboot.jpa.config.jwt;
 
+import com.yhs.blog.springboot.jpa.security.jwt.config.JwtProperties;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
 import lombok.Builder;
@@ -12,7 +13,6 @@ import java.util.Date;
 import java.util.Map;
 
 import static java.util.Collections.emptyMap;
-import static org.junit.jupiter.api.Assertions.*;
 
 @Getter
 public class JwtFactory {

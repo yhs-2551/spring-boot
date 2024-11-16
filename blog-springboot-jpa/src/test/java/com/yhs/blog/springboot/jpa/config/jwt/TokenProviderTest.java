@@ -1,7 +1,9 @@
 package com.yhs.blog.springboot.jpa.config.jwt;
 
-import com.yhs.blog.springboot.jpa.entity.User;
-import com.yhs.blog.springboot.jpa.repository.UserRepository;
+import com.yhs.blog.springboot.jpa.domain.user.entity.User;
+import com.yhs.blog.springboot.jpa.domain.user.repository.UserRepository;
+import com.yhs.blog.springboot.jpa.security.jwt.config.JwtProperties;
+import com.yhs.blog.springboot.jpa.security.jwt.provider.TokenProvider;
 import io.jsonwebtoken.Jwts;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -11,7 +13,6 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.transaction.annotation.Transactional;
 
-import javax.crypto.SecretKey;
 import java.time.Duration;
 import java.util.Date;
 import java.util.Map;

@@ -2,12 +2,12 @@ package com.yhs.blog.springboot.jpa.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.yhs.blog.springboot.jpa.config.jwt.JwtFactory;
-import com.yhs.blog.springboot.jpa.config.jwt.JwtProperties;
-import com.yhs.blog.springboot.jpa.entity.RefreshToken;
-import com.yhs.blog.springboot.jpa.entity.User;
-import com.yhs.blog.springboot.jpa.repository.RefreshTokenRepository;
-import com.yhs.blog.springboot.jpa.repository.UserRepository;
-import com.yhs.blog.springboot.jpa.service.TokenService;
+import com.yhs.blog.springboot.jpa.security.jwt.config.JwtProperties;
+import com.yhs.blog.springboot.jpa.domain.token.entity.RefreshToken;
+import com.yhs.blog.springboot.jpa.domain.user.entity.User;
+import com.yhs.blog.springboot.jpa.domain.token.repository.RefreshTokenRepository;
+import com.yhs.blog.springboot.jpa.domain.user.repository.UserRepository;
+import com.yhs.blog.springboot.jpa.security.jwt.service.TokenService;
 import jakarta.servlet.http.Cookie;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;

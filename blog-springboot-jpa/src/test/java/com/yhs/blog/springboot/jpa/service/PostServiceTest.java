@@ -1,14 +1,14 @@
 //package com.yhs.blog.springboot.jpa.service;
 //
-//import com.yhs.blog.springboot.jpa.dto.PostRequest;
-//import com.yhs.blog.springboot.jpa.dto.PostResponse;
-//import com.yhs.blog.springboot.jpa.entity.Post;
-//import com.yhs.blog.springboot.jpa.entity.User;
-//import com.yhs.blog.springboot.jpa.repository.CategoryRepository;
-//import com.yhs.blog.springboot.jpa.repository.PostRepository;
-//import com.yhs.blog.springboot.jpa.service.impl.PostServiceImpl;
-//import com.yhs.blog.springboot.jpa.service.impl.UserServiceImpl;
-//import com.yhs.blog.springboot.jpa.util.PostMapper;
+//import com.yhs.blog.springboot.jpa.dto.post.request.PostRequest;
+//import com.yhs.blog.springboot.jpa.dto.post.response.PostResponse;
+//import com.yhs.blog.springboot.jpa.domain.post.entity.Post;
+//import com.yhs.blog.springboot.jpa.domain.user.entity.User;
+//import com.yhs.blog.springboot.jpa.domain.category.repository.CategoryRepository;
+//import com.yhs.blog.springboot.jpa.domain.post.repository.PostRepository;
+//import com.yhs.blog.springboot.jpa.service.post.impl.PostServiceImpl;
+//import com.yhs.blog.springboot.jpa.service.user.impl.UserServiceImpl;
+//import com.yhs.blog.springboot.jpa.domain.post.mapper.PostMapper;
 //import org.junit.jupiter.api.DisplayName;
 //import org.junit.jupiter.api.Test;
 //import org.junit.jupiter.api.extension.ExtendWith;
