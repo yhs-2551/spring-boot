@@ -55,7 +55,7 @@ public class CategoryServiceImpl implements CategoryService {
         // DTO로 변환. 변환 중에 Map을 이용해 캐시 사용
         Map<String, CategoryResponse> cache = new HashMap<>();
         return savedCategories.stream()
-                .map(category -> CategoryMapper.toDTO(category, cache))
+                .map(category -> CategoryMapper.from(category, cache))
                 .collect(Collectors.toList());
     }
 
@@ -71,38 +71,10 @@ public class CategoryServiceImpl implements CategoryService {
             log.info("No categories found for user ID: {}", userId);
             return Collections.emptyList();  // 불변 빈 배열 반환
         }
-        return categories.stream().map(this::convertToResponseDTO).collect(Collectors.toList());
+        return categories.stream().map(CategoryMapper::of).collect(Collectors.toList());
 
 
     }
-
-
-    private CategoryResponse convertToResponseDTO(Category category) {
-
-        return new CategoryResponse(
-                category.getId(),
-                category.getName(),
-                null,
-                category.getChildren() != null && !category.getChildren().isEmpty() ?
-                        category.getChildren().stream()
-                                .map(subCategory -> new CategoryResponse(
-                                        subCategory.getId(),
-                                        subCategory.getName(),
-                                        category.getId(),
-                                        Collections.emptyList(), // 2단계 자식은 자식이 존재하지 않으니 빈배열로
-                                        0, // 2단계 자식은 자식이 존재하지 않으니 값은 항상 0
-                                        subCategory.getPosts() != null && !subCategory.getPosts().isEmpty() ?
-                                                subCategory.getPosts().size() : 0
-                                ))
-                                .collect(Collectors.toList()) : Collections.emptyList(), // 최상위에자식이 없으면 빈배열로 반환
-                category.getChildren() != null && !category.getChildren().isEmpty() ?
-                        category.getChildren().size() : 0,
-                category.getPosts() != null && !category.getPosts().isEmpty() ?
-                        category.getPosts().size() : 0
-
-        );
-    }
-
 
     @Transactional
     private void deleteCategory(String categoryUuid) {
@@ -126,11 +98,6 @@ public class CategoryServiceImpl implements CategoryService {
     }
 
 
-    private User extractUserFromToken() {
-        Long userId = TokenUtil.extractUserIdFromRequestToken(request, tokenProvider);
-        return userService.findUserById(userId);
-    }
-
     private List<Category> saveChildrenCategories(List<CategoryRequest> childrenRequests) {
         long childOrderIndex = 0;
         List<Category> childCategories = new ArrayList<>();
@@ -146,7 +113,8 @@ public class CategoryServiceImpl implements CategoryService {
     private Category createSingleCategory(CategoryRequest categoryRequest,
                                           long orderIndex) {
 
-        User user = extractUserFromToken();
+        Long userId = TokenUtil.extractUserIdFromRequestToken(request, tokenProvider);
+        User user = userService.findUserById(userId);
 
         Category parentCategory;
 

@@ -1,5 +1,6 @@
 package com.yhs.blog.springboot.jpa.domain.post.service.impl;
 
+import com.yhs.blog.springboot.jpa.domain.file.mapper.FileMapper;
 import com.yhs.blog.springboot.jpa.security.jwt.provider.TokenProvider;
 import com.yhs.blog.springboot.jpa.domain.post.dto.request.FeaturedImageRequest;
 import com.yhs.blog.springboot.jpa.domain.file.dto.request.FileRequest;
@@ -81,11 +82,9 @@ public class PostServiceImpl implements PostService {
         }
 
         // tag 먼저 삭제하고 posttag를 삭제하면,  외래키 오류나고,
-        // posttag 먼저 삭제하고 tag를 삭제하면 tag에서 PostTag 엔티티 관련된 JPQL Query문 실행 시 posttag가 영속성 컨텍스트에서
-        // 삭제되었기 PostTag엔티티 관련된 JPQL실행이 제대로 되지 않아서이다.
-
-
-
+        // 외래키 오류를 피하기 위해 posttag 먼저 삭제하고 tag를 삭제하면 tag에서 PostTag 엔티티 관련된 JPQL Query문 실행 시 posttag가
+        // 영속성 컨텍스트에서 삭제되었기 PostTag엔티티 관련된 JPQL실행이 제대로 되지 않아서이다.
+        // 따라서 최종적으로 위쪽 방식으로 사용한다.
     }
 
 
@@ -110,7 +109,8 @@ public class PostServiceImpl implements PostService {
 
             // 포스트 생성 시 user를 넘겨주면 외래키 연관관계 설정으로 인해 posts테이블에 user_id 값이 자동으로 들어간다.
             // category, featuredImage또한 마찬가지.
-            Post post = PostMapper.toEntity(user, category, postRequest.getTitle(), postRequest.getContent(), postRequest.getPostStatus(), postRequest.getCommentsEnabled(), featuredImage);
+            Post post = PostMapper.create(user, category, postRequest.getTitle(), postRequest.getContent(),
+                    postRequest.getPostStatus(), postRequest.getCommentsEnabled(), featuredImage);
             post.setFiles(processFiles(post, postRequest.getFiles(), user));
             post.setPostTags(processTags(post, postRequest.getTags(), user));
 
@@ -173,20 +173,7 @@ public class PostServiceImpl implements PostService {
                 // 최종적으로 post를 저장시에 aws 파일 저장 위치를 temp -> final로 변경하기 때문에 final로 변경하는 로직 추가.
                 // 따라서 db에 final 경로로 저장한다.
                 String updatedFileUrl = fileRequest.getFileUrl().replace("/temp/", "/final/");
-                File file = File.builder()
-                        .fileName(fileRequest.getFileName())
-                        .filetType(fileRequest.getFileType())
-                        .fileUrl(updatedFileUrl)
-                        .fileSize(fileRequest.getFileSize())
-                        .width(fileRequest.getFileType().startsWith("image/")
-                                ? (fileRequest.getWidth() != null ? fileRequest.getWidth() : null)
-                                : null)
-                        .height(fileRequest.getFileType().startsWith("image/")
-                                ? (fileRequest.getHeight() != null ? fileRequest.getHeight() : null)
-                                : null)
-                        .post(post)
-                        .user(user)
-                        .build();
+                File file = FileMapper.create(fileRequest, post, user, updatedFileUrl);
                 files.add(file);
             }
         }

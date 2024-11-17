@@ -46,7 +46,6 @@ public class User implements UserDetails {
     @Column(nullable = false, length = 100, unique = true)
     private String email;
 
-
     @CreatedDate
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
@@ -54,6 +53,11 @@ public class User implements UserDetails {
     @LastModifiedDate
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
+
+
+    public enum UserRole {
+        USER, ADMIN
+    }
 
     @OneToMany(mappedBy = "user", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<Post> posts;
@@ -81,7 +85,7 @@ public class User implements UserDetails {
     @Column(length = 10, nullable = false)
     private UserRole role = UserRole.USER;
 
-    
+
     // 권한 반환 SimpleGrantedAuthority는 GrantedAuthority의 구현체
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
@@ -112,6 +116,16 @@ public class User implements UserDetails {
         return true;
     }
 
+    @Override
+    public String getUsername() {
+        return userName;
+    }
+
+    @Override
+    public String getPassword() {
+        return password;
+    }
+
     @Builder
     public User(String email, String password, String username, String userIdentifier,
                 UserRole role, String auth) {
@@ -127,18 +141,5 @@ public class User implements UserDetails {
         return this;
     }
 
-    public enum UserRole {
-        USER, ADMIN
-    }
-
-    @Override
-    public String getUsername() {
-        return userName;
-    }
-
-    @Override
-    public String getPassword() {
-        return password;
-    }
 
 }

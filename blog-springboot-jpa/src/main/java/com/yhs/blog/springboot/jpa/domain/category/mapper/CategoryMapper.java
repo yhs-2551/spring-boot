@@ -9,7 +9,8 @@ import java.util.stream.Collectors;
 
 public class CategoryMapper {
 
-    public static CategoryResponse toDTO(Category category, Map<String, CategoryResponse> cache) {
+    public static CategoryResponse from(Category category,
+                                            Map<String, CategoryResponse> cache) {
         if (category == null) {
             return null;
         }
@@ -25,7 +26,7 @@ public class CategoryMapper {
                 category.getParent() != null ? category.getParent().getId() : null,
                 category.getChildren() != null && (!category.getChildren().isEmpty()) ?
                         category.getChildren().stream()
-                                .map(child -> toDTO(child, cache))
+                                .map(child -> from(child, cache))
                                 .collect(Collectors.toList()) : Collections.emptyList(),
                 category.getChildren() != null && !category.getChildren().isEmpty() ?
                         category.getChildren().size() : 0,
@@ -36,5 +37,33 @@ public class CategoryMapper {
         cache.put(category.getId(), dto);
         return dto;
     }
+
+
+    public static CategoryResponse of(Category category) {
+
+        return new CategoryResponse(
+                category.getId(),
+                category.getName(),
+                null,
+                category.getChildren() != null && !category.getChildren().isEmpty() ?
+                        category.getChildren().stream()
+                                .map(subCategory -> new CategoryResponse(
+                                        subCategory.getId(),
+                                        subCategory.getName(),
+                                        category.getId(),
+                                        Collections.emptyList(), // 2단계 자식은 자식이 존재하지 않으니 빈배열로
+                                        0, // 2단계 자식은 자식이 존재하지 않으니 값은 항상 0
+                                        subCategory.getPosts() != null && !subCategory.getPosts().isEmpty() ?
+                                                subCategory.getPosts().size() : 0
+                                ))
+                                .collect(Collectors.toList()) : Collections.emptyList(), // 최상위에자식이 없으면 빈배열로 반환
+                category.getChildren() != null && !category.getChildren().isEmpty() ?
+                        category.getChildren().size() : 0,
+                category.getPosts() != null && !category.getPosts().isEmpty() ?
+                        category.getPosts().size() : 0
+
+        );
+    }
+
 
 }

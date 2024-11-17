@@ -20,10 +20,10 @@ public class SwaggerConfig {
                                         .scheme("bearer")
                                         .bearerFormat("JWT")))
                 .addSecurityItem(new SecurityRequirement()  // 이 부분 추가
-                        .addList("bearerAuth"))
+                        .addList("bearerAuth")) // SecurityScheme 이름과 일치
                 .info(new Info()
                         .title("Blog API")
                         .version("1.0.0")  // 버전 업데이트
-                        .description("Blog API Documentation - November 2024")); // 설명 추가// SecurityScheme 이름과 일치
+                        .description("Blog API Documentation - November 2024"));
     }
 }

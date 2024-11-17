@@ -25,12 +25,9 @@ public class Tag {
     @OneToMany(mappedBy = "tag", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<PostTag> postTags;
 
-    @Builder
-    public Tag(String name) {
-        this.name = name;
-    }
-
     public static Tag create(String name) {
-        return Tag.builder().name(name).build();
+        Tag tag = new Tag();
+        tag.setName(name);
+        return tag;
     }
 }
