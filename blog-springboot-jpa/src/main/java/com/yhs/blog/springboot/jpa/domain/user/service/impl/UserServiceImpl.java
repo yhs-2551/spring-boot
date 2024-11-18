@@ -1,5 +1,6 @@
 package com.yhs.blog.springboot.jpa.domain.user.service.impl;
 
+import com.yhs.blog.springboot.jpa.security.dto.response.SignUpUserResponse;
 import com.yhs.blog.springboot.jpa.security.jwt.provider.TokenProvider;
 import com.yhs.blog.springboot.jpa.security.dto.request.SignUpUserRequest;
 import com.yhs.blog.springboot.jpa.domain.user.entity.User;
@@ -27,7 +28,7 @@ public class UserServiceImpl implements UserService {
 
 
     @Override
-    public Long createUser(SignUpUserRequest signUpUserRequest) {
+    public SignUpUserResponse createUser(SignUpUserRequest signUpUserRequest) {
         String userEmail = signUpUserRequest.getEmail();
 
         String userIdentifier;
@@ -50,7 +51,10 @@ public class UserServiceImpl implements UserService {
 //                    .role(User.UserRole.ADMIN) 일단 기본값인 user로 사용
                     .build();
 
-            return userRepository.save(user).getId();
+             User reponseUser = userRepository.save(user);
+             return new SignUpUserResponse(reponseUser.getId(), reponseUser.getUsername(),
+                     reponseUser.getUserIdentifier(), reponseUser.getEmail());
+
 
         } catch (Exception ex) {
             throw new UserCreationException("An error occurred while creating the user: " + ex.getMessage());

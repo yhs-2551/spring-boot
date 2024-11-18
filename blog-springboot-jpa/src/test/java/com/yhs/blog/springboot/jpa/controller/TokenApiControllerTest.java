@@ -1,7 +1,7 @@
 package com.yhs.blog.springboot.jpa.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.yhs.blog.springboot.jpa.config.jwt.JwtFactory;
+import com.yhs.blog.springboot.jpa.security.jwt.config.jwt.factory.JwtFactory;
 import com.yhs.blog.springboot.jpa.security.jwt.config.JwtProperties;
 import com.yhs.blog.springboot.jpa.domain.token.entity.RefreshToken;
 import com.yhs.blog.springboot.jpa.domain.user.entity.User;

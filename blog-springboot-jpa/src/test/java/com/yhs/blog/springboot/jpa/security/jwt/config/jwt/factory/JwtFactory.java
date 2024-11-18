@@ -1,4 +1,4 @@
-package com.yhs.blog.springboot.jpa.config.jwt;
+package com.yhs.blog.springboot.jpa.security.jwt.config.jwt.factory;
 
 import com.yhs.blog.springboot.jpa.security.jwt.config.JwtProperties;
 import io.jsonwebtoken.Jwts;

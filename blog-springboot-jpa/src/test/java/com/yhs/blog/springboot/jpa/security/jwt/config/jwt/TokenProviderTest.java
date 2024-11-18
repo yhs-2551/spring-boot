@@ -1,8 +1,9 @@
-package com.yhs.blog.springboot.jpa.config.jwt;
+package com.yhs.blog.springboot.jpa.security.jwt.config.jwt;
 
 import com.yhs.blog.springboot.jpa.domain.user.entity.User;
 import com.yhs.blog.springboot.jpa.domain.user.repository.UserRepository;
 import com.yhs.blog.springboot.jpa.security.jwt.config.JwtProperties;
+import com.yhs.blog.springboot.jpa.security.jwt.config.jwt.factory.JwtFactory;
 import com.yhs.blog.springboot.jpa.security.jwt.provider.TokenProvider;
 import io.jsonwebtoken.Jwts;
 import org.junit.jupiter.api.DisplayName;

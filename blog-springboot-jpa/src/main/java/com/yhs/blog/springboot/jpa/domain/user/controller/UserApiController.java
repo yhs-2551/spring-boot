@@ -1,5 +1,6 @@
 package com.yhs.blog.springboot.jpa.domain.user.controller;
 
+import com.yhs.blog.springboot.jpa.security.dto.response.SignUpUserResponse;
 import com.yhs.blog.springboot.jpa.security.jwt.service.TokenManagementService;
 import com.yhs.blog.springboot.jpa.security.jwt.provider.TokenProvider;
 import com.yhs.blog.springboot.jpa.common.response.ApiResponse;
@@ -45,13 +46,11 @@ public class UserApiController extends SimpleUrlAuthenticationSuccessHandler {
     private final TokenManagementService tokenManagementService;
     private final TokenService tokenService;
 
-    private final CategoryService categoryService;
-
-
     @PostMapping("/api/users/signup")
-    public ResponseEntity<Long> signup(@RequestBody SignUpUserRequest signUpUserRequest) {
-        Long userId = userService.createUser(signUpUserRequest);
-        return ResponseEntity.status(HttpStatus.CREATED).body(userId);
+    public ResponseEntity<ApiResponse> signup(@RequestBody SignUpUserRequest signUpUserRequest) {
+        SignUpUserResponse response = userService.createUser(signUpUserRequest);
+        return ResponseEntity.status(HttpStatus.CREATED).body(new SuccessResponse<>(response,
+                "User created successfully."));
     }
 
     @PostMapping("/api/users/login")

@@ -1,5 +1,6 @@
 package com.yhs.blog.springboot.jpa.domain.user.entity;
 
+import com.yhs.blog.springboot.jpa.common.entity.BaseEntity;
 import com.yhs.blog.springboot.jpa.domain.category.entity.Category;
 import com.yhs.blog.springboot.jpa.domain.file.entity.File;
 import com.yhs.blog.springboot.jpa.domain.post.entity.Comment;
@@ -27,7 +28,7 @@ import java.util.Set;
 @ToString
 @Entity
 @Table(name = "Users")
-public class User implements UserDetails {
+public class User extends BaseEntity implements UserDetails {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -45,10 +46,6 @@ public class User implements UserDetails {
 
     @Column(nullable = false, length = 100, unique = true)
     private String email;
-
-    @CreatedDate
-    @Column(name = "created_at", updatable = false)
-    private LocalDateTime createdAt;
 
     @LastModifiedDate
     @Column(name = "updated_at")

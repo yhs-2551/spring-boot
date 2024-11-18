@@ -56,7 +56,10 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-data-redis:3.3.5'
 
     developmentOnly 'org.springframework.boot:spring-boot-devtools'
+
     runtimeOnly 'com.mysql:mysql-connector-j'
+
+    testImplementation 'com.h2database:h2:2.2.224'
 
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
 
