@@ -159,8 +159,8 @@ public class WebOAuthFormJwtSecurityConfig {
                         .authorizationEndpoint((authorizationEndpointConfig) -> authorizationEndpointConfig.authorizationRequestRepository(oAuth2AuthorizationRequestBasedOnCookieRepository())
                         )
                         .userInfoEndpoint((userInfoEndpointConfig) -> userInfoEndpointConfig.userService(oAuth2UserCustomService))
-                        //인증 성공 시 실행할 핸들러
                         .redirectionEndpoint(redirectEndpointConfig -> redirectEndpointConfig.baseUri("/login/oauth2/code/*"))
+                        //인증 성공 시 실행할 핸들러
                         .successHandler(oAuth2SuccessHandler())
 
                 )

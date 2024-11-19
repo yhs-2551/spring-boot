@@ -32,6 +32,7 @@ public class OAuth2AuthorizationRequestBasedOnCookieRepository implements Author
         //쿠키에서 해당 이름의 쿠키를 가져옴
         Cookie cookie = WebUtils.getCookie(request, OAUTH2_AUTHORIZATION_REQUEST_COOKIE_NAME);
 
+        // 쿠키를 가져오지 못했다면 초기에 구글 로그인 페이지로 리다이렉트 하기 전의 쿠키 정보가 아니라는 의미.
         if (cookie == null) {
             return null;
         }

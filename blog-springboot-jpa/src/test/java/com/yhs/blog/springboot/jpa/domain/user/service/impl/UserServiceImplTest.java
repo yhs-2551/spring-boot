@@ -38,11 +38,11 @@ class UserServiceImplTest {
     private UserServiceImpl userService;
 
     @Nested
-    @DisplayName("사용자 회원가입(생성) 테스트")
+    @DisplayName("사용자 회원가입 서비스 테스트")
     class CreateUser {
 
         @Test
-        @DisplayName("회원가입시 사용자 생성를 생성")
+        @DisplayName("회원가입시 사용자를 생성")
         void createUserSuccess() {
             // given
             SignUpUserRequest request = new SignUpUserRequest(
@@ -58,6 +58,9 @@ class UserServiceImplTest {
                     .userIdentifier("test")
                     .build();
 
+            ReflectionTestUtils.setField(user, "id", 1L);
+
+
             when(userRepository.save(any(User.class))).thenReturn(user);
             // when
             SignUpUserResponse response = userService.createUser(request);
@@ -65,6 +68,7 @@ class UserServiceImplTest {
 
             // then
             assertThat(response).isNotNull();
+            assertThat(response.getId()).isEqualTo(1L);
             assertThat(response.getUsername()).isEqualTo("testUser");
             assertThat(response.getEmail()).isEqualTo("test@example.com");
             assertThat(response.getUserIdentifier()).isEqualTo("test");
@@ -74,7 +78,7 @@ class UserServiceImplTest {
     }
 
     @Nested
-    @DisplayName("존재하는 사용자 조회 테스트")
+    @DisplayName("존재하는 사용자 조회 서비스 테스트")
     class FindUser {
         @Test
         @DisplayName("userID로 사용자 조회")
@@ -114,7 +118,7 @@ class UserServiceImplTest {
     }
 
     @Nested
-    @DisplayName("특정 사용자 식별자 존재 확인 테스트")
+    @DisplayName("Redis를 이용한 특정 사용자 존재 확인 서비스 테스트")
     class ExistsUserIdentifier {
         @Test
         @DisplayName("캐시에서 사용자 조회 성공")

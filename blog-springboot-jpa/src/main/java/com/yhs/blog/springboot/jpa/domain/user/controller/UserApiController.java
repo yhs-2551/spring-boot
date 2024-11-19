@@ -67,38 +67,22 @@ public class UserApiController extends SimpleUrlAuthenticationSuccessHandler {
 
         HttpHeaders headers = new HttpHeaders();
 
-        String getRefreshTokenCookie = tokenManagementService.getRefreshTokenCookie(request);
 
-        // Form로그인을 통하여 동일한 사용자가 2번이상 로그인 & 브라우저 쿠키에 리프레시 토큰이 있을 때.
-        // 해당 RefreshToken을 이용해 새로운 액세스 토큰 발급
-        if (getRefreshTokenCookie != null && tokenProvider.validToken(getRefreshTokenCookie)) {
+        // 리프레시 토큰 생성
+        String refreshToken = tokenProvider.generateToken(user,
+                TokenManagementService.REFRESH_TOKEN_DURATION);
 
-            // 리프레시 토큰이 유효하다면 새로운 액세스 토큰 발급
-            String newAccessToken = tokenService.createNewAccessToken(getRefreshTokenCookie);
+        // 리프레시 토큰을 userId와 함께 DB에 저장
+        tokenManagementService.saveRefreshToken(user.getId(), refreshToken);
 
-            // 응답 헤더에 액세스 토큰 추가
-            headers.set("Authorization", "Bearer " + newAccessToken);
+        // 생성된 리프레시 토큰을 클라이언트측 쿠키에 저장 -> 클라이언트에서 액세스 토큰이 만료되면 재발급 요청하기 위함
+        tokenManagementService.addRefreshTokenToCookie(request, response, refreshToken);
 
-        } else {
+        // Access Token 생성
+        String accessToken = tokenProvider.generateToken(user, TokenManagementService.ACCESS_TOKEN_DURATION);
 
-            // else문은 FormLogin에 초기 로그인 시
-
-            // 리프레시 토큰 생성
-            String refreshToken = tokenProvider.generateToken(user,
-                    TokenManagementService.REFRESH_TOKEN_DURATION);
-
-            // 리프레시 토큰을 userId와 함께 DB에 저장
-            tokenManagementService.saveRefreshToken(user.getId(), refreshToken);
-
-            // 생성된 리프레시 토큰을 클라이언트측 쿠키에 저장 -> 클라이언트에서 액세스 토큰이 만료되면 재발급 요청하기 위함
-            tokenManagementService.addRefreshTokenToCookie(request, response, refreshToken);
-
-            // Access Token 생성
-            String accessToken = tokenProvider.generateToken(user, TokenManagementService.ACCESS_TOKEN_DURATION);
-
-            // 응답 헤더에 액세스 토큰 추가
-            headers.set("Authorization", "Bearer " + accessToken);
-        }
+        // 응답 헤더에 액세스 토큰 추가
+        headers.set("Authorization", "Bearer " + accessToken);
 
         //  세션이나 쿠키에 불필요한 데이터가 남아 있지 않도록 하여 보안을 강화함.
         super.clearAuthenticationAttributes(request);

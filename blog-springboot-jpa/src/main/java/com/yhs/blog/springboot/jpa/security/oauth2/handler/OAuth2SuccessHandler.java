@@ -34,41 +34,21 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
         OAuth2User oAuth2User = (OAuth2User) authentication.getPrincipal();
         User user = userService.findUserByEmail((String) oAuth2User.getAttributes().get("email"));
 
-        String getRefreshTokenCookie = tokenManagementService.getRefreshTokenCookie(request);
+        // 리프레시 토큰 생성
+        String refreshToken = tokenProvider.generateToken(user, TokenManagementService.REFRESH_TOKEN_DURATION);
 
-        // OAuth2에 동일한 사용자가 2번이상 로그인 & 브라우저 쿠키에 리프레시 토큰이 있을 때.
-        // 해당 RefreshToken을 이용해 새로운 액세스 토큰 발급
-        if (getRefreshTokenCookie != null && tokenProvider.validToken(getRefreshTokenCookie)) {
+        // 리프레시 토큰을 userId와 함께 DB에 저장
+        tokenManagementService.saveRefreshToken(user.getId(), refreshToken);
 
-            System.out.println("실행11111");
+        // 생성된 리프레시 토큰을 클라이언트측 쿠키에 저장 -> 클라이언트에서 액세스 토큰이 만료되면 재발급 요청하기 위함
+        tokenManagementService.addRefreshTokenToCookie(request, response, refreshToken);
 
-            // 리프레시 토큰이 유효하다면 새로운 액세스 토큰 발급
-            String newAccessToken = tokenService.createNewAccessToken(getRefreshTokenCookie);
+        // Access Token 생성
+        String accessToken = tokenProvider.generateToken(user, TokenManagementService.ACCESS_TOKEN_DURATION);
 
-            // 서버측에서 리다이렉트 시키면 클라이언트측에선 최종 응답헤더만 접근할 수 있기 때문에 바로 응답 헤더에 담아서 주면 클라이언트 측에서 접근할 수 없다
-            // 따라서 초기엔 서버측에서 쿠키에 담아서 클라이언트 측으로 보내줘야 한다.
-            tokenManagementService.handleAccessTokenCookie(request, response, newAccessToken);
-
-        } else {
-            System.out.println("실행222222");
-            // else문은 OAuth2에 초기 로그인 시
-
-            // 리프레시 토큰 생성
-            String refreshToken = tokenProvider.generateToken(user, TokenManagementService.REFRESH_TOKEN_DURATION);
-
-            // 리프레시 토큰을 userId와 함께 DB에 저장
-            tokenManagementService.saveRefreshToken(user.getId(), refreshToken);
-
-            // 생성된 리프레시 토큰을 클라이언트측 쿠키에 저장 -> 클라이언트에서 액세스 토큰이 만료되면 재발급 요청하기 위함
-            tokenManagementService.addRefreshTokenToCookie(request, response, refreshToken);
-
-            // Access Token 생성
-            String accessToken = tokenProvider.generateToken(user, TokenManagementService.ACCESS_TOKEN_DURATION);
-
-            // 액세스 토큰을 리다이렉트 경로에 파라미터로 추가 근데 이 방식은 보안 상 별로라 사용하지 않는다.
+        // 액세스 토큰을 리다이렉트 경로에 파라미터로 추가 근데 이 방식은 보안 상 별로라 사용하지 않는다.
 //        String targetUrl = getTargetUrl(accessToken);
-            tokenManagementService.handleAccessTokenCookie(request, response, accessToken);
-        }
+        tokenManagementService.handleAccessTokenCookie(request, response, accessToken);
 
         clearAuthenticationAttributes(request, response);
 
