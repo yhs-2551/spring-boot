@@ -1,7 +1,7 @@
 package com.yhs.blog.springboot.jpa.domain.post.service.impl;
 
 import com.yhs.blog.springboot.jpa.domain.file.mapper.FileMapper;
-import com.yhs.blog.springboot.jpa.security.jwt.provider.TokenProvider;
+import com.yhs.blog.springboot.jpa.domain.token.jwt.provider.TokenProvider;
 import com.yhs.blog.springboot.jpa.domain.post.dto.request.FeaturedImageRequest;
 import com.yhs.blog.springboot.jpa.domain.file.dto.request.FileRequest;
 import com.yhs.blog.springboot.jpa.domain.post.dto.request.PostRequest;
@@ -23,7 +23,7 @@ import com.yhs.blog.springboot.jpa.domain.post.service.PostService;
 import com.yhs.blog.springboot.jpa.domain.file.service.s3.S3Service;
 import com.yhs.blog.springboot.jpa.domain.user.service.UserService;
 import com.yhs.blog.springboot.jpa.domain.post.mapper.PostMapper;
-import com.yhs.blog.springboot.jpa.security.jwt.util.TokenUtil;
+import com.yhs.blog.springboot.jpa.domain.token.jwt.util.TokenUtil;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
@@ -117,7 +117,7 @@ public class PostServiceImpl implements PostService {
             postRepository.save(post);
 
             // s3 Temp 파일 관련 작업은 비동기로 처리. 사용자에게 빠르게 응답하기 위함
-            s3Service.processCreatePostS3TempOperation(postRequest, user.getUserIdentifier());
+            s3Service.processCreatePostS3TempOperation(postRequest, user.getBlogId());
 
             return new PostResponse(post);
 
@@ -159,7 +159,7 @@ public class PostServiceImpl implements PostService {
         FeaturedImage featuredImage = processFeaturedImage(postUpdateRequest.getFeaturedImage());
 
         post.update(category, postUpdateRequest.getTitle(), postUpdateRequest.getContent(), newFiles, newPostTags, Post.PostStatus.valueOf(postUpdateRequest.getPostStatus().toUpperCase()), Post.CommentsEnabled.valueOf(postUpdateRequest.getCommentsEnabled().toUpperCase()), featuredImage);
-        s3Service.processUpdatePostS3TempOperation(postUpdateRequest, user.getUserIdentifier());
+        s3Service.processUpdatePostS3TempOperation(postUpdateRequest, user.getBlogId());
         return postRepository.save(post);
     }
 

@@ -1,6 +1,6 @@
 package com.yhs.blog.springboot.jpa.domain.post.controller;
 
-import com.yhs.blog.springboot.jpa.security.jwt.provider.TokenProvider;
+import com.yhs.blog.springboot.jpa.domain.token.jwt.provider.TokenProvider;
 import com.yhs.blog.springboot.jpa.domain.post.dto.request.PostRequest;
 import com.yhs.blog.springboot.jpa.domain.post.dto.request.PostUpdateRequest;
 import com.yhs.blog.springboot.jpa.domain.post.dto.response.PostResponse;
@@ -12,7 +12,7 @@ import com.yhs.blog.springboot.jpa.domain.user.entity.User;
 import com.yhs.blog.springboot.jpa.domain.user.repository.UserRepository;
 import com.yhs.blog.springboot.jpa.domain.post.service.PostService;
 import com.yhs.blog.springboot.jpa.domain.file.service.s3.S3Service;
-import com.yhs.blog.springboot.jpa.security.jwt.util.TokenUtil;
+import com.yhs.blog.springboot.jpa.domain.token.jwt.util.TokenUtil;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -32,7 +32,7 @@ import java.util.Objects;
 
 @RequiredArgsConstructor
 @RestController
-@RequestMapping("/api/{userIdentifier}/posts")
+@RequestMapping("/api/{blogId}/posts")
 @Log4j2
 public class PostApiController {
 
@@ -48,7 +48,7 @@ public class PostApiController {
     )
     @PreAuthorize("#userBlogId == authentication.name")
     public ResponseEntity<ApiResponse> createNewPost(@P("userBlogId") @PathVariable(
-            "userIdentifier") String userIdentifier,
+            "blogId") String blogId,
                                                      @Valid @RequestBody PostRequest postRequest,
                                                      HttpServletRequest request) {
 
@@ -59,11 +59,11 @@ public class PostApiController {
     }
 
     @GetMapping
-    public ResponseEntity<List<PostResponse>> findAllPosts(@PathVariable("userIdentifier") String userIdentifier, HttpServletRequest request) {
+    public ResponseEntity<List<PostResponse>> findAllPosts(@PathVariable("blogId") String blogId, HttpServletRequest request) {
 
         // 게시글 전체는 특정 사용자 즉 정확한 해당 사용자의 게시글만 조회 가능하도록 구현(userIdentifier 사용)
-        User user = userRepository.findByUserIdentifier(userIdentifier)
-                .orElseThrow(() -> new RuntimeException("User not found with user identifier " + userIdentifier));
+        User user = userRepository.findByBlogId(blogId)
+                .orElseThrow(() -> new RuntimeException("User not found with user identifier " + blogId));
         Long userId = user.getId();
 
         List<PostResponse> postResponses = postService.getPostListByUserId(userId);
@@ -81,12 +81,12 @@ public class PostApiController {
     @GetMapping("/{postId}/verify-author")
     public ResponseEntity<Map<String, Boolean>> verifyAuthor(HttpServletRequest request,
                                                              @PathVariable("postId") Long postId,
-                                                             @PathVariable("userIdentifier") String userIdentifier
+                                                             @PathVariable("blogId") String blogId
     ) {
 
         // url 경로에서 받은 userIdentifier을 통해 정확히 해당 사용자의 게시글을 가져오기 위함
-        Long userId = userRepository.findByUserIdentifier(userIdentifier)
-                .orElseThrow(() -> new RuntimeException("User not found with user identifier " + userIdentifier)).getId();
+        Long userId = userRepository.findByBlogId(blogId)
+                .orElseThrow(() -> new RuntimeException("User not found with user identifier " + blogId)).getId();
 
         // 로그인한 사용자의 userId
         Long userIdFromAccessToken = TokenUtil.extractUserIdFromRequestToken(request,
@@ -103,7 +103,7 @@ public class PostApiController {
     @PreAuthorize("#userBlogId == authentication.name")
     @DeleteMapping("/{postId}")
     public ResponseEntity<String> deletePostById(@PathVariable("postId") Long postId,
-                                                 @P("userBlogId") @PathVariable("userIdentifier") String userIdentifier) {
+                                                 @P("userBlogId") @PathVariable("blogId") String blogId) {
 
         postService.deletePostByPostId(postId);
         return ResponseEntity.ok("File deleted successfully");
@@ -112,11 +112,11 @@ public class PostApiController {
     @PreAuthorize("#userBlogId == authentication.name")
     @PatchMapping("/{postId}")
     public ResponseEntity<ApiResponse> updatePostByPostId(@PathVariable("postId") Long postId,
-                                                          @P("userBlogId") @PathVariable("userIdentifier") String userIdentifier,
+                                                          @P("userBlogId") @PathVariable("blogId") String blogId,
                                                           @RequestBody PostUpdateRequest postUpdateRequest) {
 
-        Long userId = userRepository.findByUserIdentifier(userIdentifier)
-                .orElseThrow(() -> new RuntimeException("User not found with user identifier " + userIdentifier)).getId();
+        Long userId = userRepository.findByBlogId(blogId)
+                .orElseThrow(() -> new RuntimeException("User not found with user identifier " + blogId)).getId();
 
         Post updatedPost = postService.updatePostByPostId(postId, userId,
                 postUpdateRequest);
@@ -133,7 +133,7 @@ public class PostApiController {
     public ResponseEntity<String> uploadFile(
             @RequestParam("file") MultipartFile file,
             @RequestParam(value = "featured", required = false) String featured,
-            @P("userBlogId") @PathVariable("userIdentifier") String userIdentifier,
+            @P("userBlogId") @PathVariable("blogId") String blogId,
             HttpServletRequest request) {
 
         try {
@@ -145,7 +145,7 @@ public class PostApiController {
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("File size exceeds the limit of 10MB");
             }
 
-            String fileUrl = s3Service.tempUploadFile(file, featured, userIdentifier);
+            String fileUrl = s3Service.tempUploadFile(file, featured, blogId);
 
             return ResponseEntity.ok(fileUrl);
         } catch (Exception e) {

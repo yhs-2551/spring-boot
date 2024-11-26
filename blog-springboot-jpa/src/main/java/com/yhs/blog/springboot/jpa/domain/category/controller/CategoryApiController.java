@@ -1,7 +1,7 @@
 package com.yhs.blog.springboot.jpa.domain.category.controller;
 
 
-import com.yhs.blog.springboot.jpa.security.jwt.provider.TokenProvider;
+import com.yhs.blog.springboot.jpa.domain.token.jwt.provider.TokenProvider;
 import com.yhs.blog.springboot.jpa.domain.category.dto.request.CategoryRequestPayLoad;
 import com.yhs.blog.springboot.jpa.domain.category.dto.response.CategoryResponse;
 import com.yhs.blog.springboot.jpa.common.response.ApiResponse;
@@ -21,7 +21,7 @@ import java.util.List;
 @Log4j2
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/api/{userIdentifier}/categories")
+@RequestMapping("/api/{blogId}/categories")
 public class CategoryApiController {
 
     private final CategoryService categoryService;
@@ -30,7 +30,7 @@ public class CategoryApiController {
     @PostMapping
     @PreAuthorize("#userBlogId == authentication.name")
     public ResponseEntity<ApiResponse> createCategory(@RequestBody CategoryRequestPayLoad categoryRequestPayLoad,
-                                                      @P("userBlogId") @PathVariable("userIdentifier") String userIdentifier) {
+                                                      @P("userBlogId") @PathVariable("blogId") String blogId) {
 
         List<CategoryResponse> categoryResponse =
                 categoryService.createCategory(categoryRequestPayLoad);
@@ -43,7 +43,7 @@ public class CategoryApiController {
     // 특정 사용자의 모든 카테고리 조회
     @GetMapping
     @PreAuthorize("#userBlogId == authentication.name")
-    public ResponseEntity<ApiResponse> getAllCategoriesWithChildrenByUserId(@P("userBlogId") @PathVariable("userIdentifier") String userIdentifier) {
+    public ResponseEntity<ApiResponse> getAllCategoriesWithChildrenByUserId(@P("userBlogId") @PathVariable("blogId") String blogId) {
 
         List<CategoryResponse> categories = categoryService.getAllCategoriesWithChildrenByUserId();
 

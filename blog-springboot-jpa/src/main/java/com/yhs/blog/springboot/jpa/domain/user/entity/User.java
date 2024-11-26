@@ -38,7 +38,7 @@ public class User extends BaseEntity implements UserDetails {
     private String userName;
 
     @Column(nullable = false, length = 50, unique = true)
-    private String userIdentifier;
+    private String blogId;
 
     // OAUTH2 사용자의 경우 비밀번호를 저장할 필요가 없기 때문에 nullable true 설정
     @Column(nullable = true, length = 255)
@@ -124,12 +124,11 @@ public class User extends BaseEntity implements UserDetails {
     }
 
     @Builder
-    public User(String email, String password, String username, String userIdentifier,
-                UserRole role, String auth) {
+    public User(String email, String password, String username, String blogId, UserRole role) {
         this.email = email;
         this.password = password;
         this.userName = username;
-        this.userIdentifier = userIdentifier;
+        this.blogId = blogId;
         this.role = role != null ? role : UserRole.USER;
     }
 

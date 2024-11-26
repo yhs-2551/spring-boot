@@ -1,6 +1,6 @@
 package com.yhs.blog.springboot.jpa.security.jwt.config.jwt.factory;
 
-import com.yhs.blog.springboot.jpa.security.jwt.config.JwtProperties;
+import com.yhs.blog.springboot.jpa.domain.token.jwt.config.JwtProperties;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
 import lombok.Builder;

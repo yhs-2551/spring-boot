@@ -1,8 +1,10 @@
 package com.yhs.blog.springboot.jpa.domain.user.service.impl;
 
-import com.yhs.blog.springboot.jpa.security.dto.response.SignUpUserResponse;
-import com.yhs.blog.springboot.jpa.security.jwt.provider.TokenProvider;
-import com.yhs.blog.springboot.jpa.security.dto.request.SignUpUserRequest;
+import com.yhs.blog.springboot.jpa.aop.duplicatecheck.DuplicateCheck;
+import com.yhs.blog.springboot.jpa.domain.user.dto.response.DuplicateCheckResponse;
+import com.yhs.blog.springboot.jpa.domain.user.dto.response.SignUpUserResponse;
+import com.yhs.blog.springboot.jpa.domain.token.jwt.provider.TokenProvider;
+import com.yhs.blog.springboot.jpa.domain.user.dto.request.SignUpUserRequest;
 import com.yhs.blog.springboot.jpa.domain.user.entity.User;
 import com.yhs.blog.springboot.jpa.exception.custom.UserCreationException;
 import com.yhs.blog.springboot.jpa.domain.user.repository.UserRepository;
@@ -12,6 +14,8 @@ import lombok.extern.log4j.Log4j2;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
+
+import java.util.function.Supplier;
 
 @Log4j2
 @RequiredArgsConstructor
@@ -29,31 +33,19 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public SignUpUserResponse createUser(SignUpUserRequest signUpUserRequest) {
-        String userEmail = signUpUserRequest.getEmail();
-
-        String userIdentifier;
-
-        if (userEmail.contains("@")) {
-            userIdentifier = userEmail.substring(0, userEmail.indexOf('@'));
-        } else {
-            throw new IllegalArgumentException("Invalid email address: " + userEmail);
-        }
-
-
 
         try {
             BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
             User user = User.builder()
+                    .blogId(signUpUserRequest.getBlogId())
                     .username(signUpUserRequest.getUsername())
-                    .userIdentifier(userIdentifier)
                     .email(signUpUserRequest.getEmail())
                     .password(encoder.encode(signUpUserRequest.getPassword()))
 //                    .role(User.UserRole.ADMIN) 일단 기본값인 user로 사용
                     .build();
 
-             User reponseUser = userRepository.save(user);
-             return new SignUpUserResponse(reponseUser.getId(), reponseUser.getUsername(),
-                     reponseUser.getUserIdentifier(), reponseUser.getEmail());
+            User reponseUser = userRepository.save(user);
+            return new SignUpUserResponse(reponseUser.getId(), reponseUser.getBlogId(), reponseUser.getUsername(), reponseUser.getEmail());
 
 
         } catch (Exception ex) {
@@ -73,30 +65,77 @@ public class UserServiceImpl implements UserService {
                 "User not found"));
     }
 
+
     @Override
-    public boolean existsByUserIdentifier(String userIdentifier) {
+    @DuplicateCheck
+    public DuplicateCheckResponse existsByBlogId(String blogId) {
 
-        String cacheKey = "user:" + userIdentifier;
+        String cacheKey = "userBlogId:" + blogId;
+        return checkDuplicate(cacheKey, () -> userRepository.existsByBlogId(blogId), "이미 존재하는 BlogId 입니다.", "사용 가능한 BlogId 입니다.");
+    }
 
+    @Override
+    @DuplicateCheck
+    public DuplicateCheckResponse existsByEmail(String email) {
+        String cacheKey = "userEmail:" + email;
+        return checkDuplicate(cacheKey, () -> userRepository.existsByEmail(email), "이미 존재하는 이메일 입니다.", "사용 가능한 이메일 입니다.");
+
+    }
+
+    @Override
+    @DuplicateCheck
+    public DuplicateCheckResponse existsByUserName(String userName) {
+        String cacheKey = "userName:" + userName;
+        return checkDuplicate(cacheKey, () -> userRepository.existsByUserName(userName), "이미 존재하는 사용자명 입니다.", "사용 가능한 사용자명 입니다.");
+    }
+
+
+    private DuplicateCheckResponse checkDuplicate(String cacheKey, Supplier<Boolean> dbCheck, String existMessage, String notExistMessage) {
+        // boolean 기본 타입은 null값을 가질 수 없기 때문에 null 비교 하려면 래퍼 클래스 사용필요.
         Boolean exists = redisTemplate.opsForValue().get(cacheKey);
         if (exists != null) {
-            return exists;
+            // 캐시 조회 성공
+            return new DuplicateCheckResponse(true, existMessage, false);
         }
 
-        boolean userExists = userRepository.existsByUserIdentifier(userIdentifier);
-
-        if (userExists) {
-            // 캐시에 저장. 사용자는 회원탈퇴 하는 경우 아니면 계속 존재하기 때문에, 만료시간을 설정하지 않음. 즉 무한대.
-//            redisTemplate.opsForValue().set(cacheKey, userExists, CACHE_TTL, TimeUnit.SECONDS);
-            redisTemplate.opsForValue().set(cacheKey, userExists);
+        boolean isExists = dbCheck.get();
+        if (isExists) {
+            // DB 조회 성공
+            // 캐시에 저장. 일단 무한대. 나중에 사용자 계정 변경 및 계정 탈퇴 시 캐시 무효화할 예정
+            // 즉 한번 중복확인 체크하면 사용자가 계정 변경 시 사용자명(닉네임), 블로그아이디를 재설정 or 계정 탈퇴 하는거 아닌 이상 항상 같음
+            // redisTemplate.opsForValue().set(cacheKey, userExists, CACHE_TTL, TimeUnit.SECONDS);
+            redisTemplate.opsForValue().set(cacheKey, true);
+            return new DuplicateCheckResponse(true, existMessage, false);
         }
 
-        return userExists;
+        return new DuplicateCheckResponse(false, notExistMessage, false);
     }
+
+//    @Override
+//    public boolean existsByUserIdentifier(String userIdentifier) {
+//
+//        String cacheKey = "user:" + userIdentifier;
+//
+//        Boolean exists = redisTemplate.opsForValue().get(cacheKey);
+//        if (exists != null) {
+//            return exists;
+//        }
+//
+//        boolean userExists = userRepository.existsByUserIdentifier(userIdentifier);
+//
+//        if (userExists) {
+//            // 캐시에 저장. 사용자는 회원탈퇴 하는 경우 아니면 계속 존재하기 때문에, 만료시간을 설정하지 않음. 즉 무한대.
+////            redisTemplate.opsForValue().set(cacheKey, userExists, CACHE_TTL, TimeUnit.SECONDS);
+//            redisTemplate.opsForValue().set(cacheKey, userExists);
+//        }
+//
+//        return userExists;
+//    }
 
     // 나중에 무효화할때 필요
-    public void invalidateUserCache(String userIdentifier) {
-        redisTemplate.delete("user:" + userIdentifier);
-    }
+//    public void invalidateUserCache(String userIdentifier) {
+//        redisTemplate.delete("user:" + userIdentifier);
+//    }
+
 
 }

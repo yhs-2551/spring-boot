@@ -1,10 +1,11 @@
 package com.yhs.blog.springboot.jpa.domain.user.service.impl;
 
+import com.yhs.blog.springboot.jpa.domain.user.dto.response.DuplicateCheckResponse;
 import com.yhs.blog.springboot.jpa.domain.user.entity.User;
 import com.yhs.blog.springboot.jpa.domain.user.factory.TestUserFactory;
 import com.yhs.blog.springboot.jpa.domain.user.repository.UserRepository;
-import com.yhs.blog.springboot.jpa.security.dto.request.SignUpUserRequest;
-import com.yhs.blog.springboot.jpa.security.dto.response.SignUpUserResponse;
+import com.yhs.blog.springboot.jpa.domain.user.dto.request.SignUpUserRequest;
+import com.yhs.blog.springboot.jpa.domain.user.dto.response.SignUpUserResponse;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -46,6 +47,7 @@ class UserServiceImplTest {
         void createUserSuccess() {
             // given
             SignUpUserRequest request = new SignUpUserRequest(
+                    "testBlogId",
                     "testUser",
                     "test@example.com",
                     "123"
@@ -53,9 +55,9 @@ class UserServiceImplTest {
 
 
             User user = User.builder()
+                    .blogId("testBlogId")
                     .username("testUser")
                     .email("test@example.com")
-                    .userIdentifier("test")
                     .build();
 
             ReflectionTestUtils.setField(user, "id", 1L);
@@ -69,9 +71,9 @@ class UserServiceImplTest {
             // then
             assertThat(response).isNotNull();
             assertThat(response.getId()).isEqualTo(1L);
-            assertThat(response.getUsername()).isEqualTo("testUser");
+            assertThat(response.getBlogId()).isEqualTo("test");
+            assertThat(response.getUserName()).isEqualTo("testUser");
             assertThat(response.getEmail()).isEqualTo("test@example.com");
-            assertThat(response.getUserIdentifier()).isEqualTo("test");
             verify(userRepository).save(any(User.class)); // save 메서드가 실제 호출되었는지 검증
         }
 
@@ -117,49 +119,70 @@ class UserServiceImplTest {
 
     }
 
+
+    /////// 아래 241126완료
+
     @Nested
-    @DisplayName("Redis를 이용한 특정 사용자 존재 확인 서비스 테스트")
-    class ExistsUserIdentifier {
+    @DisplayName("Redis를 이용한 특정 사용자 고유 블로그 아이디 존재 확인 서비스 테스트")
+    class CheckUserBlogIdForIdentifier {
         @Test
-        @DisplayName("캐시에서 사용자 조회 성공")
-        void checkUserIdentifierFromCache() {
+        @DisplayName("캐시에서 특정 사용자 블로그 아이디 조회 성공")
+        void checkUserBlogIdFromCache() {
             // given
-            String userIdentifier = "test";
+            String blogId = "testBlog";
             when(redisTemplate.opsForValue()).thenReturn(valueOperations);
-            when(valueOperations.get("user:" + userIdentifier))
-                    .thenReturn(true);
+            when(valueOperations.get("userBlogId:" + blogId)).thenReturn(true);
 
             // when
-            boolean exists = userService.existsByUserIdentifier(userIdentifier);
+            DuplicateCheckResponse response = userService.existsByBlogId(blogId);
 
             // then
-            assertThat(exists).isTrue();
-            // userServiceImpl에서 userRepository가 실행 안되었고, existsByUserIdentifier() 함수가 호출되었는지 검증
-            verify(userRepository, never()).existsByUserIdentifier(any());
+            assertThat(response.isExist()).isTrue();
+            assertThat(response.getMessage()).isEqualTo("이미 존재하는 BlogId 입니다.");
+            // userServiceImpl에서 userRepository가 실행 안되었는지 검증
+            verify(userRepository, never()).existsByBlogId(anyString());
         }
 
         @Test
-        @DisplayName("DB에서 사용자 조회 후 캐시 저장")
-        void checkUserIdentifierFromDB() {
+        @DisplayName("DB에서 특정 사용자 블로그 아이디 조회 후 Redis 캐시에 저장")
+        void checkUserBlogIdFromDB() {
             // given
-            String userIdentifier = "test";
+            String blogId = "testBlog";
             when(redisTemplate.opsForValue()).thenReturn(valueOperations);
-            when(valueOperations.get("user:" + userIdentifier))
+            when(valueOperations.get("userBlogId:" + blogId))
                     .thenReturn(null);
-            when(userRepository.existsByUserIdentifier(userIdentifier))
+            when(userRepository.existsByBlogId(blogId))
                     .thenReturn(true);
 
 
             // when
-            boolean exists = userService.existsByUserIdentifier(userIdentifier);
+            DuplicateCheckResponse response = userService.existsByBlogId(blogId);
 
             // then
-            assertThat(exists).isTrue();
-            verify(valueOperations).set(
-                    eq("user:" + userIdentifier),
-                    eq(true)
-            );
+            assertThat(response.isExist()).isTrue();
+            assertThat(response.getMessage()).isEqualTo("이미 존재하는 BlogId 입니다.");
+            verify(valueOperations).set("userBlogId:" + blogId, true);
         }
+
+
+        @Test
+        @DisplayName("Redis 캐시 및 DB에도 사용자가 존재하지 않을때 테스트")
+        void checkUserBlogId_WhenNotExists_ReturnsFalse() {
+            // given
+            String blogId = "testBlog";
+            when(redisTemplate.opsForValue()).thenReturn(valueOperations);
+            when(valueOperations.get("userBlogId:" + blogId)).thenReturn(null);
+            when(userRepository.existsByBlogId(blogId)).thenReturn(false);
+
+            // when
+            DuplicateCheckResponse response = userService.existsByBlogId(blogId);
+
+            // then
+            assertThat(response.isExist()).isFalse();
+            assertThat(response.getMessage()).isEqualTo("사용 가능한 BlogId 입니다.");
+            verify(valueOperations, never()).set(anyString(), anyBoolean());
+        }
+
     }
 
 }

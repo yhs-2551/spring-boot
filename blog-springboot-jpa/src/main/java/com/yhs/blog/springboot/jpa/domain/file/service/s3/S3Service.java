@@ -9,13 +9,13 @@ import java.io.IOException;
 
 public interface S3Service {
 
-    String tempUploadFile(MultipartFile file, String folder, String userIdentifier) throws IOException;
+    String tempUploadFile(MultipartFile file, String folder, String blogId) throws IOException;
 //    public void tempDeleteFile(String fileUrl);
 //    void moveTempFilesToFinal(String tempFileUrl, String finalFolder) throws IOException;
     @Async
-    void processCreatePostS3TempOperation(PostRequest postRequest, String userIdentifier);
+    void processCreatePostS3TempOperation(PostRequest postRequest, String blogId);
     @Async
     void processUpdatePostS3TempOperation(PostUpdateRequest postUpdateRequest,
-                                          String userIdentifier);
+                                          String blogId);
 
 }

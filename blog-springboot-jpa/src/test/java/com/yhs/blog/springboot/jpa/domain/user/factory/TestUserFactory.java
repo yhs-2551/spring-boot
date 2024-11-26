@@ -12,19 +12,19 @@ public class TestUserFactory {
     // 테스트용 기본 사용자 생성
     public static User createTestUser() {
         return User.builder()
-                .email("test@example.com")
+                .blogId("testBlogId")
                 .username("testUser")
-                .userIdentifier("test")
+                .email("test@example.com")
                 .password("123")
                 .build();
     }
 
     // 커스텀 사용자 생성
-    public static User createTestUser(String email, String username, String userIdentifier) {
+    public static User createTestUser(String email, String username, String blogId) {
         return User.builder()
+                .blogId(blogId)
                 .email(email)
                 .username(username)
-                .userIdentifier(userIdentifier)
                 .password("123")
                 .build();
     }
@@ -34,9 +34,9 @@ public class TestUserFactory {
         List<User> users = new ArrayList<>();
         for (int i = 0; i < count; i++) {
             users.add(User.builder()
+                    .blogId("testBlogId" + i)
                     .email("test" + i + "@example.com")
                     .username("testUser" + i)
-                    .userIdentifier("test" + i)
                     .password("123")
                     .build());
         }

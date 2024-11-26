@@ -61,6 +61,7 @@ public class GlobalExceptionHandler {
                 .body(error);
     }
 
+
     @ExceptionHandler(UsernameNotFoundException.class)
     public ResponseEntity<String> handleUserNotFoundException(UsernameNotFoundException ex) {
         return new ResponseEntity<>(ex.getMessage(), HttpStatus.NOT_FOUND);
@@ -89,6 +90,8 @@ public class GlobalExceptionHandler {
     public ResponseEntity<String> generalException(Exception ex) {
         return new ResponseEntity<>("Internal Server Error. Please try again later.", HttpStatus.INTERNAL_SERVER_ERROR);
     }
+
+
 
 
 }

@@ -1,6 +1,6 @@
 package com.yhs.blog.springboot.jpa.domain.file.service.s3.impl;
 
-import com.yhs.blog.springboot.jpa.security.jwt.provider.TokenProvider;
+import com.yhs.blog.springboot.jpa.domain.token.jwt.provider.TokenProvider;
 import com.yhs.blog.springboot.jpa.domain.file.dto.request.FileRequest;
 import com.yhs.blog.springboot.jpa.domain.file.service.s3.S3Service;
 import com.yhs.blog.springboot.jpa.domain.post.dto.request.PostRequest;
@@ -42,18 +42,18 @@ public class S3ServiceImpl implements S3Service {
 //        return email.substring(0, email.indexOf('@'));
 //    }
 
-    public String tempUploadFile(MultipartFile file, String folder, String userIdentifier) throws IOException {
+    public String tempUploadFile(MultipartFile file, String folder, String blogId) throws IOException {
 
 //        String userFolder = getUserFolder();
 
-        log.info("userFolder >>>> " + userIdentifier);
+        log.info("userFolder >>>> " + blogId);
 
         // 대표 이미지 구분하기 위함
         if (folder == null || folder.isEmpty()) {
             folder = Objects.requireNonNull(file.getContentType()).startsWith("image/") ?
-                    userIdentifier + "/temp/images/" : userIdentifier + "/temp/files/";
+                    blogId + "/temp/images/" : blogId + "/temp/files/";
         } else if (folder.equals("featured")) {
-            folder = userIdentifier + "/temp/" + folder + "/";
+            folder = blogId + "/temp/" + folder + "/";
         }
         String fileName = folder + UUID.randomUUID() + "-" + file.getOriginalFilename();
         log.info("fileName >>>> " + fileName);
@@ -75,7 +75,7 @@ public class S3ServiceImpl implements S3Service {
 
     @Async
     @Override
-    public void processCreatePostS3TempOperation(PostRequest postRequest, String userIdentifier) {
+    public void processCreatePostS3TempOperation(PostRequest postRequest, String blogId) {
         try {
 
 //            String userFolder = getUserFolder();
@@ -84,15 +84,15 @@ public class S3ServiceImpl implements S3Service {
             List<String> tempfileUrls =
                     postRequest.getFiles().stream().map(FileRequest::getFileUrl).toList();
 
-            processTempFilesToFinal(tempfileUrls, userIdentifier);
+            processTempFilesToFinal(tempfileUrls, blogId);
 
             if (postRequest.getFeaturedImage() != null) {
                 moveTempFilesToFinal(postRequest.getFeaturedImage().getFileUrl(),
-                        userIdentifier + "/final/featured/", userIdentifier);
+                        blogId + "/final/featured/", blogId);
             }
 
             for (String tempFileUrl : postRequest.getDeleteTempImageUrls()) {
-                tempDeleteFile(tempFileUrl, userIdentifier);
+                tempDeleteFile(tempFileUrl, blogId);
             }
 
         } catch (IOException e) {
@@ -103,7 +103,7 @@ public class S3ServiceImpl implements S3Service {
     @Override
     @Async
     public void processUpdatePostS3TempOperation(PostUpdateRequest postUpdateRequest,
-                                                 String userIdentifier) {
+                                                 String blogId) {
 
         try {
 
@@ -118,15 +118,15 @@ public class S3ServiceImpl implements S3Service {
                     .filter(url -> !url.contains("final/"))
                     .toList();
 
-            processTempFilesToFinal(tempfileUrls, userIdentifier);
+            processTempFilesToFinal(tempfileUrls, blogId);
 
             if (postUpdateRequest.getFeaturedImage() != null) {
                 moveTempFilesToFinal(postUpdateRequest.getFeaturedImage().getFileUrl(),
-                        userIdentifier + "/final/featured/", userIdentifier);
+                        blogId + "/final/featured/", blogId);
             }
 
             for (String tempFileUrl : postUpdateRequest.getDeleteTempImageUrls()) {
-                tempDeleteFile(tempFileUrl, userIdentifier);
+                tempDeleteFile(tempFileUrl, blogId);
             }
 
         } catch (IOException e) {
@@ -134,23 +134,23 @@ public class S3ServiceImpl implements S3Service {
         }
     }
 
-    private void processTempFilesToFinal(List<String> tempfileUrls, String userIdentifier) throws IOException {
+    private void processTempFilesToFinal(List<String> tempfileUrls, String blogId) throws IOException {
 
 //        String userFolder = getUserFolder();
 
         for (String tempFileUrl : tempfileUrls) {
             String finalFolder;
             if (tempFileUrl.contains("/images/")) {
-                finalFolder = userIdentifier + "/final/images/";
+                finalFolder = blogId + "/final/images/";
             } else {
-                finalFolder = userIdentifier + "/final/files/";
+                finalFolder = blogId + "/final/files/";
             }
-            moveTempFilesToFinal(tempFileUrl, finalFolder, userIdentifier);
+            moveTempFilesToFinal(tempFileUrl, finalFolder, blogId);
         }
     }
 
 
-    private void moveTempFilesToFinal(String tempFileUrl, String finalFolder, String userIdentifier) throws IOException {
+    private void moveTempFilesToFinal(String tempFileUrl, String finalFolder, String blogId) throws IOException {
 
 //        String userFolder = getUserFolder();
 
@@ -160,11 +160,11 @@ public class S3ServiceImpl implements S3Service {
         String tempFolder;
 
         if (tempFileUrl.contains("/images/")) {
-            tempFolder = userIdentifier + "/temp/images/";
+            tempFolder = blogId + "/temp/images/";
         } else if (tempFileUrl.contains("/files/")) {
-            tempFolder = userIdentifier + "/temp/files/";
+            tempFolder = blogId + "/temp/files/";
         } else {
-            tempFolder = userIdentifier + "/temp/featured/";
+            tempFolder = blogId + "/temp/featured/";
         }
 
         String tempFullPath = tempFolder + fileName;
@@ -194,7 +194,7 @@ public class S3ServiceImpl implements S3Service {
 
     }
 
-    private void tempDeleteFile(String fileUrl, String userIdentifier) {
+    private void tempDeleteFile(String fileUrl, String blogId) {
 
 //        String userFolder = getUserFolder();
 
@@ -203,17 +203,17 @@ public class S3ServiceImpl implements S3Service {
 
         String folder;
         if (fileUrl.contains("temp/featured/")) {
-            folder = userIdentifier + "/temp/featured/";
+            folder = blogId + "/temp/featured/";
         } else if (fileUrl.contains("temp/images/")) {
-            folder = userIdentifier + "/temp/images/";
+            folder = blogId + "/temp/images/";
         } else if (fileUrl.contains("temp/files/")) {
-            folder = userIdentifier + "/temp/files/";
+            folder = blogId + "/temp/files/";
         } else if (fileUrl.contains("final/featured/")) {
-            folder = userIdentifier + "/final/featured/";
+            folder = blogId + "/final/featured/";
         } else if (fileUrl.contains("final/images/")) {
-            folder = userIdentifier + "/final/images/";
+            folder = blogId + "/final/images/";
         } else {
-            folder = userIdentifier + "/final/files/";
+            folder = blogId + "/final/files/";
         }
         String fullPath = folder + fileName;
 

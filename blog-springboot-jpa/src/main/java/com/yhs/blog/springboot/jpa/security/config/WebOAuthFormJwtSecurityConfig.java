@@ -1,13 +1,13 @@
 package com.yhs.blog.springboot.jpa.security.config;
 
-import com.yhs.blog.springboot.jpa.security.jwt.filter.TokenAuthenticationFilter;
-import com.yhs.blog.springboot.jpa.security.jwt.service.TokenManagementService;
-import com.yhs.blog.springboot.jpa.security.jwt.provider.TokenProvider;
-import com.yhs.blog.springboot.jpa.security.oauth2.repository.OAuth2AuthorizationRequestBasedOnCookieRepository;
-import com.yhs.blog.springboot.jpa.security.oauth2.handler.OAuth2SuccessHandler;
-import com.yhs.blog.springboot.jpa.security.oauth2.service.OAuth2UserCustomService;
+import com.yhs.blog.springboot.jpa.domain.token.jwt.filter.TokenAuthenticationFilter;
+import com.yhs.blog.springboot.jpa.domain.token.jwt.service.TokenManagementService;
+import com.yhs.blog.springboot.jpa.domain.token.jwt.provider.TokenProvider;
+import com.yhs.blog.springboot.jpa.domain.oauth2.repository.OAuth2AuthorizationRequestBasedOnCookieRepository;
+import com.yhs.blog.springboot.jpa.domain.oauth2.handler.OAuth2SuccessHandler;
+import com.yhs.blog.springboot.jpa.domain.oauth2.service.OAuth2UserCustomService;
 import com.yhs.blog.springboot.jpa.domain.token.repository.RefreshTokenRepository;
-import com.yhs.blog.springboot.jpa.security.jwt.service.impl.TokenServiceImpl;
+import com.yhs.blog.springboot.jpa.domain.token.jwt.service.impl.TokenServiceImpl;
 import com.yhs.blog.springboot.jpa.security.service.CustomUserDetailsService;
 import com.yhs.blog.springboot.jpa.domain.user.service.impl.UserServiceImpl;
 import lombok.RequiredArgsConstructor;
@@ -141,7 +141,7 @@ public class WebOAuthFormJwtSecurityConfig {
                                 .requestMatchers(HttpMethod.GET, "/api/token/initial-token").permitAll()
                                 .requestMatchers(HttpMethod.GET, "/api/*/posts").permitAll()
                                 .requestMatchers(HttpMethod.GET, "/api/*/posts/*").permitAll()
-                                .requestMatchers(HttpMethod.GET, "/api/*/availability").permitAll()
+                                .requestMatchers(HttpMethod.GET, "/api/check/**").permitAll()
                                 // POST 요청 permitAll
                                 .requestMatchers(HttpMethod.POST, "/api/users/signup").permitAll()
                                 .requestMatchers(HttpMethod.POST, "/api/users/login").permitAll()

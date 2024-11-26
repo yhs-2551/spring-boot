@@ -1,17 +1,19 @@
 package com.yhs.blog.springboot.jpa.domain.user.controller;
 
-import com.yhs.blog.springboot.jpa.security.dto.response.SignUpUserResponse;
-import com.yhs.blog.springboot.jpa.security.jwt.service.TokenManagementService;
-import com.yhs.blog.springboot.jpa.security.jwt.provider.TokenProvider;
-import com.yhs.blog.springboot.jpa.common.response.ApiResponse;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.yhs.blog.springboot.jpa.common.response.ErrorResponse;
+import com.yhs.blog.springboot.jpa.domain.user.dto.request.VerifyEmailRequest;
+import com.yhs.blog.springboot.jpa.domain.user.dto.response.DuplicateCheckResponse;
+import com.yhs.blog.springboot.jpa.domain.user.service.EmailService;
+import com.yhs.blog.springboot.jpa.domain.user.dto.response.RateLimitResponse;
+import com.yhs.blog.springboot.jpa.domain.token.jwt.service.TokenManagementService;
+import com.yhs.blog.springboot.jpa.domain.token.jwt.provider.TokenProvider;
+import com.yhs.blog.springboot.jpa.common.response.ApiResponse;
 import com.yhs.blog.springboot.jpa.common.response.SuccessResponse;
-import com.yhs.blog.springboot.jpa.security.dto.request.LoginRequest;
-import com.yhs.blog.springboot.jpa.security.dto.request.SignUpUserRequest;
+import com.yhs.blog.springboot.jpa.domain.user.dto.request.LoginRequest;
+import com.yhs.blog.springboot.jpa.domain.user.dto.request.SignUpUserRequest;
 import com.yhs.blog.springboot.jpa.domain.user.entity.User;
-import com.yhs.blog.springboot.jpa.domain.category.service.CategoryService;
-import com.yhs.blog.springboot.jpa.security.jwt.service.RefreshTokenService;
-import com.yhs.blog.springboot.jpa.security.jwt.service.TokenService;
+import com.yhs.blog.springboot.jpa.domain.token.jwt.service.RefreshTokenService;
 import com.yhs.blog.springboot.jpa.domain.user.service.UserService;
 import com.yhs.blog.springboot.jpa.common.util.cookie.CookieUtil;
 import io.jsonwebtoken.ExpiredJwtException;
@@ -33,7 +35,6 @@ import org.springframework.security.web.authentication.SimpleUrlAuthenticationSu
 import org.springframework.web.bind.annotation.*;
 
 import java.io.IOException;
-
 @Log4j2
 @RestController
 @RequiredArgsConstructor
@@ -44,13 +45,35 @@ public class UserApiController extends SimpleUrlAuthenticationSuccessHandler {
     private final TokenProvider tokenProvider;
     private final RefreshTokenService refreshTokenService;
     private final TokenManagementService tokenManagementService;
-    private final TokenService tokenService;
+    private final EmailService emailService;
 
     @PostMapping("/api/users/signup")
-    public ResponseEntity<ApiResponse> signup(@RequestBody SignUpUserRequest signUpUserRequest) {
-        SignUpUserResponse response = userService.createUser(signUpUserRequest);
-        return ResponseEntity.status(HttpStatus.CREATED).body(new SuccessResponse<>(response,
-                "User created successfully."));
+    public ResponseEntity<ApiResponse> signup(@RequestBody SignUpUserRequest signUpUserRequest) throws JsonProcessingException {
+        RateLimitResponse result = emailService.processSignUp(signUpUserRequest);
+        if (result.isSuccess()) {
+            return ResponseEntity.status(result.getCode())
+                    .body(new SuccessResponse<>(result.getMessage()));
+        }
+
+
+        return ResponseEntity.status(result.getCode())
+                .body(new ErrorResponse(result.getMessage(), result.getCode()));
+
+    }
+
+
+    @PostMapping("/api/users/verify-email")
+    public ResponseEntity<ApiResponse> verifyEmail(@RequestBody VerifyEmailRequest verifyEmailRequest) {
+
+        RateLimitResponse result =  emailService.completeVerification(verifyEmailRequest);
+
+        if (result.isSuccess()) {
+            return ResponseEntity.status(result.getCode())
+                    .body(new SuccessResponse<>(result.getData(), result.getMessage()));
+        }
+
+        return ResponseEntity.status(result.getCode())
+                .body(new ErrorResponse(result.getMessage(), result.getCode()));
     }
 
     @PostMapping("/api/users/login")
@@ -123,28 +146,69 @@ public class UserApiController extends SimpleUrlAuthenticationSuccessHandler {
         }
     }
 
-    // 특정 사용자가 존재하는지 프론트측에서 미들웨어로 확인
-    @GetMapping("/api/{userIdentifier}/availability")
-    public ResponseEntity<ApiResponse> checkUserExists(@PathVariable("userIdentifier") String userIdentifier) {
 
-        log.info("userIdentifier: " + userIdentifier);
+    @GetMapping("/api/check/blogId/{blogId}")
+    public ResponseEntity<ApiResponse> checkBlogId(@PathVariable String blogId) {
 
-        if (userService.existsByUserIdentifier(userIdentifier)) {
-            return ResponseEntity.ok()
-                    .body(new SuccessResponse<>("User exists"));
+
+        DuplicateCheckResponse response = userService.existsByBlogId(blogId);
+
+        return checkDuplicate(response);
+    }
+
+    @GetMapping("/api/check/email/{email}")
+    public ResponseEntity<ApiResponse> checkEmail(@PathVariable String email) {
+
+        DuplicateCheckResponse response = userService.existsByEmail(email);
+
+       return checkDuplicate(response);
+
+    }
+
+    @GetMapping("/api/check/userName/{userName}")
+    public ResponseEntity<ApiResponse> checkUserName(@PathVariable String userName) {
+
+
+        DuplicateCheckResponse response = userService.existsByUserName(userName);
+
+        return checkDuplicate(response);
+    }
+
+    private ResponseEntity<ApiResponse> checkDuplicate(DuplicateCheckResponse response) {
+
+        // 3회 초과 요청이 오면 429 Too Many Requests 응답
+        if (response.isLimited()) {
+            return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
+                    .body(new ErrorResponse(response.getMessage(), HttpStatus.TOO_MANY_REQUESTS.value()));
         }
-
-        return ResponseEntity
-                .status(HttpStatus.NOT_FOUND)
-                .body(new ErrorResponse("User not found.", 404));
+        return ResponseEntity.ok(new SuccessResponse<>(response.isExist(), response.getMessage()));
     }
 
-    // 나중에 사용
-    @DeleteMapping("/api/{userIdentifier}/availability/invalidation")
-    public ResponseEntity<Void> invalidateUserCache(@PathVariable String userIdentifier) {
+//    // 특정 사용자가 존재하는지 프론트측에서 미들웨어로 확인
+//    @GetMapping("/api/check/userIdentifier/{userIdentifier}")
+//    public ResponseEntity<ApiResponse> checkUserExists(@PathVariable("userIdentifier") String userIdentifier) {
+//
+//        log.info("userIdentifier: " + userIdentifier);
+//
+//        if (userService.existsByUserIdentifier(userIdentifier)) {
+//            return ResponseEntity.ok()
+//                    .body(new SuccessResponse<>("User exists"));
+//        }
+//
+//        return ResponseEntity
+//                .status(HttpStatus.NOT_FOUND)
+//                .body(new ErrorResponse("User not found.", 404));
+//    }
 
-        userService.invalidateUserCache(userIdentifier);
-        return ResponseEntity.noContent().build();
-    }
+    // 레디스 캐시 무효화 해야할때:
+    // 1) 사용자가 프로필 변경에서 사용자명, BlogId(최초1회만 변경가능)을 변경했을 때
+    // 2) 사용자가 회원탈퇴를 했을 때: 사용자명, BlogId, Email 전부 무효화 필요
+//    @DeleteMapping("/api/check/userIdentifier/{userIdentifier}/invalidation")
+//    public ResponseEntity<Void> invalidateUserCache(@PathVariable String userIdentifier) {
+//
+//        userService.invalidateUserCache(userIdentifier);
+//        return ResponseEntity.noContent().build();
+//    }
+
 
 }

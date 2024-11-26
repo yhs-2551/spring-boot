@@ -80,13 +80,39 @@ class UserRepositoryTest {
         }
 
         @Test
-        @DisplayName("UserIdentifier값으로 특정 사용자 존재 여부를 확인한다.")
-        void existsByUserIdentifier() {
+        @DisplayName("blogId 값으로 특정 사용자의 존재 여부를 확인한다.")
+        void existsByBlogId() {
             // given
             userRepository.save(TestUserFactory.createTestUser());
 
             // when
-            boolean exists = userRepository.existsByUserIdentifier("test");
+            boolean exists = userRepository.existsByBlogId("testBlogId");
+
+            // then
+            assertThat(exists).isTrue();
+        }
+
+        @Test
+        @DisplayName("Email 값으로 특정 사용자의 존재 여부를 확인한다.")
+        void existsByEmail() {
+            // given
+            userRepository.save(TestUserFactory.createTestUser());
+
+            // when
+            boolean exists = userRepository.existsByEmail("test@example.com");
+
+            // then
+            assertThat(exists).isTrue();
+        }
+
+        @Test
+        @DisplayName("userName 값으로 특정 사용자의 블로그 아이디 존재 여부를 확인한다.")
+        void existsByUserName() {
+            // given
+            userRepository.save(TestUserFactory.createTestUser());
+
+            // when
+            boolean exists = userRepository.existsByUserName("testUser");
 
             // then
             assertThat(exists).isTrue();

@@ -1,6 +1,6 @@
 package com.yhs.blog.springboot.jpa.domain.category.service.impl;
 
-import com.yhs.blog.springboot.jpa.security.jwt.provider.TokenProvider;
+import com.yhs.blog.springboot.jpa.domain.token.jwt.provider.TokenProvider;
 import com.yhs.blog.springboot.jpa.domain.category.dto.request.CategoryRequest;
 import com.yhs.blog.springboot.jpa.domain.category.dto.request.CategoryRequestPayLoad;
 import com.yhs.blog.springboot.jpa.domain.category.dto.response.CategoryResponse;
@@ -11,7 +11,7 @@ import com.yhs.blog.springboot.jpa.domain.category.repository.CategoryRepository
 import com.yhs.blog.springboot.jpa.domain.category.service.CategoryService;
 import com.yhs.blog.springboot.jpa.domain.user.service.UserService;
 import com.yhs.blog.springboot.jpa.domain.category.mapper.CategoryMapper;
-import com.yhs.blog.springboot.jpa.security.jwt.util.TokenUtil;
+import com.yhs.blog.springboot.jpa.domain.token.jwt.util.TokenUtil;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
