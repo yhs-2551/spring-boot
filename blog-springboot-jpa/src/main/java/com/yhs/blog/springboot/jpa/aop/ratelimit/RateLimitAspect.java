@@ -35,6 +35,7 @@ public class RateLimitAspect {
         }
  
         // 2. 대상 메서드 실행
+        // --------------------------사용자 계정 생성 성공하면 아래 attempte 관련 코드 실행할 필요 없이 바로 해당 응답 return하면될듯
         Object result = joinPoint.proceed();
 
         // 3. 실행 후 카운트 증가
