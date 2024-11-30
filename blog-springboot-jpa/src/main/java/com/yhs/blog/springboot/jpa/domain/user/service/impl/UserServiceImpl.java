@@ -67,26 +67,29 @@ public class UserServiceImpl implements UserService {
 
 
     @Override
-    @DuplicateCheck
+    @DuplicateCheck(type = "BlogId")
     public DuplicateCheckResponse existsByBlogId(String blogId) {
 
         String cacheKey = "userBlogId:" + blogId;
-        return checkDuplicate(cacheKey, () -> userRepository.existsByBlogId(blogId), "이미 존재하는 BlogId 입니다.", "사용 가능한 BlogId 입니다.");
+        return checkDuplicate(cacheKey, () -> userRepository.existsByBlogId(blogId), "이미 존재하는 " +
+                "BlogId 입니다. 다른 BlogId를 사용해 주세요.", "사용 가능한 BlogId 입니다.");
     }
 
     @Override
-    @DuplicateCheck
+    @DuplicateCheck(type = "Email")
     public DuplicateCheckResponse existsByEmail(String email) {
         String cacheKey = "userEmail:" + email;
-        return checkDuplicate(cacheKey, () -> userRepository.existsByEmail(email), "이미 존재하는 이메일 입니다.", "사용 가능한 이메일 입니다.");
+        return checkDuplicate(cacheKey, () -> userRepository.existsByEmail(email), "이미 존재하는 이메일 " +
+                "입니다. 다른 이메일을 사용해 주세요.", "사용 가능한 이메일 입니다.");
 
     }
 
     @Override
-    @DuplicateCheck
+    @DuplicateCheck(type = "UserName")
     public DuplicateCheckResponse existsByUserName(String userName) {
         String cacheKey = "userName:" + userName;
-        return checkDuplicate(cacheKey, () -> userRepository.existsByUserName(userName), "이미 존재하는 사용자명 입니다.", "사용 가능한 사용자명 입니다.");
+        return checkDuplicate(cacheKey, () -> userRepository.existsByUserName(userName), "이미 존재하는" +
+                " 사용자명 입니다. 다른 사용자명을 사용해 주세요.", "사용 가능한 사용자명 입니다.");
     }
 
 

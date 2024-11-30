@@ -44,8 +44,6 @@ class UserIntegrationTest {
     @DisplayName("회원가입 후 로그인 시 액세스/리프레시 토큰 발급 통합 테스트")
     void signup_login_integration_test() {
 
-
-
         // 1. 회원가입
         SignUpUserRequest signUpRequest = new SignUpUserRequest(
                 "testBlogId",

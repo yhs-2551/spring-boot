@@ -1,7 +1,5 @@
 package com.yhs.blog.springboot.jpa.aop.ratelimit;
 
-import com.yhs.blog.springboot.jpa.common.response.ApiResponse;
-import com.yhs.blog.springboot.jpa.common.response.ErrorResponse;
 import com.yhs.blog.springboot.jpa.domain.user.dto.response.RateLimitResponse;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
@@ -35,8 +33,13 @@ public class RateLimitAspect {
         }
  
         // 2. 대상 메서드 실행
-        // --------------------------사용자 계정 생성 성공하면 아래 attempte 관련 코드 실행할 필요 없이 바로 해당 응답 return하면될듯
         Object result = joinPoint.proceed();
+        RateLimitResponse rateLimitResponse = (RateLimitResponse) result;
+
+        // 성공하면 아래 attempts 관련 코드 실행할 필요 없이 바로 해당 응답 return.
+        if (rateLimitResponse.isSuccess()) {
+            return rateLimitResponse;
+        }
 
         // 3. 실행 후 카운트 증가
         if (attempts != null) {
@@ -46,7 +49,7 @@ public class RateLimitAspect {
                     rateLimit.windowMinutes(), TimeUnit.MINUTES);
         }
 
-        return result;
+        return rateLimitResponse;
     }
 
     private String getClientIp() {

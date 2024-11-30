@@ -6,6 +6,7 @@ import lombok.NoArgsConstructor;
 
 @AllArgsConstructor
 @Getter
+@NoArgsConstructor
 public class SignUpUserResponse {
     private Long id;
     private String blogId;

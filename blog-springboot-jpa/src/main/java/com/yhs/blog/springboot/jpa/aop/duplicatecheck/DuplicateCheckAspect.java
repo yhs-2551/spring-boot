@@ -5,6 +5,7 @@ package com.yhs.blog.springboot.jpa.aop.duplicatecheck;
 import com.yhs.blog.springboot.jpa.domain.user.dto.response.DuplicateCheckResponse;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.log4j.Log4j2;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
@@ -16,6 +17,7 @@ import java.util.concurrent.TimeUnit;
 @Aspect
 @Component
 @RequiredArgsConstructor
+@Log4j2
 public class DuplicateCheckAspect {
 
     private final RedisTemplate<String, String> redisTemplate;
@@ -23,14 +25,18 @@ public class DuplicateCheckAspect {
 
     private static final String CHECK_ATTEMPT_PREFIX = "duplicateCheck:";
     private static final int MAX_ATTEMPTS = 3;
-    private static final long WINDOW_MINUTES = 1;
+    private static final long WINDOW_MINUTES = 1L;
 
     // 실제 대상 메서드를 실행해야 중복확인 시도 증가.
     // Around는 joinPoint.proceed()를 명시적으로 호출해야만 실제 메서드 실행.
     @Around("@annotation(DuplicateCheck)")
-    public DuplicateCheckResponse checkLimit(ProceedingJoinPoint joinPoint) throws Throwable {
+    public DuplicateCheckResponse checkLimit(ProceedingJoinPoint joinPoint, DuplicateCheck duplicateCheck) throws Throwable {
         String clientIp = getClientIp();
-        String attemptKey = CHECK_ATTEMPT_PREFIX + clientIp;
+        String checkType = duplicateCheck.type();
+        String attemptKey = "duplicate" + checkType +  "Check:" +clientIp; // duplicateEmailCheck:127.0.0.1
+        String firstLimitKey = "first" + checkType + "Limit:" + clientIp; // 최초 제한인지 확인하기 위한 키.
+        // 최초 제한일때만 만료시간을 1분으로 설정
+
         int attempts;
 
         // 현재 시도 횟수 확인. 초기 호출일 경우 실제 대상 메서드가 실행 되기 전이니 중복확인 횟수 0
@@ -40,7 +46,15 @@ public class DuplicateCheckAspect {
         // 최대 시도 횟수 체크
         // 최대 시도를 초과하면 만료 시간 새롭게 갱신함으로써 초과한 시점 기준으로 1분 기다려야 재시도 가능
         if (attempts >= MAX_ATTEMPTS) {
-            redisTemplate.expire(attemptKey, WINDOW_MINUTES, TimeUnit.MINUTES);
+
+            boolean isFirstLimit = redisTemplate.opsForValue().get(firstLimitKey) == null;
+
+            if (isFirstLimit) {
+                redisTemplate.opsForValue().set(firstLimitKey, "true");
+                redisTemplate.expire(firstLimitKey, WINDOW_MINUTES, TimeUnit.MINUTES);
+                redisTemplate.expire(attemptKey, WINDOW_MINUTES, TimeUnit.MINUTES);
+            }
+
             return new DuplicateCheckResponse(false, "너무 많은 시도입니다. 1분 후 다시 시도해주세요.", true);
         }
 

@@ -5,8 +5,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.yhs.blog.springboot.jpa.aop.ratelimit.RateLimit;
 import com.yhs.blog.springboot.jpa.domain.user.dto.request.SignUpUserRequest;
 import com.yhs.blog.springboot.jpa.domain.user.dto.request.VerifyEmailRequest;
-import com.yhs.blog.springboot.jpa.domain.user.dto.response.SignUpUserResponse;
 import com.yhs.blog.springboot.jpa.domain.user.dto.response.RateLimitResponse;
+import com.yhs.blog.springboot.jpa.domain.user.dto.response.SignUpUserResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.http.HttpStatus;
@@ -21,7 +21,7 @@ import java.time.Duration;
 
 @Service
 @RequiredArgsConstructor
-public class EmailService {
+    public class EmailService {
 
     private final JavaMailSender mailSender;
     private final RedisTemplate<String, String> redisTemplate;
@@ -72,19 +72,36 @@ public class EmailService {
 
     }
 
-
-    //    userService.createUser와 redis의 동시 작업을 안전하게 하기 위해 @Transcational 어노테이션 추가
-    @Transactional
+    @RateLimit(key = "verifyCode")  // 총 3번의 시도 후 4번째 시도부터 1분 뒤 재요청 해야함
+    @Transactional    //    userService.createUser와 redis의 동시 작업을 안전하게 하기 위해 @Transcational 어노테이션 추가
     public RateLimitResponse completeVerification(VerifyEmailRequest verifyEmailRequest) {
 
         // json 관련 objectMapper 메서드 사용 시 try-catch 문으로 예외 처리 필요
         try {
-            return verifyEmailAuthenticationCode(verifyEmailRequest.getEmail(),
-                    verifyEmailRequest.getCode());
+
+            String saveCode = redisTemplate.opsForValue().get(VERIFICATION_CODE_PREFIX + verifyEmailRequest.getEmail());
+            if (saveCode == null) {
+                return new RateLimitResponse(false, "만료된 인증코드입니다. 인증코드를 재발급 받아주세요.", HttpStatus.GONE.value(), null);
+            }
+
+            if (!saveCode.equals(verifyEmailRequest.getCode())) {
+                return new RateLimitResponse(false, "인증코드가 유효하지 않습니다.", HttpStatus.BAD_REQUEST.value(), null);
+            } else {
+
+                String userJson = redisTemplate.opsForValue().get(TEMP_USER_PREFIX + verifyEmailRequest.getEmail());
+
+                SignUpUserRequest signUpUserRequest = objectMapper.readValue(userJson, SignUpUserRequest.class);
+
+                SignUpUserResponse response = userService.createUser(signUpUserRequest);
+
+                redisTemplate.delete(TEMP_USER_PREFIX + verifyEmailRequest.getEmail());
+                redisTemplate.delete(VERIFICATION_CODE_PREFIX + verifyEmailRequest.getEmail());
+
+                return new RateLimitResponse(true, "사용자 계정 생성에 성공하였습니다.", HttpStatus.CREATED.value(), response);
+            }
 
         } catch (JsonProcessingException e) {
-            return new RateLimitResponse(false, "인증 처리 중 오류가 발생하였습니다.",
-                    HttpStatus.INTERNAL_SERVER_ERROR.value(), null);
+            return new RateLimitResponse(false, "인증 처리 중 오류가 발생하였습니다.", HttpStatus.INTERNAL_SERVER_ERROR.value(), null);
         }
 
     }
@@ -106,36 +123,36 @@ public class EmailService {
         message.setText(text);
         mailSender.send(message);
     }
-
-
-    // 총 3번의 시도 후 4번째 시도부터 1분 뒤 재요청 해야함
-    @RateLimit(key = "verifyCode")
-    private RateLimitResponse verifyEmailAuthenticationCode(String email, String code) throws JsonProcessingException {
-
-        String saveCode = redisTemplate.opsForValue().get(VERIFICATION_CODE_PREFIX + email);
-        if (saveCode == null) {
-            return new RateLimitResponse(false, "만료된 인증코드입니다. 1분 후에 다시 요청해주세요.",
-                    HttpStatus.GONE.value(), null);
-        }
-
-        if (!saveCode.equals(code)) {
-            return new RateLimitResponse(false, "인증코드가 유효하지 않습니다.",
-                    HttpStatus.BAD_REQUEST.value(), null);
-        } else {
-
-            String userJson = redisTemplate.opsForValue().get(TEMP_USER_PREFIX + email);
-
-            SignUpUserRequest signUpUserRequest = objectMapper.readValue(userJson, SignUpUserRequest.class);
-
-            SignUpUserResponse response = userService.createUser(signUpUserRequest);
-
-            redisTemplate.delete(TEMP_USER_PREFIX + email);
-            redisTemplate.delete(VERIFICATION_CODE_PREFIX + email);
-
-            return new RateLimitResponse(true, "사용자 계정 생성에 성공하였습니다.", HttpStatus.CREATED.value(), response);
-        }
-
-    }
+//
+//
+//    // 총 3번의 시도 후 4번째 시도부터 1분 뒤 재요청 해야함
+//    @RateLimit(key = "verifyCode")
+//    private RateLimitResponse verifyEmailAuthenticationCode(String email, String code) throws JsonProcessingException {
+//
+//        String saveCode = redisTemplate.opsForValue().get(VERIFICATION_CODE_PREFIX + email);
+//        if (saveCode == null) {
+//            return new RateLimitResponse(false, "만료된 인증코드입니다. 인증코드를 재발급 받아주세요.",
+//                    HttpStatus.GONE.value(), null);
+//        }
+//
+//        if (!saveCode.equals(code)) {
+//            return new RateLimitResponse(false, "인증코드가 유효하지 않습니다.",
+//                    HttpStatus.BAD_REQUEST.value(), null);
+//        } else {
+//
+//            String userJson = redisTemplate.opsForValue().get(TEMP_USER_PREFIX + email);
+//
+//            SignUpUserRequest signUpUserRequest = objectMapper.readValue(userJson, SignUpUserRequest.class);
+//
+//            SignUpUserResponse response = userService.createUser(signUpUserRequest);
+//
+//            redisTemplate.delete(TEMP_USER_PREFIX + email);
+//            redisTemplate.delete(VERIFICATION_CODE_PREFIX + email);
+//
+//            return new RateLimitResponse(true, "사용자 계정 생성에 성공하였습니다.", HttpStatus.CREATED.value(), response);
+//        }
+//
+//    }
 
 
 }

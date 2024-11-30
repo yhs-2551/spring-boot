@@ -12,5 +12,5 @@ import java.lang.annotation.Target;
 public @interface RateLimit {
     String key();  // 메서드별 고유 키 접두사
     int maxAttempts() default 3;
-    int windowMinutes() default 1;
+    long windowMinutes() default 1;
 }

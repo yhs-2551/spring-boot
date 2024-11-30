@@ -1,22 +1,27 @@
 package com.yhs.blog.springboot.jpa.domain.user.controller;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.yhs.blog.springboot.jpa.common.response.ErrorResponse;
-import com.yhs.blog.springboot.jpa.domain.user.dto.request.VerifyEmailRequest;
-import com.yhs.blog.springboot.jpa.domain.user.dto.response.DuplicateCheckResponse;
-import com.yhs.blog.springboot.jpa.domain.user.service.EmailService;
-import com.yhs.blog.springboot.jpa.domain.user.dto.response.RateLimitResponse;
-import com.yhs.blog.springboot.jpa.domain.token.jwt.service.TokenManagementService;
-import com.yhs.blog.springboot.jpa.domain.token.jwt.provider.TokenProvider;
 import com.yhs.blog.springboot.jpa.common.response.ApiResponse;
+import com.yhs.blog.springboot.jpa.common.response.ErrorResponse;
 import com.yhs.blog.springboot.jpa.common.response.SuccessResponse;
+import com.yhs.blog.springboot.jpa.common.util.cookie.CookieUtil;
+import com.yhs.blog.springboot.jpa.domain.token.jwt.provider.TokenProvider;
+import com.yhs.blog.springboot.jpa.domain.token.jwt.service.RefreshTokenService;
+import com.yhs.blog.springboot.jpa.domain.token.jwt.service.TokenManagementService;
 import com.yhs.blog.springboot.jpa.domain.user.dto.request.LoginRequest;
 import com.yhs.blog.springboot.jpa.domain.user.dto.request.SignUpUserRequest;
+import com.yhs.blog.springboot.jpa.domain.user.dto.request.VerifyEmailRequest;
+import com.yhs.blog.springboot.jpa.domain.user.dto.response.DuplicateCheckResponse;
+import com.yhs.blog.springboot.jpa.domain.user.dto.response.RateLimitResponse;
 import com.yhs.blog.springboot.jpa.domain.user.entity.User;
-import com.yhs.blog.springboot.jpa.domain.token.jwt.service.RefreshTokenService;
+import com.yhs.blog.springboot.jpa.domain.user.service.EmailService;
 import com.yhs.blog.springboot.jpa.domain.user.service.UserService;
-import com.yhs.blog.springboot.jpa.common.util.cookie.CookieUtil;
 import io.jsonwebtoken.ExpiredJwtException;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -28,9 +33,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
-
 import org.springframework.security.core.context.SecurityContextHolder;
-
 import org.springframework.security.web.authentication.SimpleUrlAuthenticationSuccessHandler;
 import org.springframework.web.bind.annotation.*;
 
@@ -47,17 +50,18 @@ public class UserApiController extends SimpleUrlAuthenticationSuccessHandler {
     private final TokenManagementService tokenManagementService;
     private final EmailService emailService;
 
+    // 일단 하나씩 해보면서 잘 되는지 회원가입부터 해봐야지
     @PostMapping("/api/users/signup")
     public ResponseEntity<ApiResponse> signup(@RequestBody SignUpUserRequest signUpUserRequest) throws JsonProcessingException {
         RateLimitResponse result = emailService.processSignUp(signUpUserRequest);
         if (result.isSuccess()) {
-            return ResponseEntity.status(result.getCode())
+            return ResponseEntity.status(result.getStatusCode())
                     .body(new SuccessResponse<>(result.getMessage()));
         }
 
 
-        return ResponseEntity.status(result.getCode())
-                .body(new ErrorResponse(result.getMessage(), result.getCode()));
+        return ResponseEntity.status(result.getStatusCode())
+                .body(new ErrorResponse(result.getMessage(), result.getStatusCode()));
 
     }
 
@@ -68,12 +72,12 @@ public class UserApiController extends SimpleUrlAuthenticationSuccessHandler {
         RateLimitResponse result =  emailService.completeVerification(verifyEmailRequest);
 
         if (result.isSuccess()) {
-            return ResponseEntity.status(result.getCode())
+            return ResponseEntity.status(result.getStatusCode())
                     .body(new SuccessResponse<>(result.getData(), result.getMessage()));
         }
 
-        return ResponseEntity.status(result.getCode())
-                .body(new ErrorResponse(result.getMessage(), result.getCode()));
+        return ResponseEntity.status(result.getStatusCode())
+                .body(new ErrorResponse(result.getMessage(), result.getStatusCode()));
     }
 
     @PostMapping("/api/users/login")
@@ -146,9 +150,27 @@ public class UserApiController extends SimpleUrlAuthenticationSuccessHandler {
         }
     }
 
-
+    @Operation(summary = "블로그 ID 중복 확인")
+    @ApiResponses(value = {
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                    responseCode = "200",
+                    description = "중복 확인 성공",
+                    content = @Content(schema = @Schema(implementation = SuccessResponse.class))
+            ),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                    responseCode = "429",
+                    description = "너무 많은 요청",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class))
+            ),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                    responseCode = "409",
+                    description = "이미 존재하고 있는 경우",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class))
+            )
+    })
+    @Parameter(name = "blogId", description = "확인할 블로그 ID", required = true)
     @GetMapping("/api/check/blogId/{blogId}")
-    public ResponseEntity<ApiResponse> checkBlogId(@PathVariable String blogId) {
+    public ResponseEntity<ApiResponse> checkBlogId(@PathVariable("blogId") String blogId) {
 
 
         DuplicateCheckResponse response = userService.existsByBlogId(blogId);
@@ -156,8 +178,27 @@ public class UserApiController extends SimpleUrlAuthenticationSuccessHandler {
         return checkDuplicate(response);
     }
 
+    @Operation(summary = "이메일 중복 확인")
+    @ApiResponses(value = {
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                    responseCode = "200",
+                    description = "중복 확인 성공",
+                    content = @Content(schema = @Schema(implementation = SuccessResponse.class))
+            ),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                    responseCode = "429",
+                    description = "너무 많은 요청",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class))
+            ),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(
+            responseCode = "409",
+            description = "이미 존재하고 있는 경우",
+            content = @Content(schema = @Schema(implementation = ErrorResponse.class))
+    )
+    })
+    @Parameter(name = "email", description = "확인할 이메일", required = true)
     @GetMapping("/api/check/email/{email}")
-    public ResponseEntity<ApiResponse> checkEmail(@PathVariable String email) {
+    public ResponseEntity<ApiResponse> checkEmail(@PathVariable("email") String email) {
 
         DuplicateCheckResponse response = userService.existsByEmail(email);
 
@@ -165,8 +206,27 @@ public class UserApiController extends SimpleUrlAuthenticationSuccessHandler {
 
     }
 
+    @Operation(summary = "사용자명 중복 확인")
+    @ApiResponses(value = {
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                    responseCode = "200",
+                    description = "중복 확인 성공",
+                    content = @Content(schema = @Schema(implementation = SuccessResponse.class))
+            ),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                    responseCode = "429",
+                    description = "너무 많은 요청",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class))
+            ),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                    responseCode = "409",
+                    description = "이미 존재하고 있는 경우",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class))
+            )
+    })
+    @Parameter(name = "userName", description = "확인할 사용자명", required = true)
     @GetMapping("/api/check/userName/{userName}")
-    public ResponseEntity<ApiResponse> checkUserName(@PathVariable String userName) {
+    public ResponseEntity<ApiResponse> checkUserName(@PathVariable("userName") String userName) {
 
 
         DuplicateCheckResponse response = userService.existsByUserName(userName);
@@ -178,9 +238,16 @@ public class UserApiController extends SimpleUrlAuthenticationSuccessHandler {
 
         // 3회 초과 요청이 오면 429 Too Many Requests 응답
         if (response.isLimited()) {
-            return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
+            return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS) // 429
                     .body(new ErrorResponse(response.getMessage(), HttpStatus.TOO_MANY_REQUESTS.value()));
         }
+
+        if (response.isExist()) {
+            // 이미 존재하는 경우
+            return ResponseEntity.status(HttpStatus.CONFLICT)  // 409
+                    .body(new ErrorResponse(response.getMessage(), HttpStatus.CONFLICT.value()));
+        }
+
         return ResponseEntity.ok(new SuccessResponse<>(response.isExist(), response.getMessage()));
     }
 
