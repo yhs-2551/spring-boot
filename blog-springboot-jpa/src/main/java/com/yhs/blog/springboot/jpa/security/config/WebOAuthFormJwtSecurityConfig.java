@@ -146,6 +146,7 @@ public class WebOAuthFormJwtSecurityConfig {
                                 .requestMatchers(HttpMethod.POST, "/api/users/signup").permitAll()
                                 .requestMatchers(HttpMethod.POST, "/api/users/login").permitAll()
                                 .requestMatchers(HttpMethod.POST, "/api/users/logout").permitAll()
+                                .requestMatchers(HttpMethod.POST, "/api/users/verify-email").permitAll()
                                 .requestMatchers(HttpMethod.POST, "/api/token/new-token").permitAll()
                                 // 나머지는 인증 필요
                                 .anyRequest().authenticated()

@@ -25,6 +25,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.http.HttpHeaders;
@@ -52,11 +53,14 @@ public class UserApiController extends SimpleUrlAuthenticationSuccessHandler {
 
     // 일단 하나씩 해보면서 잘 되는지 회원가입부터 해봐야지
     @PostMapping("/api/users/signup")
-    public ResponseEntity<ApiResponse> signup(@RequestBody SignUpUserRequest signUpUserRequest) throws JsonProcessingException {
+    public ResponseEntity<ApiResponse> signup(@RequestBody @Valid SignUpUserRequest signUpUserRequest) throws JsonProcessingException {
+
+        log.info("signUpUserRequest: " + signUpUserRequest);
+
         RateLimitResponse result = emailService.processSignUp(signUpUserRequest);
         if (result.isSuccess()) {
             return ResponseEntity.status(result.getStatusCode())
-                    .body(new SuccessResponse<>(result.getMessage()));
+                    .body(new SuccessResponse<>(result.getData(), result.getMessage()));
         }
 
 
@@ -67,7 +71,7 @@ public class UserApiController extends SimpleUrlAuthenticationSuccessHandler {
 
 
     @PostMapping("/api/users/verify-email")
-    public ResponseEntity<ApiResponse> verifyEmail(@RequestBody VerifyEmailRequest verifyEmailRequest) {
+    public ResponseEntity<ApiResponse> verifyEmail(@RequestBody @Valid VerifyEmailRequest verifyEmailRequest) {
 
         RateLimitResponse result =  emailService.completeVerification(verifyEmailRequest);
 
@@ -224,12 +228,12 @@ public class UserApiController extends SimpleUrlAuthenticationSuccessHandler {
                     content = @Content(schema = @Schema(implementation = ErrorResponse.class))
             )
     })
-    @Parameter(name = "userName", description = "확인할 사용자명", required = true)
-    @GetMapping("/api/check/userName/{userName}")
-    public ResponseEntity<ApiResponse> checkUserName(@PathVariable("userName") String userName) {
+    @Parameter(name = "username", description = "확인할 사용자명", required = true)
+    @GetMapping("/api/check/username/{username}")
+    public ResponseEntity<ApiResponse> checkUserName(@PathVariable("username") String username) {
 
 
-        DuplicateCheckResponse response = userService.existsByUserName(userName);
+        DuplicateCheckResponse response = userService.existsByUserName(username);
 
         return checkDuplicate(response);
     }

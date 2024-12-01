@@ -88,6 +88,7 @@
 //                    "testBlogId",
 //                    "testUser",
 //                    "test@example.com",
+//                    "password123",
 //                    "password123"
 //            );
 //            SignUpUserResponse response = new SignUpUserResponse(

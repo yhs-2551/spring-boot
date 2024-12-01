@@ -22,12 +22,23 @@ public class RateLimitAspect {
     @Around("@annotation(RateLimit)")
     public Object checkRateLimit(ProceedingJoinPoint joinPoint, RateLimit rateLimit) throws Throwable {
         String clientIp = getClientIp();
-        String rateLimitKey = String.format("%s:%s", rateLimit.key(), clientIp);
+        String rateLimitKey = "rateLimit" + rateLimit.key() + ":" + clientIp; // rateLimitVerifyCode:127.0.0.1
+        // 최초 제한인지 확인하기 위한 키. firstRateLimitVerifyCode:127.0.0.1
+        String firstRateLimitKey = "firstRateLimit" + rateLimit.key() + ":" + clientIp;
 
         // 1. 실행 전 체크
         String attempts = redisTemplate.opsForValue().get(rateLimitKey);
+
         if (attempts != null && Integer.parseInt(attempts) >= rateLimit.maxAttempts()) {
-            redisTemplate.expire(rateLimitKey, rateLimit.windowMinutes(), TimeUnit.MINUTES);
+
+            boolean isFirstRateLimit = redisTemplate.opsForValue().get(firstRateLimitKey) == null;
+
+            if (isFirstRateLimit) {
+                redisTemplate.opsForValue().set(firstRateLimitKey, "true");
+                redisTemplate.expire(firstRateLimitKey, rateLimit.windowMinutes(), TimeUnit.MINUTES);
+                redisTemplate.expire(rateLimitKey, rateLimit.windowMinutes(), TimeUnit.MINUTES);
+            }
+
             return new RateLimitResponse(false, "너무 많은 시도입니다. 1분 후에 다시 시도해주세요.",
                     HttpStatus.TOO_MANY_REQUESTS.value(), null);
         }

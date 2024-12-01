@@ -78,6 +78,9 @@ public class S3ServiceImpl implements S3Service {
     public void processCreatePostS3TempOperation(PostRequest postRequest, String blogId) {
         try {
 
+            // 나중에 쓰레드명 제대로 나오지 확인해야함
+            log.info("sAWS TEMP- Thread: {}", Thread.currentThread().getName());
+
 //            String userFolder = getUserFolder();
 
             // AWS S3 final 폴더에 최종 업로드 및 temp 폴더에 저장되어 있는 불필요한 이미지 및 파일 삭제 처리 로직

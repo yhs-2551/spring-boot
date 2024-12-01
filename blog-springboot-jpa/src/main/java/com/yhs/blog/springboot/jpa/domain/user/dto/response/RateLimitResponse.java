@@ -9,5 +9,5 @@ public class RateLimitResponse {
     private boolean isSuccess;
     private String message;
     private int statusCode;
-    private SignUpUserResponse data;
+    private Object data;
 }

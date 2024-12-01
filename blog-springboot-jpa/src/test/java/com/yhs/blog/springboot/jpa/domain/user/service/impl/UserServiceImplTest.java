@@ -50,6 +50,7 @@ class UserServiceImplTest {
                     "testBlogId",
                     "testUser",
                     "test@example.com",
+                    "123",
                     "123"
             );
 

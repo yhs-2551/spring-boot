@@ -49,6 +49,7 @@ class UserIntegrationTest {
                 "testBlogId",
                 "testUser",
                 "test@example.com",
+                "password123",
                 "password123"
         );
                 RestAssured
@@ -99,6 +100,7 @@ class UserIntegrationTest {
                 "testBlogId",
                 "testUser",
                 "test@example.com",
+                "password123",
                 "password123"
         );
 
