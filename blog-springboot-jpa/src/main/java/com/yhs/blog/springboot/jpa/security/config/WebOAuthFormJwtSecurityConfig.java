@@ -1,18 +1,19 @@
 package com.yhs.blog.springboot.jpa.security.config;
 
-import com.yhs.blog.springboot.jpa.domain.token.jwt.filter.TokenAuthenticationFilter;
-import com.yhs.blog.springboot.jpa.domain.token.jwt.service.TokenManagementService;
-import com.yhs.blog.springboot.jpa.domain.token.jwt.provider.TokenProvider;
-import com.yhs.blog.springboot.jpa.domain.oauth2.repository.OAuth2AuthorizationRequestBasedOnCookieRepository;
+import com.yhs.blog.springboot.jpa.domain.oauth2.filter.RememberMeAuthenticationFilter;
 import com.yhs.blog.springboot.jpa.domain.oauth2.handler.OAuth2SuccessHandler;
+import com.yhs.blog.springboot.jpa.domain.oauth2.repository.OAuth2AuthorizationRequestBasedOnCookieRepository;
 import com.yhs.blog.springboot.jpa.domain.oauth2.service.OAuth2UserCustomService;
-import com.yhs.blog.springboot.jpa.domain.token.repository.RefreshTokenRepository;
+import com.yhs.blog.springboot.jpa.domain.token.jwt.filter.TokenAuthenticationFilter;
+import com.yhs.blog.springboot.jpa.domain.token.jwt.provider.TokenProvider;
+import com.yhs.blog.springboot.jpa.domain.token.jwt.service.TokenManagementService;
 import com.yhs.blog.springboot.jpa.domain.token.jwt.service.impl.TokenServiceImpl;
-import com.yhs.blog.springboot.jpa.security.service.CustomUserDetailsService;
 import com.yhs.blog.springboot.jpa.domain.user.service.impl.UserServiceImpl;
+import com.yhs.blog.springboot.jpa.security.service.CustomUserDetailsService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -22,10 +23,10 @@ import org.springframework.security.config.annotation.method.configuration.Enabl
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityCustomizer;
-
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.oauth2.client.web.OAuth2AuthorizationRequestRedirectFilter;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.HttpStatusEntryPoint;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
@@ -45,10 +46,10 @@ public class WebOAuthFormJwtSecurityConfig {
     private final OAuth2UserCustomService oAuth2UserCustomService;
     private final TokenProvider tokenProvider;
     private final TokenManagementService tokenManagementService;
-    private final RefreshTokenRepository refreshTokenRepository;
     private final UserServiceImpl userService;
     private final TokenServiceImpl tokenService;
     private final CustomUserDetailsService userDetailService;
+    private final RedisTemplate<String, String> redisTemplate;
 
 
     // 스프링 시큐리티 기능 비활성화. 일반적으로 정적 리소스(이미지, html 파일)
@@ -118,7 +119,7 @@ public class WebOAuthFormJwtSecurityConfig {
     @Bean
     public OAuth2SuccessHandler oAuth2SuccessHandler() {
         return new OAuth2SuccessHandler(tokenProvider, tokenManagementService,
-                oAuth2AuthorizationRequestBasedOnCookieRepository(), userService, tokenService);
+                oAuth2AuthorizationRequestBasedOnCookieRepository(), userService, redisTemplate);
     }
 
 
@@ -139,6 +140,7 @@ public class WebOAuthFormJwtSecurityConfig {
                                 .requestMatchers(SWAGGER_WHITELIST).permitAll()
                                 // GET 요청 permitAll
                                 .requestMatchers(HttpMethod.GET, "/api/token/initial-token").permitAll()
+                                .requestMatchers(HttpMethod.GET, "/api/token/new-token").permitAll()
                                 .requestMatchers(HttpMethod.GET, "/api/*/posts").permitAll()
                                 .requestMatchers(HttpMethod.GET, "/api/*/posts/*").permitAll()
                                 .requestMatchers(HttpMethod.GET, "/api/check/**").permitAll()
@@ -147,7 +149,8 @@ public class WebOAuthFormJwtSecurityConfig {
                                 .requestMatchers(HttpMethod.POST, "/api/users/login").permitAll()
                                 .requestMatchers(HttpMethod.POST, "/api/users/logout").permitAll()
                                 .requestMatchers(HttpMethod.POST, "/api/users/verify-email").permitAll()
-                                .requestMatchers(HttpMethod.POST, "/api/token/new-token").permitAll()
+                                .requestMatchers(HttpMethod.POST, "/api/oauth2/users").permitAll()
+
                                 // 나머지는 인증 필요
                                 .anyRequest().authenticated()
                         // 그 외의 모든 요청은 USER 또는 ADMIN 권한을 가진 사용자만 접근 가능. 임시로 주석. 나중에 적용
@@ -155,6 +158,7 @@ public class WebOAuthFormJwtSecurityConfig {
 
 
                 )
+                .addFilterBefore(new RememberMeAuthenticationFilter(redisTemplate), OAuth2AuthorizationRequestRedirectFilter.class)
                 // Authorization 요청과 관련된 상태 저장
                 .oauth2Login(oauth2 -> oauth2
                         .authorizationEndpoint((authorizationEndpointConfig) -> authorizationEndpointConfig.authorizationRequestRepository(oAuth2AuthorizationRequestBasedOnCookieRepository())

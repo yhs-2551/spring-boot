@@ -17,7 +17,7 @@ public class PostRequest {
 
     private Long userId;          // 작성자 ID
 
-    private String userName;        // 작성자명
+    private String username;        // 작성자명
 
     private String categoryName;      // 카테고리 이름
 
@@ -49,13 +49,13 @@ public class PostRequest {
     private int replyCount;       // 대댓글 수
 
     @Builder
-    public PostRequest(Long id, Long userId, String userName, String categoryName, String title,
+    public PostRequest(Long id, Long userId, String username, String categoryName, String title,
                        String content, List<String> tags, List<FileRequest> files,
                        List<String> deleteTempImageUrls, String postStatus,
                        String commentsEnabled, FeaturedImageRequest featuredImageRequest
                        ) {
         this.userId = userId;
-        this.userName = userName;
+        this.username = username;
         this.categoryName = categoryName;
         this.title = title;
         this.content = content;

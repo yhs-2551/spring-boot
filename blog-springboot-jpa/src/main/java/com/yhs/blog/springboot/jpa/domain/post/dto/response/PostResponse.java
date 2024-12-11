@@ -15,7 +15,7 @@ public class PostResponse {
 
     private Long userId;          // 작성자 ID
 
-    private String userName;        // 작성자명
+    private String username;        // 작성자명
 
     private String categoryName;  // 카테고리 이름
 
@@ -47,7 +47,7 @@ public class PostResponse {
     public PostResponse(Post post) {
         this.id = post.getId();
         this.userId = post.getUser() != null ? post.getUser().getId() : null;
-        this.userName = post.getUser() != null ? post.getUser().getUsername() : null;
+        this.username = post.getUser() != null ? post.getUser().getUsername() : null;
         this.categoryName = post.getCategory() != null ? post.getCategory().getName() : null;
         this.title = post.getTitle();
         this.content = post.getContent().replace("/temp/", "/final/");

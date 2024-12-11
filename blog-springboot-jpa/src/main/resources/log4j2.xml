@@ -9,7 +9,7 @@
 
     <Loggers>
         <!-- Root logger: 기본 로그 레벨 설정 -->
-        <Root level="info">
+        <Root level="debug">
             <AppenderRef ref="Console"/>
         </Root>
 

@@ -1,17 +1,22 @@
 package com.yhs.blog.springboot.jpa.aop.ratelimit;
 
+import com.yhs.blog.springboot.jpa.common.response.ErrorResponse;
 import com.yhs.blog.springboot.jpa.domain.user.dto.response.RateLimitResponse;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.stereotype.Component;
 
 import java.util.concurrent.TimeUnit;
 
+@Slf4j
 @Aspect
 @Component
 @RequiredArgsConstructor
@@ -21,6 +26,7 @@ public class RateLimitAspect {
 
     @Around("@annotation(RateLimit)")
     public Object checkRateLimit(ProceedingJoinPoint joinPoint, RateLimit rateLimit) throws Throwable {
+        
         String clientIp = getClientIp();
         String rateLimitKey = "rateLimit" + rateLimit.key() + ":" + clientIp; // rateLimitVerifyCode:127.0.0.1
         // 최초 제한인지 확인하기 위한 키. firstRateLimitVerifyCode:127.0.0.1
@@ -39,28 +45,39 @@ public class RateLimitAspect {
                 redisTemplate.expire(rateLimitKey, rateLimit.windowMinutes(), TimeUnit.MINUTES);
             }
 
+
+            // Login의 경우 컨트롤러에 적용해서 직접적으로 리턴해야하기 때문에 바로 여기서 ResponseEntity로 리턴
+            if (rateLimit.key().equals("Login")) {
+                return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
+                        .body(new ErrorResponse("너무 많은 시도입니다. 1분 후에 다시 시도해주세요.", HttpStatus.TOO_MANY_REQUESTS.value()));
+            }
+
             return new RateLimitResponse(false, "너무 많은 시도입니다. 1분 후에 다시 시도해주세요.",
                     HttpStatus.TOO_MANY_REQUESTS.value(), null);
         }
- 
-        // 2. 대상 메서드 실행
-        Object result = joinPoint.proceed();
-        RateLimitResponse rateLimitResponse = (RateLimitResponse) result;
 
-        // 성공하면 아래 attempts 관련 코드 실행할 필요 없이 바로 해당 응답 return.
-        if (rateLimitResponse.isSuccess()) {
-            return rateLimitResponse;
+        try {
+            // 2. 대상 메서드 실행
+            // login 컨트롤러에 적용한 aop 적용시 AuthenticationManager에 의해 인증이 실패하면 아래 catch문이 실행될 수 있도록 try-catch문으로 감싸줌
+            Object result = joinPoint.proceed();
+
+            // 3. 실행 후 카운트 증가
+
+            updateRateLimitAttempts(rateLimitKey, attempts, rateLimit.windowMinutes());
+
+            return result;
+
+        } catch (AuthenticationException e) { // 로그인의 경우 컨트롤러에서 AOP를 적용했는데, 인증이 실패하면 AuthenticationException 발생
+            // AuthenticationException이 발생하면 @Around의 joinPoint.proceed() 이후의 로직을 실행하지 않기 때문에 여기서 catch로 바로 잡아줘서 횟수를
+            // 증가시켜야함
+
+            updateRateLimitAttempts(rateLimitKey, attempts, rateLimit.windowMinutes());
+
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(new ErrorResponse("아이디 또는 비밀번호가 잘못 되었습니다.", HttpStatus.UNAUTHORIZED.value()));
         }
 
-        // 3. 실행 후 카운트 증가
-        if (attempts != null) {
-            redisTemplate.opsForValue().increment(rateLimitKey);
-        } else {
-            redisTemplate.opsForValue().set(rateLimitKey, "1",
-                    rateLimit.windowMinutes(), TimeUnit.MINUTES);
-        }
 
-        return rateLimitResponse;
     }
 
     private String getClientIp() {
@@ -83,5 +100,14 @@ public class RateLimitAspect {
         }
 
         return clientIp;
+    }
+
+    // static으로 하면 인스턴스 멤버(필드, 메서드) 특히 인스턴스 필드인 redisTemplate에 접근할 수 없음.
+    private void updateRateLimitAttempts(String rateLimitKey, String attempts, long windowMinutes) {
+        if (attempts != null) {
+            redisTemplate.opsForValue().increment(rateLimitKey);
+        } else {
+            redisTemplate.opsForValue().set(rateLimitKey, "1", windowMinutes, TimeUnit.MINUTES);
+        }
     }
 }

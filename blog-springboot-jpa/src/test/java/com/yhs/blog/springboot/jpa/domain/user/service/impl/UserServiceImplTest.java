@@ -73,7 +73,7 @@ class UserServiceImplTest {
             assertThat(response).isNotNull();
             assertThat(response.getId()).isEqualTo(1L);
             assertThat(response.getBlogId()).isEqualTo("testBlogId");
-            assertThat(response.getUserName()).isEqualTo("testUser");
+            assertThat(response.getUsername()).isEqualTo("testUser");
             assertThat(response.getEmail()).isEqualTo("test@example.com");
             verify(userRepository).save(any(User.class)); // save 메서드가 실제 호출되었는지 검증
         }

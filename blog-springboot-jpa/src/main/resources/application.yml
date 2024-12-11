@@ -59,6 +59,10 @@ spring:
             redirect-uri: ${GOOGLE_REDIRECT_URI}
             authorization-grant-type: ${GOOGLE_AUTHORIZATION_GRANT_TYPE}
             scope: ${GOOGLE_SCOPE}
+        provider:
+          google:
+            authorization-uri: ${GOOGLE_AUTHORIZATION_URI}
+
 
   mail:
     host: smtp.gmail.com

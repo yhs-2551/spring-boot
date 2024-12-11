@@ -4,16 +4,21 @@ import com.yhs.blog.springboot.jpa.common.util.cookie.CookieUtil;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import lombok.extern.log4j.Log4j2;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.client.web.AuthorizationRequestRepository;
 import org.springframework.security.oauth2.core.endpoint.OAuth2AuthorizationRequest;
 import org.springframework.web.util.WebUtils;
 
+// 사용자 인증 정보 과정을 처리하는 클래스
+@Log4j2
 public class OAuth2AuthorizationRequestBasedOnCookieRepository implements AuthorizationRequestRepository<OAuth2AuthorizationRequest> {
 
     public final static String OAUTH2_AUTHORIZATION_REQUEST_COOKIE_NAME = "oauth2_auth_request";
-    private final static int COOKIE_EXPIRE_SECONDS = 18000; // 300분 = 5시간
+    // private final static int COOKIE_EXPIRE_SECONDS = 18000; // 300분 = 5시간
+    // OAuth2 인증 요청 관련 쿠키는 인증 프로세스가 완료될 때까지만 유지되면 되므로, 짧게 설정. 5분으로 설정.
+    private final static int COOKIE_EXPIRE_SECONDS = 300;
 
     public void removeAuthorizationRequestCookies(HttpServletRequest request,
                                                   HttpServletResponse response) {

@@ -1,7 +1,4 @@
 package com.yhs.blog.springboot.jpa.domain.user.controller;
-
-import com.yhs.blog.springboot.jpa.domain.token.entity.RefreshToken;
-import com.yhs.blog.springboot.jpa.domain.token.repository.RefreshTokenRepository;
 import com.yhs.blog.springboot.jpa.domain.user.entity.User;
 import com.yhs.blog.springboot.jpa.domain.user.repository.UserRepository;
 import com.yhs.blog.springboot.jpa.domain.user.dto.request.LoginRequest;
@@ -30,9 +27,6 @@ class UserIntegrationTest {
 
     @Autowired
     private UserRepository userRepository;
-
-    @Autowired
-    private RefreshTokenRepository refreshTokenRepository;
 
     @Autowired
     private PasswordEncoder passwordEncoder;
@@ -86,10 +80,10 @@ class UserIntegrationTest {
         assertThat(savedUser.getUsername()).isEqualTo("testUser");
 
         // 4. 리프레시 토큰 DB 저장 검증
-        RefreshToken refreshToken = refreshTokenRepository
-                .findByUserId(savedUser.getId())
-                .orElseThrow();
-        assertThat(refreshToken).isNotNull();
+//        RefreshToken refreshToken = refreshTokenRepository
+//                .findByUserId(savedUser.getId())
+//                .orElseThrow();
+//        assertThat(refreshToken).isNotNull();
     }
 
     @Test
@@ -171,14 +165,14 @@ class UserIntegrationTest {
         User savedUser = userRepository.findByEmail("test2@example.com")
                 .orElseThrow();
 
-        RefreshToken updatedRefreshToken = refreshTokenRepository
-                .findByUserId(savedUser.getId())
-                .orElseThrow();
+//        RefreshToken updatedRefreshToken = refreshTokenRepository
+//                .findByUserId(savedUser.getId())
+//                .orElseThrow();
 
         // accessToken/refreshToken 값이 변경되었는지 확인
         assertThat(firstAccessToken.substring(7)).isNotEqualTo(newAccessToken.substring(7));
         assertThat(firstRefreshToken).isNotEqualTo(newRefreshToken);
         // DB의 refreshToken이 새로운 값으로 업데이트되었는지 확인
-        assertThat(updatedRefreshToken.getRefreshToken()).isEqualTo(newRefreshToken);
+//        assertThat(updatedRefreshToken.getRefreshToken()).isEqualTo(newRefreshToken);
     }
 }

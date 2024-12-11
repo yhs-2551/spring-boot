@@ -9,7 +9,6 @@ import com.yhs.blog.springboot.jpa.domain.post.entity.Post;
 import com.yhs.blog.springboot.jpa.domain.post.entity.PostTag;
 import jakarta.persistence.*;
 import lombok.*;
-import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 import org.springframework.security.core.GrantedAuthority;
@@ -35,7 +34,7 @@ public class User extends BaseEntity implements UserDetails {
     private Long id;
 
     @Column(nullable = false, length = 50, unique = true)
-    private String userName;
+    private String username;
 
     @Column(nullable = false, length = 50, unique = true)
     private String blogId;
@@ -115,7 +114,7 @@ public class User extends BaseEntity implements UserDetails {
 
     @Override
     public String getUsername() {
-        return userName;
+        return username;
     }
 
     @Override
@@ -127,13 +126,13 @@ public class User extends BaseEntity implements UserDetails {
     public User(String email, String password, String username, String blogId, UserRole role) {
         this.email = email;
         this.password = password;
-        this.userName = username;
+        this.username = username;
         this.blogId = blogId;
         this.role = role != null ? role : UserRole.USER;
     }
 
     public User update(String username) {
-        this.userName = username;
+        this.username = username;
         return this;
     }
 

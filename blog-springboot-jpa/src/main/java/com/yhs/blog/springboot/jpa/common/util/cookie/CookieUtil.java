@@ -9,6 +9,20 @@ import java.util.Base64;
 
 public class CookieUtil {
 
+    //아래 대신 WebUtils에서 제공하는 쿠키 유틸 메서드 사용하면 됨
+//    public static String getCookie(HttpServletRequest request, String name) {
+//        Cookie[] cookies = request.getCookies();
+//        if (cookies != null) {
+//            for (Cookie cookie : cookies) {
+//                if (name.equals(cookie.getName())) {
+//                    return cookie.getValue();
+//                }
+//            }
+//        }
+//        return null;
+//    }
+
+
     // 요청 값(이름, 값, 만료 기간)을 바탕으로 쿠키 추가
     public static void addCookie(HttpServletResponse httpServletResponse, String name,
                                  String value, int maxAge) {
@@ -47,7 +61,7 @@ public class CookieUtil {
             // 객체를 직렬화하여 바이트 배열로 변환
             objectOutputStream.writeObject(obj);
 
-            // 바이트 배열을 Base64로 인코딩하여 문자열로 변환
+            // 직렬화된 바이트 배열을 Base64로 인코딩하여 문자열로 변환 - 객체를 직렬화한 바이트 배열은 byteArrayOutputStream에 저장되어 있음
             return Base64.getUrlEncoder().encodeToString(byteArrayOutputStream.toByteArray());
         } catch (IOException ex) {
             throw new RuntimeException("Serialization Error", ex);

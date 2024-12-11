@@ -25,12 +25,13 @@ public class EmailService {
     private final RedisTemplate<String, String> redisTemplate;
     private final ObjectMapper objectMapper;
     private final UserService userService;
-    private final AsyncEmailSender asyncEmailSender;
+    private final EmailSender emailSender;
 
     private static final String VERIFICATION_CODE_PREFIX = "verificationCode:";
     private static final String TEMP_USER_PREFIX = "tempUser:";
 
-    public RateLimitResponse processSignUp(SignUpUserRequest signUpUserRequest) {
+    @RateLimit(key = "IssueCode") // 총 3번의 시도 후 4번째 시도부터 1분 뒤 재요청 해야함
+    public RateLimitResponse processEmailVerification(SignUpUserRequest signUpUserRequest) {
 
         // 기존 인증 코드가 남아있다면 삭제. 인증코드 재발급까지 한번에 처리하기 위함
 //            redisTemplate.delete(VERIFICATION_CODE_PREFIX + signUpUserRequest.getEmail());
@@ -50,11 +51,9 @@ public class EmailService {
                 verificationCode
         );
 
+        boolean emailResult = emailSender.sendEmail(signUpUserRequest.getEmail(), subject, text);
 
         try {
-            // get()을 통해 CompletableFuture의 결과를 동기적으로 받음. 즉 여러 쓰레드에서 작업중인 비동기 작업이 끝날때까지 기다림
-            Boolean emailResult = asyncEmailSender.sendEmail(signUpUserRequest.getEmail(), subject, text).get();
-
             if (emailResult) {
 
                 redisTemplate.opsForValue().set(VERIFICATION_CODE_PREFIX + signUpUserRequest.getEmail(), verificationCode,
@@ -64,7 +63,7 @@ public class EmailService {
                         objectMapper.writeValueAsString(signUpUserRequest), Duration.ofMinutes(3));
 
                 return new RateLimitResponse(true, "이메일 인증 코드가 발송되었습니다.",
-                        HttpStatus.OK.value(), signUpUserRequest.getEmail());
+                        HttpStatus.OK.value(), signUpUserRequest);
 
             } else {
                 return new RateLimitResponse(false, "이메일 발송에 실패했습니다.",
@@ -74,17 +73,12 @@ public class EmailService {
         } catch (JsonProcessingException e) {
             //objectMapper.writeValueAsString() 메서드 호출 시 발생하는 예외 처리. 객체를 json 문자열로 변환하는 과정에서 예외가 발생할 수 있음
             return new RateLimitResponse(false, "인증 처리 중 오류가 발생하였습니다.", HttpStatus.INTERNAL_SERVER_ERROR.value(), null);
-        } catch (Exception e) {
-            // CompletableFuture.get() 비동기 메서드 호출 시 발생하는 예외 처리
-            log.error("회원가입 처리 실패: ", e);
-            return new RateLimitResponse(false, "인증 처리 중 오류가 발생했습니다",
-                    HttpStatus.INTERNAL_SERVER_ERROR.value(), null);
         }
 
     }
 
     @RateLimit(key = "VerifyCode")  // 총 3번의 시도 후 4번째 시도부터 1분 뒤 재요청 해야함
-    @Transactional    // userService.createUser와 redis의 동시 작업을 안전하게 하기 위해 @Transcational 어노테이션 추가
+    @Transactional // userService.createUser와 redis의 동시 작업을 안전하게 하기 위해 @Transactional 어노테이션 추가, DB 작업이 있어서 @Transactional 추가
     public RateLimitResponse completeVerification(VerifyEmailRequest verifyEmailRequest) {
 
         // json 관련 objectMapper 메서드 사용 시 try-catch 문으로 예외 처리 필요

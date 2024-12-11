@@ -102,11 +102,11 @@ public class PostApiController {
 
     @PreAuthorize("#userBlogId == authentication.name")
     @DeleteMapping("/{postId}")
-    public ResponseEntity<String> deletePostById(@PathVariable("postId") Long postId,
+    public ResponseEntity<ApiResponse> deletePostById(@PathVariable("postId") Long postId,
                                                  @P("userBlogId") @PathVariable("blogId") String blogId) {
 
         postService.deletePostByPostId(postId);
-        return ResponseEntity.ok("File deleted successfully");
+        return ResponseEntity.ok(new SuccessResponse<>("게시글이 성공적으로 삭제되었습니다."));
     }
 
     @PreAuthorize("#userBlogId == authentication.name")

@@ -10,6 +10,6 @@ import lombok.NoArgsConstructor;
 public class SignUpUserResponse {
     private Long id;
     private String blogId;
-    private String userName;
+    private String username;
     private String email;
 }

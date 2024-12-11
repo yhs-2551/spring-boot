@@ -106,13 +106,13 @@ class UserRepositoryTest {
         }
 
         @Test
-        @DisplayName("userName 값으로 특정 사용자의 블로그 아이디 존재 여부를 확인한다.")
-        void existsByUserName() {
+        @DisplayName("username 값으로 특정 사용자의 블로그 아이디 존재 여부를 확인한다.")
+        void existsByUsername() {
             // given
             userRepository.save(TestUserFactory.createTestUser());
 
             // when
-            boolean exists = userRepository.existsByUserName("testUser");
+            boolean exists = userRepository.existsByUsername("testUser");
 
             // then
             assertThat(exists).isTrue();

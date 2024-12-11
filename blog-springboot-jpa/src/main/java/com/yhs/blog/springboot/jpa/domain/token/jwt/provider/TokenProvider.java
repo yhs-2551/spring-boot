@@ -2,30 +2,33 @@ package com.yhs.blog.springboot.jpa.domain.token.jwt.provider;
 
 
 import com.yhs.blog.springboot.jpa.domain.token.jwt.config.JwtProperties;
+import com.yhs.blog.springboot.jpa.domain.token.jwt.service.TokenManagementService;
 import com.yhs.blog.springboot.jpa.domain.user.entity.User;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.Jwts;
-
-
 import lombok.RequiredArgsConstructor;
+import lombok.extern.log4j.Log4j2;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.stereotype.Service;
 
 import java.time.Duration;
-
-
-import java.util.*;
+import java.util.Date;
+import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 // 토큰 생성하고 올바른 토큰인지 유효성 검사, 토큰에서 필요한 정보를 가져오는 클래스
 @RequiredArgsConstructor
 @Service
+@Log4j2
 public class TokenProvider {
 
     private final JwtProperties jwtProperties;
+    private final RedisTemplate<String, String> redisTemplate;
 
 
     public String generateToken(User user, Duration expiredAt) {
@@ -44,28 +47,47 @@ public class TokenProvider {
         // 헤더 부분은 굳이 명시적으로 추가하지 않아도 된다.
         return Jwts.builder()
                 .issuer(jwtProperties.getIssuer()).issuedAt(now).expiration(expiry).subject(user.getEmail())
-                .claim("id", user.getId()).claim("blogId", user.getBlogId()).claim("roles",
+                .claim("id", user.getId())
+                .claim("blogId", user.getBlogId())
+                .claim("email", user.getEmail())
+                .claim("roles",
                         roles)
                 .signWith(jwtProperties.getJwtSecretKey()).compact();
     }
 
     // 토큰 유효성 검사 메서드
-    public boolean validToken(String token) {
+    public boolean validateAccessToken(String token) {
         try {
-
-            System.out.println("실행 true");
             Jwts.parser().verifyWith(jwtProperties.getJwtSecretKey()).build().parseSignedClaims(token); // JWT
             // 문자열의 토큰을 파싱하고
             // 서명을 검증한다. 유효한 경우 서명이 포함된 클레임 객체를 반환한다.
+            log.info("액세스 토큰 검증 true");
             return true;
         } catch (Exception e) {
 
-            System.out.println("실행 false");
-            System.out.println("예외 메시지: " + e.getMessage());
-
+            log.error("액세스 토큰 검증 fail, 예외 메시지: {}", e.getMessage());
             return false;
         }
 
+    }
+
+    public boolean validateRefreshToken(String token, String email) {
+        String storedRefreshToken = redisTemplate.opsForValue().get(TokenManagementService.RT_PREFIX + email);
+        if (storedRefreshToken == null || !storedRefreshToken.equals(token)) {
+            log.info("리프레시 토큰 검증 실패");
+            return false;
+        }
+
+          try {
+            Jwts.parser().verifyWith(jwtProperties.getJwtSecretKey()).build().parseSignedClaims(token); // JWT
+            // 문자열의 토큰을 파싱하고
+            // 서명을 검증한다. 유효한 경우 서명이 포함된 클레임 객체를 반환한다.
+            log.info("리프레시 토큰 검증 true");
+            return true;
+        } catch (Exception e) {
+            log.error("리프레시 토큰 검증 fail, 예외 메시지: {}", e.getMessage());
+            return false;
+        }
     }
 
     // 토큰 기반으로 인증 정보를 가져오는 메서드
@@ -110,6 +132,11 @@ public class TokenProvider {
     public String getBlogId(String token) {
         Claims claims = getClaims(token);
         return claims.get("blogId", String.class);
+    }
+
+    public String getEmail(String token) {
+        Claims claims = getClaims(token);
+        return claims.get("email", String.class);
     }
 
 

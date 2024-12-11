@@ -1,13 +1,11 @@
 package com.yhs.blog.springboot.jpa.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.yhs.blog.springboot.jpa.security.jwt.config.jwt.factory.JwtFactory;
 import com.yhs.blog.springboot.jpa.domain.token.jwt.config.JwtProperties;
-import com.yhs.blog.springboot.jpa.domain.token.entity.RefreshToken;
-import com.yhs.blog.springboot.jpa.domain.user.entity.User;
-import com.yhs.blog.springboot.jpa.domain.token.repository.RefreshTokenRepository;
-import com.yhs.blog.springboot.jpa.domain.user.repository.UserRepository;
 import com.yhs.blog.springboot.jpa.domain.token.jwt.service.TokenService;
+import com.yhs.blog.springboot.jpa.domain.user.entity.User;
+import com.yhs.blog.springboot.jpa.domain.user.repository.UserRepository;
+import com.yhs.blog.springboot.jpa.security.jwt.config.jwt.factory.JwtFactory;
 import jakarta.servlet.http.Cookie;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -25,7 +23,6 @@ import org.springframework.web.context.WebApplicationContext;
 import java.util.Date;
 import java.util.Map;
 
-import static org.mockito.Mockito.doThrow;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -48,9 +45,6 @@ public class TokenApiControllerTest {
 
     @Autowired
     UserRepository userRepository;
-
-    @Autowired
-    RefreshTokenRepository refreshTokenRepository;
 
     @Autowired
     TokenService tokenService;
@@ -105,7 +99,6 @@ public class TokenApiControllerTest {
                 ".com").password("test").build());
 
         String refreshToken = JwtFactory.builder().claims(Map.of("id", testUser.getId())).build().createToken(jwtProperties);
-        refreshTokenRepository.save(new RefreshToken(testUser.getId(), refreshToken));
 
         Cookie refreshTokenCookie = new Cookie("refresh_token", refreshToken);
         refreshTokenCookie.setHttpOnly(true);
