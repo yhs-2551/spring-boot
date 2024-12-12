@@ -15,6 +15,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -31,6 +32,7 @@ public class OAuth2ApiController {
     private final RedisTemplate<String, String> redisTemplate;
 
 
+    @PreAuthorize("isAuthenticated()")
     @PostMapping("/oauth2/users")
     public ResponseEntity<ApiResponse> oAuth2UserSignup(@Valid @RequestBody AdditionalInfoRequest additionalInfoRequest,
                                                         Authentication authentication, HttpServletRequest request, HttpServletResponse response) {

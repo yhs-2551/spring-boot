@@ -42,6 +42,7 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
     // 나중에 리멤버미 Redis 기반 처리 추가 필요
     @Override
     public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response, Authentication authentication) throws IOException, ServletException {
+        
         // OAuth2UserCustomService에서 리턴한 oAuth2User는 세션 스코프로 저장되어 있는데, 해당 OAuth2 사용자를 가져옴
         OAuth2User oAuth2User = (OAuth2User) authentication.getPrincipal();
         Optional<User> user = userService.findUserByEmail((String) oAuth2User.getAttributes().get("email"));

@@ -22,6 +22,7 @@ public class RememberMeAuthenticationFilter extends OncePerRequestFilter {
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
+
         if (request.getRequestURI().startsWith("/oauth2/authorization/")) {
             String rememberMe = request.getParameter("remember_me");
 

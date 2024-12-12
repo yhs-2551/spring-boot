@@ -65,6 +65,7 @@ public class UserApiController extends SimpleUrlAuthenticationSuccessHandler {
                     .body(new SuccessResponse<>(result.getData(), result.getMessage()));
         }
 
+
         return ResponseEntity.status(result.getStatusCode())
                 .body(new ErrorResponse(result.getMessage(), result.getStatusCode()));
 

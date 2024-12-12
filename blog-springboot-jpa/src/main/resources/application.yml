@@ -41,11 +41,11 @@ spring:
       max-file-size: 10MB
       # Total request size limit
       max-request-size: 20MB
-
-  redis:
-    # Redis settings
-    host: localhost
-    port: 6379
+  data:
+    redis:
+      # Redis settings
+      host: localhost
+      port: 6379
 
   security:
     oauth2:
