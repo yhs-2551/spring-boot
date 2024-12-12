@@ -56,12 +56,24 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-data-redis:3.3.5'
 
     developmentOnly 'org.springframework.boot:spring-boot-devtools'
+
     runtimeOnly 'com.mysql:mysql-connector-j'
 
+    testImplementation 'com.h2database:h2:2.2.224'
+    testImplementation 'io.rest-assured:rest-assured:5.5.0'
+
+    implementation 'org.springframework.boot:spring-boot-starter-mail'
+
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    testImplementation 'org.mockito:mockito-inline:5.2.0' // 정석 메서드 테스트를 위해
 
     testImplementation 'org.springframework.security:spring-security-test'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+
+    testImplementation 'org.testcontainers:testcontainers:1.20.4'
+    testImplementation 'org.testcontainers:junit-jupiter:1.20.4'
+
+
 }
 
 configurations {
