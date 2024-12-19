@@ -39,3 +39,6 @@ out/
 #env
 .env
 application-local.yml
+
+#queryDSL related folder 
+src/main/generated/

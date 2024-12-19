@@ -1,11 +1,147 @@
-version: '3.8'
+version: "3.8"
 services:
-  redis:
-    image: redis:latest
-    container_name: blog_redis
-    ports:
-      - "6379:6379"  # 로컬 포트 : 컨테이너 포트
-    volumes:
-      - redis_data:/data  # 데이터 영속성 유지
+    redis:
+        image: redis:latest
+        container_name: blog_redis
+        ports:
+            - "6379:6379"
+        volumes:
+            - redis_data:/data
+
+    elasticsearch:
+        image: docker.elastic.co/elasticsearch/elasticsearch:8.16.1
+        container_name: blog_elasticsearch
+        environment:
+            - discovery.type=single-node
+            - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+            - xpack.security.enabled=false
+            - xpack.security.http.ssl.enabled=false
+            - xpack.security.transport.ssl.enabled=false
+            - xpack.security.enrollment.enabled=false
+            - xpack.ml.enabled=false
+        ports:
+            - "9200:9200"
+        volumes:
+            - elasticsearch_data:/usr/share/elasticsearch/data
+        healthcheck:
+            test: ["CMD", "curl", "-f", "http://localhost:9200"]
+            interval: 10s
+            timeout: 5s
+            retries: 5
+        command: >
+            /bin/bash -c '
+                elasticsearch-plugin install --batch analysis-nori &&
+                /usr/local/bin/docker-entrypoint.sh elasticsearch'
+        networks:
+            - elastic_network
+
+    setup-elasticsearch:
+        image: curlimages/curl
+        depends_on:
+            elasticsearch:
+                condition: service_healthy
+        command: >
+            sh -c '
+                echo "Starting setup..." &&
+                curl -X DELETE "elasticsearch:9200/posts" || true &&
+                echo "Waiting for 5 seconds..." &&
+                sleep 5 &&
+                curl -X PUT "elasticsearch:9200/posts" -H "Content-Type: application/json" -d '"'"'
+                {
+                    "settings": {
+                        "analysis": {
+                            "tokenizer": {
+                                "my_tokenizer": {
+                                    "type": "ngram",
+                                    "min_gram": 1,
+                                    "max_gram": 2,
+                                    "token_chars": ["letter", "digit"]
+                                }
+                            },
+                            "analyzer": {
+                                "my_analyzer": {
+                                    "type": "custom",
+                                    "tokenizer": "my_tokenizer"
+                                }
+                            }
+                        }
+                    },
+                    "mappings": {
+                        "properties": {
+                            "_class": {
+                                "type": "keyword",
+                                "index": false
+                            },
+                            "id": {
+                                "type": "keyword"
+                            },
+                            "userId": {
+                                "type": "keyword"
+                            },
+                            "categoryId": {
+                                "type": "keyword"
+                            },
+                            "title": {
+                                "type": "text",
+                                "fields": {
+                                    "keyword": {
+                                        "type": "keyword",
+                                        "ignore_above": 256
+                                    },
+                                    "ngram": {
+                                        "type": "text",
+                                        "analyzer": "my_analyzer"
+                                    }
+                                }
+                            },
+                            "content": {
+                                "type": "text",
+                                "fields": {
+                                    "keyword": {
+                                        "type": "keyword",
+                                        "ignore_above": 256
+                                    },
+                                    "ngram": {
+                                        "type": "text",
+                                        "analyzer": "my_analyzer"
+                                    }
+                                }
+                            },
+                            "username": {
+                                "type": "keyword"
+                            },
+                            "createdAt": {
+                                "type": "date"
+                            }
+                        }
+                    }
+                }'"'"'
+            '
+
+        restart: "no"
+        networks:
+            - elastic_network
+
+    kibana:
+        image: docker.elastic.co/kibana/kibana:8.16.1
+        container_name: blog_kibana
+        environment:
+            - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+            - XPACK_SECURITY_ENABLED=false
+            - XPACK_REPORTING_ENABLED=false
+            - XPACK_MONITORING_ENABLED=false
+            - XPACK_SECURITY_ENROLLMENT_ENABLED=false
+        ports:
+            - "5601:5601"
+        depends_on:
+            - elasticsearch
+        networks:
+            - elastic_network
+
 volumes:
-  redis_data:
+    redis_data:
+    elasticsearch_data:
+
+networks:
+    elastic_network:
+        driver: bridge

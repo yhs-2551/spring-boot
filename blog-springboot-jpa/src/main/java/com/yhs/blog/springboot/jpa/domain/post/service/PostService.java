@@ -4,15 +4,19 @@ import com.yhs.blog.springboot.jpa.domain.post.dto.request.PostRequest;
 import com.yhs.blog.springboot.jpa.domain.post.dto.response.PostResponse;
 import com.yhs.blog.springboot.jpa.domain.post.dto.request.PostUpdateRequest;
 import com.yhs.blog.springboot.jpa.domain.post.entity.Post;
+import com.yhs.blog.springboot.jpa.domain.post.repository.search.SearchType;
+
 import jakarta.servlet.http.HttpServletRequest;
 
-import java.util.List;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 public interface PostService {
 
     PostResponse createNewPost(PostRequest postRequest, HttpServletRequest request);
 
-    List<PostResponse> getPostListByUserId(Long UserId);
+    // List<PostResponse> getPostListByUserId(Long UserId);
+    Page<PostResponse> getPosts(Long userId, String keyword, SearchType searchType, String categoryUuid, Pageable pageable);
 
     PostResponse getPostByPostId(Long postId);
 
