@@ -9,10 +9,6 @@ import org.elasticsearch.client.RestClient;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Profile;
-import org.springframework.data.elasticsearch.client.elc.ElasticsearchTemplate;
-import org.springframework.data.elasticsearch.core.convert.ElasticsearchConverter;
-import org.springframework.data.elasticsearch.core.convert.MappingElasticsearchConverter;
-import org.springframework.data.elasticsearch.core.mapping.SimpleElasticsearchMappingContext;
 import org.springframework.data.elasticsearch.repository.config.EnableElasticsearchRepositories;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
@@ -92,7 +88,7 @@ public class TestElasticsearchContainerConfig {
                     .build();
 
             String indexSettings = """
-                    {
+                                        {
                         "settings": {
                             "analysis": {
                                 "tokenizer": {
@@ -157,11 +153,40 @@ public class TestElasticsearchContainerConfig {
                                 },
                                 "createdAt": {
                                     "type": "date"
+                                },
+                                "category": {
+                                    "properties": {
+                                        "id": {
+                                            "type": "keyword"
+                                        },
+                                        "name": {
+                                            "type": "keyword"
+                                        }
+                                    }
+                                },
+                                "featuredImage": {
+                                    "properties": {
+                                        "id": {
+                                            "type": "keyword"
+                                        },
+                                        "fileName": {
+                                            "type": "keyword"
+                                        },
+                                        "fileUrl": {
+                                            "type": "keyword"
+                                        },
+                                        "fileType": {
+                                            "type": "keyword"
+                                        },
+                                        "fileSize": {
+                                            "type": "long"
+                                        }
+                                    }
                                 }
                             }
                         }
                     }
-                    """;
+                                        """;
 
             // 기존 인덱스 삭제
             Request deleteRequest = new Request("DELETE", "/posts");

@@ -6,6 +6,8 @@ import org.springframework.data.elasticsearch.annotations.Query;
 import org.springframework.data.elasticsearch.repository.ElasticsearchRepository;
 import org.springframework.stereotype.Repository;
 
+import com.yhs.blog.springboot.jpa.domain.post.repository.search.document.PostDocument;
+
 // Should 조건은 title이나 content 중 하나라도 매칭되면 됨
 // must조건은 userId는 반드시 일치해야 함
 // minimum_should_match는 should 절에서만 필요. 즉 제목 또는 내용 중 하나라도 매칭되면 됨

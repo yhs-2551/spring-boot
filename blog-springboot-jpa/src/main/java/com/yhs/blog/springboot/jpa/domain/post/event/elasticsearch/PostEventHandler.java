@@ -8,8 +8,8 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.event.TransactionalEventListener;
 
-import com.yhs.blog.springboot.jpa.domain.post.repository.search.PostDocument;
 import com.yhs.blog.springboot.jpa.domain.post.repository.search.PostSearchRepository;
+import com.yhs.blog.springboot.jpa.domain.post.repository.search.document.PostDocument;
 import com.yhs.blog.springboot.jpa.exception.custom.ElasticsearchCustomException;
 
 import co.elastic.clients.elasticsearch._types.ElasticsearchException;

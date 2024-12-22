@@ -3,7 +3,8 @@ package com.yhs.blog.springboot.jpa.domain.post.dto.response;
 import com.yhs.blog.springboot.jpa.domain.category.entity.Category;
 import com.yhs.blog.springboot.jpa.domain.file.dto.response.FileResponse;
 import com.yhs.blog.springboot.jpa.domain.post.entity.Post;
-import com.yhs.blog.springboot.jpa.domain.post.repository.search.PostDocument;
+import com.yhs.blog.springboot.jpa.domain.post.repository.search.document.CategoryDocument;
+import com.yhs.blog.springboot.jpa.domain.post.repository.search.document.PostDocument;
 
 import lombok.Getter;
 
@@ -75,7 +76,7 @@ public class PostResponse {
                 response.postStatus = post.getPostStatus().name();
                 response.commentsEnabled = post.getCommentsEnabled().name();
                 response.featuredImage = Optional.ofNullable(post.getFeaturedImage())
-                                .map(FeaturedImageResponse::new)
+                                .map(FeaturedImageResponse::from)
                                 .orElse(null);
 
                 response.createdAt = post.getCreatedAt();
@@ -86,16 +87,18 @@ public class PostResponse {
 
                 return response;
         }
-
+        
         public static PostResponse fromDocument(PostDocument document) {
                 PostResponse response = new PostResponse();
                 response.featuredImage = Optional.ofNullable(document.getFeaturedImage())
-                                .map(FeaturedImageResponse::new).orElse(null);
+                                .map(FeaturedImageResponse::from).orElse(null);
                 response.title = document.getTitle();
                 response.content = document.getContent();
-                response.categoryName = Optional.ofNullable(document.getCategory()).map(Category::getName).orElse(null);
+                response.categoryName = Optional.ofNullable(document.getCategory())
+                                .map(CategoryDocument::getName)
+                                .orElse(null);
                 response.createdAt = document.getCreatedAt();
-                response.username = document.getUsername(); 
+                response.username = document.getUsername();
                 return response;
         }
 }

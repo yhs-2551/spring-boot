@@ -15,9 +15,9 @@ import com.querydsl.jpa.impl.JPAQueryFactory;
 import com.yhs.blog.springboot.jpa.domain.post.dto.response.PostResponse;
 import com.yhs.blog.springboot.jpa.domain.post.entity.Post;
 import com.yhs.blog.springboot.jpa.domain.post.entity.QPost;
-import com.yhs.blog.springboot.jpa.domain.post.repository.search.PostDocument;
 import com.yhs.blog.springboot.jpa.domain.post.repository.search.PostSearchRepository;
 import com.yhs.blog.springboot.jpa.domain.post.repository.search.SearchType;
+import com.yhs.blog.springboot.jpa.domain.post.repository.search.document.PostDocument;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;

@@ -48,7 +48,7 @@ public class PostUpdateResponse {
                 null;
         this.postStatus = post.getPostStatus().name();
         this.commentsEnabled = post.getCommentsEnabled().name();
-        this.featuredImage = post.getFeaturedImage() != null ? new FeaturedImageResponse(post.getFeaturedImage()) : null;
+        this.featuredImage = post.getFeaturedImage() != null ? FeaturedImageResponse.from(post.getFeaturedImage()) : null;
         this.updatedAt = post.getUpdatedAt();
         this.views = post.getViews();
         this.commentCount = post.getCommentCount();

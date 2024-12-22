@@ -37,6 +37,8 @@ services:
 
     setup-elasticsearch:
         image: curlimages/curl
+        volumes:
+            - ./docker/elasticsearch/mapping.json:/mapping.json  # 호스트경로:컨테이너경로(ES컨테이너 내부 경로)
         depends_on:
             elasticsearch:
                 condition: service_healthy
@@ -46,78 +48,8 @@ services:
                 curl -X DELETE "elasticsearch:9200/posts" || true &&
                 echo "Waiting for 5 seconds..." &&
                 sleep 5 &&
-                curl -X PUT "elasticsearch:9200/posts" -H "Content-Type: application/json" -d '"'"'
-                {
-                    "settings": {
-                        "analysis": {
-                            "tokenizer": {
-                                "my_tokenizer": {
-                                    "type": "ngram",
-                                    "min_gram": 1,
-                                    "max_gram": 2,
-                                    "token_chars": ["letter", "digit"]
-                                }
-                            },
-                            "analyzer": {
-                                "my_analyzer": {
-                                    "type": "custom",
-                                    "tokenizer": "my_tokenizer"
-                                }
-                            }
-                        }
-                    },
-                    "mappings": {
-                        "properties": {
-                            "_class": {
-                                "type": "keyword",
-                                "index": false
-                            },
-                            "id": {
-                                "type": "keyword"
-                            },
-                            "userId": {
-                                "type": "keyword"
-                            },
-                            "categoryId": {
-                                "type": "keyword"
-                            },
-                            "title": {
-                                "type": "text",
-                                "fields": {
-                                    "keyword": {
-                                        "type": "keyword",
-                                        "ignore_above": 256
-                                    },
-                                    "ngram": {
-                                        "type": "text",
-                                        "analyzer": "my_analyzer"
-                                    }
-                                }
-                            },
-                            "content": {
-                                "type": "text",
-                                "fields": {
-                                    "keyword": {
-                                        "type": "keyword",
-                                        "ignore_above": 256
-                                    },
-                                    "ngram": {
-                                        "type": "text",
-                                        "analyzer": "my_analyzer"
-                                    }
-                                }
-                            },
-                            "username": {
-                                "type": "keyword"
-                            },
-                            "createdAt": {
-                                "type": "date"
-                            }
-                        }
-                    }
-                }'"'"'
+                curl -X PUT "elasticsearch:9200/posts" -H "Content-Type: application/json" -d @/mapping.json
             '
-
         restart: "no"
         networks:
             - elastic_network
@@ -138,6 +70,7 @@ services:
         networks:
             - elastic_network
 
+# 볼륨 정의로 데이터 유지
 volumes:
     redis_data:
     elasticsearch_data:

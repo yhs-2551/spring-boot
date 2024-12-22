@@ -96,8 +96,8 @@ public class PostServiceImpl implements PostService {
         // 삭제될 포스트의 태그 정보 미리 저장
         List<Long> postTagIds = postTagRepository.findTagIdsByPostId(postId);
 
-        // Post를 삭제하면서 cascade효과로 인해 관련된 PostTag 삭제. w
-        // deleteById는 내부적으로 findById이후에 삭제 따라서 delete사용
+        // Post를 삭제하면서 cascade효과로 인해 관련된 PostTag 삭제. 
+        // 위에서 영속성 컨텍스트로 로드된 post를 이용하여 삭제
         postRepository.delete(post);
 
         TransactionSynchronizationManager.registerSynchronization(

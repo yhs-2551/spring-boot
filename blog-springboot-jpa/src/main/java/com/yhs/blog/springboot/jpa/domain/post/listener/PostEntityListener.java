@@ -3,8 +3,8 @@ package com.yhs.blog.springboot.jpa.domain.post.listener;
 import org.springframework.stereotype.Component;
 
 import com.yhs.blog.springboot.jpa.domain.post.entity.Post;
-import com.yhs.blog.springboot.jpa.domain.post.repository.search.PostDocument;
 import com.yhs.blog.springboot.jpa.domain.post.repository.search.PostSearchRepository;
+import com.yhs.blog.springboot.jpa.domain.post.repository.search.document.PostDocument;
 
 import jakarta.persistence.PostPersist;
 import jakarta.persistence.PostRemove;
