@@ -13,12 +13,18 @@ import com.yhs.blog.springboot.jpa.domain.file.entity.File;
 import com.yhs.blog.springboot.jpa.domain.post.entity.Post;
 import com.yhs.blog.springboot.jpa.domain.post.entity.PostTag;
 import com.yhs.blog.springboot.jpa.domain.post.entity.Tag;
+import com.yhs.blog.springboot.jpa.domain.post.entity.enums.CommentsEnabled;
+import com.yhs.blog.springboot.jpa.domain.post.entity.enums.PostStatus;
+import com.yhs.blog.springboot.jpa.domain.post.event.elasticsearch.PostCreatedEvent;
+import com.yhs.blog.springboot.jpa.domain.post.event.elasticsearch.PostDeletedEvent;
+import com.yhs.blog.springboot.jpa.domain.post.event.elasticsearch.PostUpdatedEvent;
 import com.yhs.blog.springboot.jpa.domain.user.entity.User;
 import com.yhs.blog.springboot.jpa.domain.category.repository.CategoryRepository;
 import com.yhs.blog.springboot.jpa.domain.post.repository.FeaturedImageRepository;
 import com.yhs.blog.springboot.jpa.domain.post.repository.PostRepository;
 import com.yhs.blog.springboot.jpa.domain.post.repository.PostTagRepository;
 import com.yhs.blog.springboot.jpa.domain.post.repository.TagRepository;
+import com.yhs.blog.springboot.jpa.domain.post.repository.search.SearchType;
 import com.yhs.blog.springboot.jpa.domain.post.service.PostService;
 import com.yhs.blog.springboot.jpa.domain.file.service.s3.S3Service;
 import com.yhs.blog.springboot.jpa.domain.user.service.UserService;
@@ -27,9 +33,15 @@ import com.yhs.blog.springboot.jpa.domain.token.jwt.util.TokenUtil;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
+
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.dao.DataAccessException;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.util.*;
 
@@ -46,21 +58,32 @@ public class PostServiceImpl implements PostService {
     private final TagRepository tagRepository;
     private final PostTagRepository postTagRepository;
     private final S3Service s3Service;
+    private final ApplicationEventPublisher eventPublisher;
+
+    // @Override
+    // @Transactional(readOnly = true)
+    // public List<PostResponse> getPostListByUserId(Long userId) {
+    // List<Post> posts = postRepository.findByUserId(userId);
+    // return posts.stream().map(PostResponse::from).toList();
+    // }
 
     @Override
     @Transactional(readOnly = true)
-    public List<PostResponse> getPostListByUserId(Long userId) {
-        List<Post> posts = postRepository.findByUserId(userId);
-        return posts.stream().map(PostResponse::new).toList();
+    public Page<PostResponse> getPosts(Long userId, String keyword, SearchType searchType, String categoryUuid,
+            Pageable pageable) {
+        if (categoryUuid != null) {
+            return postRepository.findPostsByCategory(userId, categoryUuid, keyword, searchType, pageable);
+        }
+        return postRepository.findPosts(userId, keyword, searchType, pageable);
     }
 
     @Override
     @Transactional(readOnly = true)
     public PostResponse getPostByPostId(Long postId) {
-        Post post =  postRepository.findById(postId)
+        Post post = postRepository.findById(postId)
                 .orElseThrow(() -> new RuntimeException("Post not found with id " + postId));
 
-        return new PostResponse(post);
+        return PostResponse.from(post);
     }
 
     @Transactional
@@ -73,20 +96,31 @@ public class PostServiceImpl implements PostService {
         // 삭제될 포스트의 태그 정보 미리 저장
         List<Long> postTagIds = postTagRepository.findTagIdsByPostId(postId);
 
-        // Post를 삭제하면서 cascade효과로 인해 관련된 PostTag 삭제.
-        postRepository.deleteById(postId);
+        // Post를 삭제하면서 cascade효과로 인해 관련된 PostTag 삭제. 
+        // 위에서 영속성 컨텍스트로 로드된 post를 이용하여 삭제
+        postRepository.delete(post);
+
+        TransactionSynchronizationManager.registerSynchronization(
+                new TransactionSynchronization() {
+
+                    @Override
+                    public void afterCommit() {
+                        eventPublisher.publishEvent(new PostDeletedEvent(post));
+                    }
+
+                });
 
         // 해당 사용자와 포스트에서만 사용된 태그 삭제
         if (!postTagIds.isEmpty()) {
             tagRepository.deleteUnusedTags(postTagIds, postId, userId);
         }
 
-        // tag 먼저 삭제하고 posttag를 삭제하면,  외래키 오류나고,
-        // 외래키 오류를 피하기 위해 posttag 먼저 삭제하고 tag를 삭제하면 tag에서 PostTag 엔티티 관련된 JPQL Query문 실행 시 posttag가
+        // tag 먼저 삭제하고 posttag를 삭제하면, 외래키 오류나고,
+        // 외래키 오류를 피하기 위해 posttag 먼저 삭제하고 tag를 삭제하면 tag에서 PostTag 엔티티 관련된 JPQL Query문 실행
+        // 시 posttag가
         // 영속성 컨텍스트에서 삭제되었기 PostTag엔티티 관련된 JPQL실행이 제대로 되지 않아서이다.
         // 따라서 최종적으로 위쪽 방식으로 사용한다.
     }
-
 
     @Transactional
     @Override
@@ -116,10 +150,21 @@ public class PostServiceImpl implements PostService {
 
             postRepository.save(post);
 
+            TransactionSynchronizationManager.registerSynchronization(
+                    new TransactionSynchronization() {
+
+                        @Override
+                        public void afterCommit() {
+                            // elasticsearch에 인덱스 저장
+                            eventPublisher.publishEvent(new PostCreatedEvent(post));
+                        }
+
+                    });
+
             // s3 Temp 파일 관련 작업은 비동기로 처리. 사용자에게 빠르게 응답하기 위함
             s3Service.processCreatePostS3TempOperation(postRequest, user.getBlogId());
 
-            return new PostResponse(post);
+            return PostResponse.from(post);
 
         } catch (DataAccessException ex) {
             throw new RuntimeException("A server error occurred while creating the post.", ex);
@@ -129,7 +174,7 @@ public class PostServiceImpl implements PostService {
     @Transactional
     @Override
     public Post updatePostByPostId(Long postId, Long userId,
-                                   PostUpdateRequest postUpdateRequest) {
+            PostUpdateRequest postUpdateRequest) {
 
         User user = userService.findUserById(userId);
 
@@ -147,23 +192,38 @@ public class PostServiceImpl implements PostService {
         Set<File> newFiles = processFiles(post, postUpdateRequest.getFiles(), user);
         List<PostTag> newPostTags = processTags(post, postUpdateRequest.getTags(), user);
 
-        if (postUpdateRequest.getEditPageDeletedTags() != null && !postUpdateRequest.getEditPageDeletedTags().isEmpty()) {
+        if (postUpdateRequest.getEditPageDeletedTags() != null
+                && !postUpdateRequest.getEditPageDeletedTags().isEmpty()) {
 
-            List<Tag> unusedTags =
-                    tagRepository.findUnusedTagsNotUsedByOtherPostsAndOtherUsers(postUpdateRequest.getEditPageDeletedTags(), postId, userId);
+            List<Tag> unusedTags = tagRepository.findUnusedTagsNotUsedByOtherPostsAndOtherUsers(
+                    postUpdateRequest.getEditPageDeletedTags(), postId, userId);
 
             tagRepository.deleteAll(unusedTags);
         }
 
-
         FeaturedImage featuredImage = processFeaturedImage(postUpdateRequest.getFeaturedImage());
 
-        post.update(category, postUpdateRequest.getTitle(), postUpdateRequest.getContent(), newFiles, newPostTags, Post.PostStatus.valueOf(postUpdateRequest.getPostStatus().toUpperCase()), Post.CommentsEnabled.valueOf(postUpdateRequest.getCommentsEnabled().toUpperCase()), featuredImage);
+        post.update(category, postUpdateRequest.getTitle(), postUpdateRequest.getContent(), newFiles, newPostTags,
+                PostStatus.valueOf(postUpdateRequest.getPostStatus().toUpperCase()),
+                CommentsEnabled.valueOf(postUpdateRequest.getCommentsEnabled().toUpperCase()), featuredImage);
         s3Service.processUpdatePostS3TempOperation(postUpdateRequest, user.getBlogId());
-        return postRepository.save(post);
+        Post updatedPost = postRepository.save(post);
+
+        TransactionSynchronizationManager.registerSynchronization(
+                new TransactionSynchronization() {
+
+                    @Override
+                    public void afterCommit() {
+                        // elasticsearch에 인덱스 업데이트
+                        eventPublisher.publishEvent(new PostUpdatedEvent(updatedPost));
+                    }
+
+                });
+
+        return updatedPost;
     }
 
-    //아래쪽은 헬퍼 메서드
+    // 아래쪽은 헬퍼 메서드
 
     private Set<File> processFiles(Post post, List<FileRequest> fileRequests, User user) {
         Set<File> files = new HashSet<>();
@@ -179,7 +239,6 @@ public class PostServiceImpl implements PostService {
         }
         return files;
     }
-
 
     private List<PostTag> processTags(Post post, List<String> tagNames, User user) {
 
@@ -212,7 +271,5 @@ public class PostServiceImpl implements PostService {
         }
         return null;
     }
-
-
 
 }

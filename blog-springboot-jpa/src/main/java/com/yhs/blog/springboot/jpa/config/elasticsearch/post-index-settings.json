@@ -1,0 +1,42 @@
+{
+    "settings": {
+        "analysis": {
+            "tokenizer": {
+                "my_tokenizer": {
+                    "type": "ngram",
+                    "min_gram": 1,
+                    "max_gram": 2,
+                    "token_chars": ["letter", "digit"]
+                }
+            },
+            "analyzer": {
+                "my_analyzer": {
+                    "type": "custom",
+                    "tokenizer": "my_tokenizer"
+                }
+            }
+        }
+    },
+    "mappings": {
+        "properties": {
+            "title": {
+                "type": "keyword",
+                "fields": {
+                    "ngram": {
+                        "type": "text",
+                        "analyzer": "my_analyzer"
+                    }
+                }
+            },
+            "content": {
+                "type": "keyword",
+                "fields": {
+                    "ngram": {
+                        "type": "text",
+                        "analyzer": "my_analyzer"
+                    }
+                }
+            }
+        }
+    }
+}

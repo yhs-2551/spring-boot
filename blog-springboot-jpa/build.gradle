@@ -1,7 +1,8 @@
 plugins {
     id 'java'
-    id 'org.springframework.boot' version '3.3.2'
-    id 'io.spring.dependency-management' version '1.1.6'
+    id 'org.springframework.boot' version '3.4.0'
+    id 'io.spring.dependency-management' version '1.1.7'
+    id 'jacoco'
 }
 
 group = 'com.yhs'
@@ -19,7 +20,7 @@ repositories {
 
 dependencies {
 
-    //	알림 관련 및 aop는 나중에 따로 추가.
+    //	알림 관련 및 aop는 나중에 따로 추가. aop는 spring boot starter web or security에 포함되어 있음.
 
     // Lombok 의존성 (컴파일 시에만 사용)
     compileOnly 'org.projectlombok:lombok'
@@ -51,13 +52,30 @@ dependencies {
 
     implementation  'software.amazon.awssdk:s3:2.28.18'
 
-    implementation 'org.springframework.kafka:spring-kafka:3.2.4'
+    // implementation 'org.springframework.kafka:spring-kafka:3.2.4'
 
-    implementation 'org.springframework.boot:spring-boot-starter-data-redis:3.3.5'
+    implementation 'org.springframework.boot:spring-boot-starter-data-redis'
 
     developmentOnly 'org.springframework.boot:spring-boot-devtools'
 
     runtimeOnly 'com.mysql:mysql-connector-j'
+
+    // querydsl
+    implementation 'com.querydsl:querydsl-jpa:5.1.0:jakarta'
+    annotationProcessor(
+        'com.querydsl:querydsl-apt:5.1.0:jakarta',
+        'jakarta.persistence:jakarta.persistence-api',
+        'jakarta.annotation:jakarta.annotation-api'
+    )
+
+    // elasticsearch
+    implementation 'org.springframework.boot:spring-boot-starter-data-elasticsearch'
+
+    // ES 동기화 실패시 재시도 기능을 위한 의존성
+    implementation 'org.springframework.retry:spring-retry:2.0.10'
+    // 날짜 포맷 변환을 위한 의존성(Elasticsearch에서 날짜 포맷 변환 필요)
+     implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310'
+
 
     testImplementation 'com.h2database:h2:2.2.224'
     testImplementation 'io.rest-assured:rest-assured:5.5.0'
@@ -71,10 +89,39 @@ dependencies {
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 
     testImplementation 'org.testcontainers:testcontainers:1.20.4'
+    testImplementation "org.testcontainers:elasticsearch:1.20.4"
     testImplementation 'org.testcontainers:junit-jupiter:1.20.4'
+
+    testImplementation 'org.awaitility:awaitility:4.2.2'
+
 
 
 }
+
+// QueryDSL QClass 생성 위치 지정
+def querydslDir = "$buildDir/generated/querydsl" 
+
+// QueryDSL QClass 위치 지정
+sourceSets {
+    main.java.srcDirs += [ querydslDir ]
+}
+
+// QueryDSL QClass 생성 설정
+tasks.withType(JavaCompile) {
+    options.annotationProcessorGeneratedSourcesDirectory = file(querydslDir)
+}
+
+// // clean 시에 QClass 삭제
+// clean {
+//     delete file(querydslDir)
+// }
+
+// doLast는 clean 태스크의 모든 작업이 완료된 후 실행되므로 더 안전
+// ./gradlew clean시에 동작
+clean.doLast {
+    file(querydslDir).deleteDir()
+}
+
 
 configurations {
     configureEach {
@@ -84,4 +131,20 @@ configurations {
 
 tasks.named('test') {
     useJUnitPlatform()
+    finalizedBy jacocoTestReport
+}
+
+jacocoTestReport {
+    dependsOn test
+    reports {
+        xml {
+            required = true
+            destination = layout.buildDirectory.file('reports/jacoco/test/jacocoTestReport.xml').get().asFile
+        }
+        html {
+            required = true
+            outputLocation = layout.buildDirectory.dir('jacocoHtml')
+        }
+        csv.required = false
+    }
 }
