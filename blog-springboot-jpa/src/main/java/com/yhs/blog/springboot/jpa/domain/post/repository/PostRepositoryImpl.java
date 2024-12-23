@@ -81,6 +81,7 @@ public class PostRepositoryImpl implements PostRepositoryCustom {
                 builder.and(post.user.id.eq(userId))
                                 .and(post.category.id.eq(categoryUuid));
 
+          
                 return executeQueryDSLQuery(builder, pageable);
         }
 
@@ -90,10 +91,13 @@ public class PostRepositoryImpl implements PostRepositoryCustom {
                 List<Post> posts = queryFactory
                                 .selectFrom(post)
                                 .where(builder)
-                                .orderBy(post.createdAt.desc())
+                                .orderBy(post.createdAt.desc(), post.id.desc())
                                 .offset(pageable.getOffset())
                                 .limit(pageable.getPageSize())
                                 .fetch();
+
+                                log.debug("posts >>>> {}", posts);
+
 
                 long total = queryFactory
                                 .select(post.count())

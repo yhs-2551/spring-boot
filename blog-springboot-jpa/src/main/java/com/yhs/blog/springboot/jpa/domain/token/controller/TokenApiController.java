@@ -53,7 +53,7 @@ public class TokenApiController {
 
         // 액세스 토큰이 쿠키에 없는 사용자
         if (accessToken == null) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("쿠키에 액세스 토큰이 존재하지 않습니다.");
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("쿠키에 액세스 토큰이 존재하지 않거나 이미 액세스 토큰을 발급 받았습니다.");
         }
 
         String redisToken = redisTemplate.opsForValue().get("AT:" + accessToken);
