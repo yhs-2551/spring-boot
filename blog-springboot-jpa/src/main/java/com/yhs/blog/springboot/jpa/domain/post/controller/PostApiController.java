@@ -11,6 +11,7 @@ import com.yhs.blog.springboot.jpa.domain.post.entity.Post;
 import com.yhs.blog.springboot.jpa.domain.post.repository.search.SearchType;
 import com.yhs.blog.springboot.jpa.domain.user.entity.User;
 import com.yhs.blog.springboot.jpa.domain.user.repository.UserRepository;
+import com.yhs.blog.springboot.jpa.dto.response.PageResponse;
 import com.yhs.blog.springboot.jpa.domain.post.service.PostService;
 import com.yhs.blog.springboot.jpa.domain.file.service.s3.S3Service;
 import com.yhs.blog.springboot.jpa.domain.token.jwt.util.TokenUtil;
@@ -20,7 +21,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
@@ -33,13 +33,12 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
 @RequiredArgsConstructor
 @RestController
-@RequestMapping("/api/{blogId}/posts")
+@RequestMapping("/api")
 @Log4j2
 public class PostApiController {
 
@@ -49,7 +48,7 @@ public class PostApiController {
         private final UserRepository userRepository;
 
         // ResponseEntity의 <?>와일드 카드 대신 sealed 클래스를 사용해 특정 클래스들만 상속하게 제한함
-        @PostMapping(produces = MediaType.APPLICATION_JSON_VALUE, consumes = MediaType.APPLICATION_JSON_VALUE)
+        @PostMapping(value = "/{blogId}/posts", produces = MediaType.APPLICATION_JSON_VALUE, consumes = MediaType.APPLICATION_JSON_VALUE)
         @PreAuthorize("#userBlogId == authentication.name")
         public ResponseEntity<ApiResponse> createNewPost(@P("userBlogId") @PathVariable("blogId") String blogId,
                         @Valid @RequestBody PostRequest postRequest,
@@ -61,35 +60,45 @@ public class PostApiController {
                                 .body(new SuccessResponse<PostResponse>(responseDTO, "Success create new post."));
         }
 
-        @GetMapping
-        public ResponseEntity<ApiResponse> findAllPosts(@PathVariable("blogId") String blogId,
+        @GetMapping({ "/{blogId}/posts", "/posts" })
+        public ResponseEntity<ApiResponse> findAllPosts(@PathVariable(name = "blogId", required = false) String blogId,
                         @RequestParam(name = "keyword", required = false) String keyword,
                         @RequestParam(name = "searchType", required = false) SearchType searchType,
                         @RequestParam(name = "categoryUuid", required = false) String categoryUuid,
                         @PageableDefault(page = 0, size = 10, sort = { "createdAt",
                                         "id" }, direction = Sort.Direction.DESC) Pageable pageable) {
+                                                
+                Page<PostResponse> postResponses;
 
-                // 게시글 전체는 특정 사용자 즉 정확한 해당 사용자의 게시글만 조회 가능하도록 구현(userIdentifier 사용)
-                User user = userRepository.findByBlogId(blogId)
-                                .orElseThrow(() -> new RuntimeException(
-                                                "User not found with user identifier " + blogId));
-                Long userId = user.getId();
-                // List<PostResponse> postResponses = postService.getPostListByUserId(userId);
-                Page<PostResponse> postResponses = postService.getPosts(userId, keyword, searchType, categoryUuid,
-                                pageable);
+                if (blogId != null) {
+                        // 특정 사용자의 전체 게시글 처리 
+                        // 게시글 전체는 특정 사용자 즉 정확한 해당 사용자의 게시글만 조회 가능하도록 구현(userIdentifier 사용)
+                        User user = userRepository.findByBlogId(blogId)
+                                        .orElseThrow(() -> new RuntimeException(
+                                                        "User not found with user identifier " + blogId));
+                        Long userId = user.getId();
+                        // List<PostResponse> postResponses = postService.getPostListByUserId(userId);
+                        postResponses = postService.getAllPostsSpecificUser(userId, keyword, searchType, categoryUuid,
+                                        pageable);
+                } else {
+                        // 모든 사용자의 전체 게시글 조회 
+                        postResponses = postService.getAllPostsAllUser(keyword, searchType, pageable);
 
-                return ResponseEntity.ok(new SuccessResponse<>(postResponses, "게시글 응답에 성공하였습니다."));
-                // return new ResponseEntity<>(postResponses, HttpStatus.OK);
+                }
+
+                PageResponse<PostResponse> pageResponse = new PageResponse<>(postResponses);
+
+                return ResponseEntity.ok(new SuccessResponse<>(pageResponse, "게시글 응답에 성공하였습니다."));
         }
 
-        @GetMapping("/{postId}")
+        @GetMapping("/{blogId}/posts/{postId}")
         public ResponseEntity<PostResponse> findPostByPostId(@PathVariable("postId") Long postId) {
 
                 PostResponse postResponse = postService.getPostByPostId(postId);
                 return ResponseEntity.ok().body(postResponse);
         }
 
-        @GetMapping("/{postId}/verify-author")
+        @GetMapping("/{blogId}/posts/{postId}/verify-author")
         public ResponseEntity<Map<String, Boolean>> verifyAuthor(HttpServletRequest request,
                         @PathVariable("postId") Long postId,
                         @PathVariable("blogId") String blogId) {
@@ -113,7 +122,7 @@ public class PostApiController {
         }
 
         @PreAuthorize("#userBlogId == authentication.name")
-        @DeleteMapping("/{postId}")
+        @DeleteMapping("/{blogId}/posts/{postId}")
         public ResponseEntity<ApiResponse> deletePostById(@PathVariable("postId") Long postId,
                         @P("userBlogId") @PathVariable("blogId") String blogId) {
 
@@ -122,7 +131,7 @@ public class PostApiController {
         }
 
         @PreAuthorize("#userBlogId == authentication.name")
-        @PatchMapping("/{postId}")
+        @PatchMapping("/{blogId}/posts/{postId}")
         public ResponseEntity<ApiResponse> updatePostByPostId(@PathVariable("postId") Long postId,
                         @P("userBlogId") @PathVariable("blogId") String blogId,
                         @RequestBody PostUpdateRequest postUpdateRequest) {
@@ -144,7 +153,7 @@ public class PostApiController {
 
         // Swagger api에서 파일을 선택하기 위해서 consumes = "multipart/form-data"를 지정해 주어야 함.
         @PreAuthorize("#userBlogId == authentication.name")
-        @PostMapping(value = "/temp/files/upload", consumes = "multipart/form-data", produces = MediaType.TEXT_PLAIN_VALUE)
+        @PostMapping(value = "/{blogId}/temp/files/upload", consumes = "multipart/form-data", produces = MediaType.TEXT_PLAIN_VALUE)
         public ResponseEntity<String> uploadFile(
                         @RequestParam("file") MultipartFile file,
                         @RequestParam(value = "featured", required = false) String featured,
@@ -158,11 +167,8 @@ public class PostApiController {
                                 // limit for image files
                                 return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                                                 .body("Image file size exceeds the limit of 5MB");
-                        } else if (!file.getContentType().startsWith("image/") && file.getSize() > 10 * 1024 * 1024) { // 10MB
-                                                                                                                       // limit
-                                                                                                                       // for
-                                                                                                                       // other
-                                                                                                                       // files
+                        } else if (!file.getContentType().startsWith("image/") && file.getSize() > 10 * 1024 * 1024) {
+                                // 10MB limit for other files
                                 return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                                                 .body("File size exceeds the limit of 10MB");
                         }

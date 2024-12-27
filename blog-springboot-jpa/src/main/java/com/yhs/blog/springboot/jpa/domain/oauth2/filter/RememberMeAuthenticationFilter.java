@@ -14,6 +14,7 @@ import java.io.IOException;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
+// 리멤버미 선택하고, OAuth2 로그인 클릭 시 해당 Remeber-me 값을 유지하기 위한 필터
 @Log4j2
 @RequiredArgsConstructor
 public class RememberMeAuthenticationFilter extends OncePerRequestFilter {

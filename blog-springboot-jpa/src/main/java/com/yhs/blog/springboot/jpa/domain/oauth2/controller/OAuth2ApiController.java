@@ -31,28 +31,39 @@ public class OAuth2ApiController {
     private final UserService userService;
     private final RedisTemplate<String, String> redisTemplate;
 
-
-    @PreAuthorize("isAuthenticated()")
     @PostMapping("/oauth2/users")
     public ResponseEntity<ApiResponse> oAuth2UserSignup(@Valid @RequestBody AdditionalInfoRequest additionalInfoRequest,
-                                                        Authentication authentication, HttpServletRequest request, HttpServletResponse response) {
+            Authentication authentication, HttpServletRequest request, HttpServletResponse response) {
 
+        String email = redisTemplate.opsForValue()
+                .get("TEMP_OAUTH2_USER_EMAIL:" + additionalInfoRequest.getTempOAuth2UserUniqueId());
 
-        String email = redisTemplate.opsForValue().get( "TEMP_OAUTH2_USER_EMAIL:" + additionalInfoRequest.getTempOAuth2UserUniqueId());
+        if (email == null) {
+
+            log.debug("유효하지 않은 OAuth2 회원가입 요청 email: {}", email);  
+
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(new ErrorResponse("유효하지 않은 OAuth2 회원가입 요청입니다.", 401));
+        }
+
         redisTemplate.delete("TEMP_OAUTH2_USER_EMAIL:" + additionalInfoRequest.getTempOAuth2UserUniqueId());
 
         log.debug("OAuth2 User Signup Email: {}", email);
 
         try {
-            RateLimitResponse rateLimitResponse = userService.createOAuth2User(email, additionalInfoRequest, request, response);
-            SignUpResponseWithHeaders signUpResponseWithHeaders = (SignUpResponseWithHeaders) rateLimitResponse.getData();
+            RateLimitResponse rateLimitResponse = userService.createOAuth2User(email, additionalInfoRequest, request,
+                    response);
+            SignUpResponseWithHeaders signUpResponseWithHeaders = (SignUpResponseWithHeaders) rateLimitResponse
+                    .getData();
 
             if (rateLimitResponse.isSuccess()) {
                 return ResponseEntity.status(HttpStatus.CREATED).headers(signUpResponseWithHeaders.headers())
-                        .body(new SuccessResponse<>(signUpResponseWithHeaders.signUpUserResponse(), rateLimitResponse.getMessage()));
+                        .body(new SuccessResponse<>(signUpResponseWithHeaders.signUpUserResponse(),
+                                rateLimitResponse.getMessage()));
             } else {
-                return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS).body(new ErrorResponse(rateLimitResponse.getMessage(),
-                        rateLimitResponse.getStatusCode()));
+                return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
+                        .body(new ErrorResponse(rateLimitResponse.getMessage(),
+                                rateLimitResponse.getStatusCode()));
             }
 
         } catch (Exception e) {
@@ -60,7 +71,6 @@ public class OAuth2ApiController {
                     "실패하였습니다.",
                     HttpStatus.INTERNAL_SERVER_ERROR.value()));
         }
-
 
     }
 }

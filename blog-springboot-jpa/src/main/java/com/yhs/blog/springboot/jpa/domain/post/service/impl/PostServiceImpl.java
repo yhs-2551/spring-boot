@@ -69,13 +69,21 @@ public class PostServiceImpl implements PostService {
 
     @Override
     @Transactional(readOnly = true)
-    public Page<PostResponse> getPosts(Long userId, String keyword, SearchType searchType, String categoryUuid,
+    public Page<PostResponse> getAllPostsSpecificUser(Long userId, String keyword, SearchType searchType, String categoryUuid,
             Pageable pageable) {
         if (categoryUuid != null) {
-            return postRepository.findPostsByCategory(userId, categoryUuid, keyword, searchType, pageable);
+            return postRepository.findPostsByUserIdAndCategoryId(userId, categoryUuid, keyword, searchType, pageable);
         }
-        return postRepository.findPosts(userId, keyword, searchType, pageable);
+        return postRepository.findPostsByUserId(userId, keyword, searchType, pageable);
     }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Page<PostResponse> getAllPostsAllUser(String keyword, SearchType searchType, Pageable pageable) {
+ 
+        return postRepository.findPostsAllUser(keyword, searchType, pageable);
+    }
+
 
     @Override
     @Transactional(readOnly = true)

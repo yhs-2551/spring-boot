@@ -34,6 +34,7 @@ public class TokenAuthenticationFilter extends OncePerRequestFilter {
                         //특정 게시글 조회 (GET /api/posts/{id}) 및 게시글 목록 조회는 토큰 검증이 필요 없음
                         requestURI.matches("/api/[^/]+/posts") ||
                         requestURI.matches("/api/[^/]+/posts/[^/]+") ||
+                        requestURI.startsWith("/api/posts") ||
                         // username, Email, BlogId 체크는 토큰 검증이 필요 없음
                         requestURI.startsWith("/api/check/") ||
                         // Swagger UI 관련 요청은 토큰 검증이 필요 없음

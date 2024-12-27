@@ -86,9 +86,6 @@ spring:
 
 logging:
     level:
-        root: debug # vscode에서 테스트시 DEBUG CONSOLE에서 보기 위함
-        org.hibernate.SQL: debug # SQL 쿼리 출력
-        org.hibernate.type.descriptor.sql: trace # SQL 쿼리 파라미터 출력
         org.springframework.transaction: debug # 트랜잭션 로그
         org.springframework.orm.jpa: debug # JPA 로그
         com.yhs.blog.springboot.jpa: debug # 애플리케이션 로그

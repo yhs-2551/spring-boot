@@ -19,8 +19,12 @@
         </Logger>
 
         <!-- 바인딩된 파라미터 값 로그 레벨 설정 -->
-        <Logger name="org.hibernate.type.descriptor.sql.BasicBinder" level="trace" additivity="false">
+        <Logger name="org.hibernate.type.descriptor.sql" level="trace" additivity="false">
             <AppenderRef ref="Console"/>
+        </Logger>
+
+         <Logger name="org.hibernate.type" level="trace" additivity="false">
+          <AppenderRef ref="Console"/>
         </Logger>
     </Loggers>
 </Configuration>

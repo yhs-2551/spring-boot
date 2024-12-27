@@ -45,3 +45,5 @@ build/generated/querydsl/
 
 # VS CODE에서 문서 작업용 파일
 document.md
+
+dummy.sql

@@ -50,6 +50,7 @@ spring:
                     google:
                         authorization-uri: ${GOOGLE_AUTHORIZATION_URI}
 
+#Test관련 log4j2-test.xml 따로 설정 필요
 logging:
     level:
         root: info # vscode에서 테스트시 DEBUG CONSOLE에서 보기 위함 

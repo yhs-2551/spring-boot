@@ -40,11 +40,7 @@ public class UserServiceImpl implements UserService {
     private final TokenProvider tokenProvider;
     private final TokenManagementService tokenManagementService;
 
-
-//    private static final long CACHE_TTL = 24 * 60 * 60; // 1일
-
-
-
+    // private static final long CACHE_TTL = 24 * 60 * 60; // 1일
 
     @Override
     @Transactional
@@ -57,59 +53,23 @@ public class UserServiceImpl implements UserService {
                     .username(signUpUserRequest.getUsername())
                     .email(signUpUserRequest.getEmail())
                     .password(encoder.encode(signUpUserRequest.getPassword()))
-//                    .role(User.UserRole.ADMIN) 일단 기본값인 user로 사용
+                    // .role(User.UserRole.ADMIN) 일단 기본값인 user로 사용
                     .build();
 
             User reponseUser = userRepository.save(user);
-            return new SignUpUserResponse(reponseUser.getId(), reponseUser.getBlogId(), reponseUser.getUsername(), reponseUser.getEmail());
-
+            return new SignUpUserResponse(reponseUser.getId(), reponseUser.getBlogId(), reponseUser.getUsername(),
+                    reponseUser.getEmail());
 
         } catch (Exception ex) {
             throw new UserCreationException("An error occurred while creating the user: " + ex.getMessage());
         }
     }
 
-
-//
-//    HttpHeaders headers = new HttpHeaders();
-//
-//    String refreshToken;
-//
-//        if (loginRequest.getRememberMe()) {
-//        refreshToken = tokenProvider.generateToken(user,
-//                TokenManagementService.REMEMBER_ME_REFRESH_TOKEN_DURATION);
-//        redisTemplate.opsForValue().set(TokenManagementService.RT_PREFIX + user.getEmail(), refreshToken,
-//                TokenManagementService.REMEMBER_ME_REFRESH_TOKEN_TTL, TimeUnit.SECONDS);
-//
-//    } else {
-//        refreshToken = tokenProvider.generateToken(user, TokenManagementService.REFRESH_TOKEN_DURATION);
-//
-//        redisTemplate.opsForValue().set(TokenManagementService.RT_PREFIX + user.getEmail(), refreshToken,
-//                TokenManagementService.REFRESH_TOKEN_TTL, TimeUnit.SECONDS);
-//
-//    }
-
-//
-//    // 생성된 리프레시 토큰을 클라이언트측 쿠키에 저장 -> 클라이언트에서 액세스 토큰이 만료되면 재발급 요청하기 위함
-//        tokenManagementService.addRefreshTokenToCookie(request, response, refreshToken, loginRequest.getRememberMe());
-//
-//    // Access Token 생성
-//    String accessToken = tokenProvider.generateToken(user, TokenManagementService.ACCESS_TOKEN_DURATION);
-//
-//    // 응답 헤더에 액세스 토큰 추가
-//        headers.set("Authorization", "Bearer " + accessToken);
-//
-//    //  인증 실패와 관련된 정보를 세션에서 제거. 즉 다음에 재로그인할때 만약 이전 인증 실패 정보가 남아있다면 이전 인증 실패 정보가 남아있지 않도록 함.
-//        super.clearAuthenticationAttributes(request);
-//
-//        return ResponseEntity.ok().headers(headers).body(new SuccessResponse<>("로그인에 성공하였습니다."));
-
     @Override
     @Transactional
     @RateLimit(key = "OAuth2Signup")
     public RateLimitResponse createOAuth2User(String email, AdditionalInfoRequest additionalInfoRequest,
-                                               HttpServletRequest request, HttpServletResponse response) {
-
+            HttpServletRequest request, HttpServletResponse response) {
 
         HttpHeaders headers = new HttpHeaders();
 
@@ -152,7 +112,6 @@ public class UserServiceImpl implements UserService {
         // 응답 헤더에 액세스 토큰 추가
         headers.set("Authorization", "Bearer " + accessToken);
 
-
         SignUpUserResponse signUpUserResponse = new SignUpUserResponse(responseUser.getId(), responseUser.getBlogId(),
                 responseUser.getUsername(),
                 responseUser.getEmail());
@@ -193,13 +152,13 @@ public class UserServiceImpl implements UserService {
 
         if (userExists) {
             // 캐시에 저장. 사용자는 회원탈퇴 하는 경우 아니면 계속 존재하기 때문에, 만료시간을 설정하지 않음. 즉 무한대.
-//            redisTemplate.opsForValue().set(cacheKey, userExists, CACHE_TTL, TimeUnit.SECONDS);
+            // redisTemplate.opsForValue().set(cacheKey, userExists, CACHE_TTL,
+            // TimeUnit.SECONDS);
             redisTemplateBoolean.opsForValue().set(cacheKey, true);
         }
 
         return false;
     }
-
 
     @Override
     @DuplicateCheck(type = "BlogId")
@@ -230,8 +189,8 @@ public class UserServiceImpl implements UserService {
                 " 사용자명 입니다. 다른 사용자명을 사용해 주세요.", "사용 가능한 사용자명 입니다.");
     }
 
-
-    private DuplicateCheckResponse checkDuplicate(String cacheKey, Supplier<Boolean> dbCheck, String existMessage, String notExistMessage) {
+    private DuplicateCheckResponse checkDuplicate(String cacheKey, Supplier<Boolean> dbCheck, String existMessage,
+            String notExistMessage) {
         // boolean 기본 타입은 null값을 가질 수 없기 때문에 null 비교 하려면 래퍼 클래스 사용필요.
         Boolean exists = redisTemplateBoolean.opsForValue().get(cacheKey);
         if (exists != null) {
@@ -244,39 +203,13 @@ public class UserServiceImpl implements UserService {
             // DB 조회 성공
             // 캐시에 저장. 일단 무한대. 나중에 사용자 계정 변경 및 계정 탈퇴 시 캐시 무효화할 예정
             // 즉 한번 중복확인 체크하면 사용자가 계정 변경 시 사용자명(닉네임), 블로그아이디를 재설정 or 계정 탈퇴 하는거 아닌 이상 항상 같음
-            // redisTemplate.opsForValue().set(cacheKey, userExists, CACHE_TTL, TimeUnit.SECONDS);
+            // redisTemplate.opsForValue().set(cacheKey, userExists, CACHE_TTL,
+            // TimeUnit.SECONDS);
             redisTemplateBoolean.opsForValue().set(cacheKey, true);
             return new DuplicateCheckResponse(true, existMessage, false);
         }
 
         return new DuplicateCheckResponse(false, notExistMessage, false);
     }
-
-//    @Override
-//    public boolean existsByUserIdentifier(String userIdentifier) {
-//
-//        String cacheKey = "user:" + userIdentifier;
-//
-//        Boolean exists = redisTemplate.opsForValue().get(cacheKey);
-//        if (exists != null) {
-//            return exists;
-//        }
-//
-//        boolean userExists = userRepository.existsByUserIdentifier(userIdentifier);
-//
-//        if (userExists) {
-//            // 캐시에 저장. 사용자는 회원탈퇴 하는 경우 아니면 계속 존재하기 때문에, 만료시간을 설정하지 않음. 즉 무한대.
-////            redisTemplate.opsForValue().set(cacheKey, userExists, CACHE_TTL, TimeUnit.SECONDS);
-//            redisTemplate.opsForValue().set(cacheKey, userExists);
-//        }
-//
-//        return userExists;
-//    }
-
-    // 나중에 무효화할때 필요
-//    public void invalidateUserCache(String userIdentifier) {
-//        redisTemplate.delete("user:" + userIdentifier);
-//    }
-
 
 }

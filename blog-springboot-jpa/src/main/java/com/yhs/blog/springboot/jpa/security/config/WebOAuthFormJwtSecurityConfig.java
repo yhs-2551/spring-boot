@@ -142,6 +142,7 @@ public class WebOAuthFormJwtSecurityConfig {
                                 .requestMatchers(HttpMethod.GET, "/api/token/initial-token").permitAll()
                                 .requestMatchers(HttpMethod.GET, "/api/token/new-token").permitAll()
                                 .requestMatchers(HttpMethod.GET, "/api/*/posts").permitAll()
+                                .requestMatchers(HttpMethod.GET, "/api/posts").permitAll()
                                 .requestMatchers(HttpMethod.GET, "/api/*/posts/*").permitAll()
                                 .requestMatchers(HttpMethod.GET, "/api/check/**").permitAll()
                                 // POST 요청 permitAll

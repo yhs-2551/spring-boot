@@ -23,6 +23,8 @@ public class PostResponse {
 
         private String username; // 작성자명
 
+        private String blogId; // 블로그 ID
+
         private String categoryName; // 카테고리 이름
 
         private String title; // 게시글 제목
@@ -55,6 +57,7 @@ public class PostResponse {
                 response.id = post.getId();
                 response.userId = post.getUser().getId();
                 response.username = post.getUser().getUsername();
+                response.blogId = post.getUser().getBlogId();
                 response.categoryName = Optional.ofNullable(post.getCategory())
                                 .map(Category::getName)
                                 .orElse(null);
@@ -90,6 +93,7 @@ public class PostResponse {
         
         public static PostResponse fromDocument(PostDocument document) {
                 PostResponse response = new PostResponse();
+                response.id = Long.parseLong(document.getId());
                 response.featuredImage = Optional.ofNullable(document.getFeaturedImage())
                                 .map(FeaturedImageResponse::from).orElse(null);
                 response.title = document.getTitle();
@@ -99,6 +103,7 @@ public class PostResponse {
                                 .orElse(null);
                 response.createdAt = document.getCreatedAt();
                 response.username = document.getUsername();
+                response.blogId = document.getBlogId();
                 return response;
         }
 }

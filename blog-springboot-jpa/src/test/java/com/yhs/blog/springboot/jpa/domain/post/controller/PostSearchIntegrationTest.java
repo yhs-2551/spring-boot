@@ -134,7 +134,7 @@ public class PostSearchIntegrationTest {
                 PageRequest pageRequest = PageRequest.of(0, 10, Sort.by(Sort.Direction.DESC, "createdAt"));
 
                 // when
-                Page<PostResponse> result = postService.getPosts(testUser.getId(), null, null, null, pageRequest);
+                Page<PostResponse> result = postService.getAllPostsSpecificUser(testUser.getId(), null, null, null, pageRequest);
 
                 // then
                 assertThat(result.getContent()).hasSize(10);
@@ -150,7 +150,7 @@ public class PostSearchIntegrationTest {
                                 "createdAt"));
 
                 // when
-                Page<PostResponse> result = postService.getPosts(testUser.getId(), null,
+                Page<PostResponse> result = postService.getAllPostsSpecificUser(testUser.getId(), null,
                                 null, null, pageRequest);
 
                 // then
@@ -170,7 +170,7 @@ public class PostSearchIntegrationTest {
                 SearchType searchType = SearchType.ALL;
 
                 // when
-                Page<PostResponse> result = postService.getPosts(testUser.getId(),
+                Page<PostResponse> result = postService.getAllPostsSpecificUser(testUser.getId(),
                                 searchKeyword, searchType, null,
                                 pageRequest);
 
@@ -216,7 +216,7 @@ public class PostSearchIntegrationTest {
                 SearchType searchType = SearchType.TITLE;
 
                 // when
-                Page<PostResponse> result = postService.getPosts(testUser.getId(),
+                Page<PostResponse> result = postService.getAllPostsSpecificUser(testUser.getId(),
                                 searchKeyword, searchType, null,
                                 pageRequest);
 
@@ -256,7 +256,7 @@ public class PostSearchIntegrationTest {
                 SearchType searchType = SearchType.CONTENT;
 
                 // when
-                Page<PostResponse> result = postService.getPosts(testUser.getId(),
+                Page<PostResponse> result = postService.getAllPostsSpecificUser(testUser.getId(),
                                 searchKeyword, searchType, null,
                                 pageRequest);
 
@@ -296,7 +296,7 @@ public class PostSearchIntegrationTest {
                 SearchType searchType = SearchType.ALL;
 
                 // when
-                Page<PostResponse> result = postService.getPosts(testUser.getId(),
+                Page<PostResponse> result = postService.getAllPostsSpecificUser(testUser.getId(),
                                 searchKeyword, searchType, null,
                                 pageRequest);
 
@@ -338,7 +338,7 @@ public class PostSearchIntegrationTest {
                 String categoryName = "테스트 카테고리";
 
                 // when
-                Page<PostResponse> result = postService.getPosts(testUser.getId(), null, null, categoryId, pageRequest);
+                Page<PostResponse> result = postService.getAllPostsSpecificUser(testUser.getId(), null, null, categoryId, pageRequest);
 
                 // then
                 assertThat(result.getContent()).isNotEmpty();
@@ -380,7 +380,7 @@ public class PostSearchIntegrationTest {
                 SearchType searchType = SearchType.ALL;
 
                 // when
-                Page<PostResponse> result = postService.getPosts(testUser.getId(), searchKeyword, searchType,
+                Page<PostResponse> result = postService.getAllPostsSpecificUser(testUser.getId(), searchKeyword, searchType,
                                 categoryId, pageRequest);
 
                 // then

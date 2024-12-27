@@ -61,6 +61,9 @@ public class PostDocument {
         @Field(type = FieldType.Keyword)
         private String username; // 프론트측 응답에 필요함
 
+        @Field(type = FieldType.Keyword)
+        private String blogId; // 프론트측 응답에 필요함
+
         @Field(type = FieldType.Nested)
         private FeaturedImageDocument featuredImage; // 프론트측 응답에 필요함
 
@@ -76,6 +79,7 @@ public class PostDocument {
                                 .category(Optional.ofNullable(post.getCategory()).map(CategoryDocument::from)
                                                 .orElse(null))
                                 .username(post.getUser().getUsername())
+                                .blogId(post.getUser().getBlogId())
                                 .userId(String.valueOf(post.getUser().getId()))
                                 .featuredImage(Optional.ofNullable(post.getFeaturedImage())
                                                 .map(FeaturedImageDocument::from).orElse(null))

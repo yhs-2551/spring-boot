@@ -13,6 +13,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.security.web.authentication.SimpleUrlAuthenticationSuccessHandler;
 import org.springframework.stereotype.Component;
@@ -45,6 +46,7 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
         
         // OAuth2UserCustomService에서 리턴한 oAuth2User는 세션 스코프로 저장되어 있는데, 해당 OAuth2 사용자를 가져옴
         OAuth2User oAuth2User = (OAuth2User) authentication.getPrincipal();
+
         Optional<User> user = userService.findUserByEmail((String) oAuth2User.getAttributes().get("email"));
 
         Cookie uniqueIdCookie = WebUtils.getCookie(request, "oauth2_remember_me_unique_id");
