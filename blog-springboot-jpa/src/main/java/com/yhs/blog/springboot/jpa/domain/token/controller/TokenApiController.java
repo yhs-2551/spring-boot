@@ -17,6 +17,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -80,6 +81,12 @@ public class TokenApiController {
             HttpServletResponse response) {
         HttpHeaders headers = new HttpHeaders();
         String getRefreshTokenCookie = tokenManagementService.getRefreshTokenCookie(request);
+
+        if (!(StringUtils.hasText(getRefreshTokenCookie))) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+            .body(new ErrorResponse("세션이 만료되었습니다. 다시 로그인해주세요.", HttpStatus.UNAUTHORIZED.value()));
+        }
+
         String userEmail = tokenProvider.getEmail(getRefreshTokenCookie);
         // RefreshToken을 이용해 새로운 액세스 토큰 발급
         if (getRefreshTokenCookie != null && userEmail != null

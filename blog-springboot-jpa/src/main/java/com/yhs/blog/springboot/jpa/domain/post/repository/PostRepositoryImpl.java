@@ -13,6 +13,8 @@ import org.springframework.util.StringUtils;
 import com.querydsl.core.BooleanBuilder;
 
 import com.querydsl.jpa.impl.JPAQueryFactory;
+import com.yhs.blog.springboot.jpa.domain.category.entity.Category;
+import com.yhs.blog.springboot.jpa.domain.category.repository.CategoryRepository;
 import com.yhs.blog.springboot.jpa.domain.post.dto.response.PostResponse;
 import com.yhs.blog.springboot.jpa.domain.post.entity.Post;
 import com.yhs.blog.springboot.jpa.domain.post.entity.QPost;
@@ -21,6 +23,7 @@ import com.yhs.blog.springboot.jpa.domain.post.repository.search.SearchType;
 import com.yhs.blog.springboot.jpa.domain.post.repository.search.document.PostDocument;
 import com.yhs.blog.springboot.jpa.exception.custom.ElasticsearchCustomException;
 import com.yhs.blog.springboot.jpa.exception.custom.QueryDslCustomException;
+import com.yhs.blog.springboot.jpa.exception.custom.ResourceNotFoundException;
 
 import co.elastic.clients.elasticsearch._types.ElasticsearchException;
 import lombok.RequiredArgsConstructor;
@@ -33,6 +36,7 @@ public class PostRepositoryImpl implements PostRepositoryCustom {
 
         private final JPAQueryFactory queryFactory;
         private final PostSearchRepository searchRepository;
+        private final CategoryRepository categoryRepository;
 
         @Override
         public Page<PostResponse> findPostsAllUser(String keyword, SearchType searchType, Pageable pageable) {
@@ -76,13 +80,16 @@ public class PostRepositoryImpl implements PostRepositoryCustom {
 
                         try {
                                 Page<PostDocument> searchResult = switch (searchType) {
-                                        case TITLE -> searchRepository.searchByTitleForSpecificUser(keyword, String.valueOf(userId),
+                                        case TITLE -> searchRepository.searchByTitleForSpecificUser(keyword,
+                                                        String.valueOf(userId),
                                                         pageable);
                                         case CONTENT ->
-                                                searchRepository.searchByContentForSpecificUser(keyword, String.valueOf(userId),
+                                                searchRepository.searchByContentForSpecificUser(keyword,
+                                                                String.valueOf(userId),
                                                                 pageable);
                                         case ALL ->
-                                                searchRepository.searchByAllForSpecificUser(keyword, String.valueOf(userId), pageable);
+                                                searchRepository.searchByAllForSpecificUser(keyword,
+                                                                String.valueOf(userId), pageable);
                                 };
 
                                 return searchResult.map(PostResponse::fromDocument);
@@ -110,7 +117,7 @@ public class PostRepositoryImpl implements PostRepositoryCustom {
         }
 
         @Override
-        public Page<PostResponse> findPostsByUserIdAndCategoryId(Long userId, String categoryUuid, String keyword,
+        public Page<PostResponse> findPostsByUserIdAndCategoryId(Long userId, String categoryId, String keyword,
                         SearchType searchType, Pageable pageable) {
 
                 // 검색어가 있는 경우 Elasticsearch 사용
@@ -120,14 +127,15 @@ public class PostRepositoryImpl implements PostRepositoryCustom {
                                         case TITLE ->
                                                 searchRepository.searchByTitleAndCategoryForSpecificUser(keyword,
                                                                 String.valueOf(userId),
-                                                                categoryUuid, pageable);
+                                                                categoryId, pageable);
                                         case CONTENT ->
                                                 searchRepository.searchByContentAndCategoryForSpecificUser(keyword,
                                                                 String.valueOf(userId),
-                                                                categoryUuid, pageable);
+                                                                categoryId, pageable);
                                         case ALL ->
-                                                searchRepository.searchByAllAndCategoryForSpecificUser(keyword, String.valueOf(userId),
-                                                                categoryUuid, pageable);
+                                                searchRepository.searchByAllAndCategoryForSpecificUser(keyword,
+                                                                String.valueOf(userId),
+                                                                categoryId, pageable);
                                 };
                                 return searchResult.map(PostResponse::fromDocument);
 
@@ -143,7 +151,7 @@ public class PostRepositoryImpl implements PostRepositoryCustom {
                         QPost post = QPost.post;
                         BooleanBuilder builder = new BooleanBuilder();
                         builder.and(post.user.id.eq(userId))
-                                        .and(post.category.id.eq(categoryUuid));
+                                        .and(post.category.id.eq(categoryId));
                         return executeQueryDSLQuery(builder, pageable);
                 } catch (Exception e) {
                         throw new QueryDslCustomException("카테고리 QueryDSL query 오류가 발생했습니다.", "QD500", e);
@@ -154,8 +162,6 @@ public class PostRepositoryImpl implements PostRepositoryCustom {
         private Page<PostResponse> executeQueryDSLQuery(BooleanBuilder builder, Pageable pageable) {
                 QPost post = QPost.post;
 
-                log.debug("post >>>> {}", post);
-
                 List<Post> posts = queryFactory
                                 .selectFrom(post)
                                 .where(builder.hasValue() ? builder : null)
@@ -163,8 +169,6 @@ public class PostRepositoryImpl implements PostRepositoryCustom {
                                 .offset(pageable.getOffset())
                                 .limit(pageable.getPageSize())
                                 .fetch();
-
-                log.debug("posts 입니당>>>> {}", posts);
 
                 long total = queryFactory
                                 .select(post.count())

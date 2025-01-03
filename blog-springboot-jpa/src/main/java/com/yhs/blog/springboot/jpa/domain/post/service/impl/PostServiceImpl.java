@@ -28,6 +28,7 @@ import com.yhs.blog.springboot.jpa.domain.post.repository.search.SearchType;
 import com.yhs.blog.springboot.jpa.domain.post.service.PostService;
 import com.yhs.blog.springboot.jpa.domain.file.service.s3.S3Service;
 import com.yhs.blog.springboot.jpa.domain.user.service.UserService;
+import com.yhs.blog.springboot.jpa.exception.custom.ResourceNotFoundException;
 import com.yhs.blog.springboot.jpa.domain.post.mapper.PostMapper;
 import com.yhs.blog.springboot.jpa.domain.token.jwt.util.TokenUtil;
 import jakarta.servlet.http.HttpServletRequest;
@@ -69,10 +70,12 @@ public class PostServiceImpl implements PostService {
 
     @Override
     @Transactional(readOnly = true)
-    public Page<PostResponse> getAllPostsSpecificUser(Long userId, String keyword, SearchType searchType, String categoryUuid,
+    public Page<PostResponse> getAllPostsSpecificUser(Long userId, String keyword, SearchType searchType,
+            String categoryId,
             Pageable pageable) {
-        if (categoryUuid != null) {
-            return postRepository.findPostsByUserIdAndCategoryId(userId, categoryUuid, keyword, searchType, pageable);
+
+        if (categoryId != null) {
+            return postRepository.findPostsByUserIdAndCategoryId(userId, categoryId, keyword, searchType, pageable);
         }
         return postRepository.findPostsByUserId(userId, keyword, searchType, pageable);
     }
@@ -80,16 +83,15 @@ public class PostServiceImpl implements PostService {
     @Override
     @Transactional(readOnly = true)
     public Page<PostResponse> getAllPostsAllUser(String keyword, SearchType searchType, Pageable pageable) {
- 
+
         return postRepository.findPostsAllUser(keyword, searchType, pageable);
     }
-
 
     @Override
     @Transactional(readOnly = true)
     public PostResponse getPostByPostId(Long postId) {
         Post post = postRepository.findById(postId)
-                .orElseThrow(() -> new RuntimeException("Post not found with id " + postId));
+                .orElseThrow(() -> new ResourceNotFoundException(postId + "번 게시글을 찾을 수 없습니다."));
 
         return PostResponse.from(post);
     }
@@ -98,13 +100,13 @@ public class PostServiceImpl implements PostService {
     @Override
     public void deletePostByPostId(Long postId) {
         Post post = postRepository.findById(postId)
-                .orElseThrow(() -> new RuntimeException("Post not found with id " + postId));
+                .orElseThrow(() -> new ResourceNotFoundException(postId + "번 게시글을 찾을 수 없습니다."));
         Long userId = post.getUser().getId();
 
         // 삭제될 포스트의 태그 정보 미리 저장
         List<Long> postTagIds = postTagRepository.findTagIdsByPostId(postId);
 
-        // Post를 삭제하면서 cascade효과로 인해 관련된 PostTag 삭제. 
+        // Post를 삭제하면서 cascade효과로 인해 관련된 PostTag 삭제.
         // 위에서 영속성 컨텍스트로 로드된 post를 이용하여 삭제
         postRepository.delete(post);
 

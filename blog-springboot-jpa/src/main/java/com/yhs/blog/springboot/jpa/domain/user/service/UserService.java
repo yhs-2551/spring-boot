@@ -5,6 +5,7 @@ import com.yhs.blog.springboot.jpa.domain.user.dto.request.SignUpUserRequest;
 import com.yhs.blog.springboot.jpa.domain.user.dto.response.DuplicateCheckResponse;
 import com.yhs.blog.springboot.jpa.domain.user.dto.response.RateLimitResponse;
 import com.yhs.blog.springboot.jpa.domain.user.dto.response.SignUpUserResponse;
+import com.yhs.blog.springboot.jpa.domain.user.dto.response.UserProfileResponse;
 import com.yhs.blog.springboot.jpa.domain.user.entity.User;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -15,13 +16,15 @@ public interface UserService {
     SignUpUserResponse createUser(SignUpUserRequest signUpUserRequest);
 
     RateLimitResponse createOAuth2User(String email, AdditionalInfoRequest additionalInfoRequest,
-                                       HttpServletRequest request, HttpServletResponse response);
+            HttpServletRequest request, HttpServletResponse response);
 
     User findUserById(Long userId);
 
     Optional<User> findUserByEmail(String email);
 
-//    void invalidateUserCache(String userIdentifier);
+    // void invalidateUserCache(String userIdentifier);
+
+    UserProfileResponse findUserByBlogId(String blogId);
 
     boolean isExistsBlogId(String blogId);
 
@@ -30,4 +33,5 @@ public interface UserService {
     DuplicateCheckResponse isDuplicateEmail(String email);
 
     DuplicateCheckResponse isDuplicateUsername(String username);
+
 }

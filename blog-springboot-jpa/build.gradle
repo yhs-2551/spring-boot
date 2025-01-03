@@ -73,8 +73,8 @@ dependencies {
 
     // ES 동기화 실패시 재시도 기능을 위한 의존성
     implementation 'org.springframework.retry:spring-retry:2.0.10'
-    // 날짜 포맷 변환을 위한 의존성(Elasticsearch에서 날짜 포맷 변환 필요)
-     implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310'
+    // 날짜 포맷 변환을 위한 의존성(Elasticsearch, redis에서 날짜 포맷 변환 필요)
+    implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310'
 
 
     testImplementation 'com.h2database:h2:2.2.224'

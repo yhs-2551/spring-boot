@@ -6,6 +6,6 @@ import java.util.List;
 
 public interface CategoryService {
     List<CategoryResponse> createCategory(CategoryRequestPayLoad categoryRequestPayLoad);
-    List<CategoryResponse> getAllCategoriesWithChildrenByUserId();
+    List<CategoryResponse> getAllCategoriesWithChildrenByUserId(Long userId);
 
 }

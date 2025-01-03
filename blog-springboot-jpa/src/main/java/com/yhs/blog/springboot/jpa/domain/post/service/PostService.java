@@ -16,7 +16,7 @@ public interface PostService {
     PostResponse createNewPost(PostRequest postRequest, HttpServletRequest request);
 
     // List<PostResponse> getPostListByUserId(Long UserId);
-    Page<PostResponse> getAllPostsSpecificUser(Long userId, String keyword, SearchType searchType, String categoryUuid, Pageable pageable);
+    Page<PostResponse> getAllPostsSpecificUser(Long userId, String keyword, SearchType searchType, String categoryId, Pageable pageable);
     
     Page<PostResponse> getAllPostsAllUser(String keyword, SearchType searchType, Pageable pageable);
 

@@ -50,6 +50,7 @@ public class TokenProvider {
                 .claim("id", user.getId())
                 .claim("blogId", user.getBlogId())
                 .claim("email", user.getEmail())
+                .claim("username", user.getUsername())
                 .claim("roles",
                         roles)
                 .signWith(jwtProperties.getJwtSecretKey()).compact();

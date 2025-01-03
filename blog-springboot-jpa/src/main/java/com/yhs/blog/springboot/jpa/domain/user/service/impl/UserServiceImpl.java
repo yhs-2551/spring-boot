@@ -10,9 +10,11 @@ import com.yhs.blog.springboot.jpa.domain.user.dto.response.DuplicateCheckRespon
 import com.yhs.blog.springboot.jpa.domain.user.dto.response.RateLimitResponse;
 import com.yhs.blog.springboot.jpa.domain.user.dto.response.SignUpResponseWithHeaders;
 import com.yhs.blog.springboot.jpa.domain.user.dto.response.SignUpUserResponse;
+import com.yhs.blog.springboot.jpa.domain.user.dto.response.UserProfileResponse;
 import com.yhs.blog.springboot.jpa.domain.user.entity.User;
 import com.yhs.blog.springboot.jpa.domain.user.repository.UserRepository;
 import com.yhs.blog.springboot.jpa.domain.user.service.UserService;
+import com.yhs.blog.springboot.jpa.exception.custom.ResourceNotFoundException;
 import com.yhs.blog.springboot.jpa.exception.custom.UserCreationException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -37,6 +39,7 @@ public class UserServiceImpl implements UserService {
     private final UserRepository userRepository;
     private final RedisTemplate<String, Boolean> redisTemplateBoolean;
     private final RedisTemplate<String, String> redisTemplateString;
+    private final RedisTemplate<String, UserProfileResponse> userProfileRedisTemplate;
     private final TokenProvider tokenProvider;
     private final TokenManagementService tokenManagementService;
 
@@ -135,6 +138,34 @@ public class UserServiceImpl implements UserService {
     @Transactional(readOnly = true)
     public Optional<User> findUserByEmail(String email) {
         return userRepository.findByEmail(email);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public UserProfileResponse findUserByBlogId(String blogId) {
+        String cacheKey = "userProfile:" + blogId;
+
+        // Try to get user from cache first
+        UserProfileResponse cachedUser = userProfileRedisTemplate.opsForValue().get(cacheKey);
+        if (cachedUser != null) {
+            return cachedUser;
+        }
+
+        // If not in cache, get from database
+        Optional<User> optionalUser = userRepository.findByBlogId(blogId);
+        if (optionalUser.isEmpty()) {
+            throw new ResourceNotFoundException(blogId + "를 가지고 있는 사용자를 찾지 못하였습니다.");
+        }
+
+        User user = optionalUser.get();
+
+        UserProfileResponse userProfileResponseDTO = new UserProfileResponse(user.getBlogId(), user.getUsername());
+
+        // blogId는 사용자가 프론트측에서 계정 정보를 변경하지 않는 한 유지된다.
+        // 따라서 그때 캐시 무효화를 할 수 있지만, 만약 사용자가 탈퇴를 하거나, 또 다른 의도치 않은 상황을 대비해 30일로 설정
+        userProfileRedisTemplate.opsForValue().set(cacheKey, userProfileResponseDTO, 30, TimeUnit.DAYS);
+
+        return userProfileResponseDTO;
     }
 
     @Override

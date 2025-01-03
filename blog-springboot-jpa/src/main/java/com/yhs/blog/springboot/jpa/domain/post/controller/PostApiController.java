@@ -12,7 +12,10 @@ import com.yhs.blog.springboot.jpa.domain.post.repository.search.SearchType;
 import com.yhs.blog.springboot.jpa.domain.user.entity.User;
 import com.yhs.blog.springboot.jpa.domain.user.repository.UserRepository;
 import com.yhs.blog.springboot.jpa.dto.response.PageResponse;
+import com.yhs.blog.springboot.jpa.exception.custom.ResourceNotFoundException;
 import com.yhs.blog.springboot.jpa.domain.post.service.PostService;
+import com.yhs.blog.springboot.jpa.domain.category.entity.Category;
+import com.yhs.blog.springboot.jpa.domain.category.repository.CategoryRepository;
 import com.yhs.blog.springboot.jpa.domain.file.service.s3.S3Service;
 import com.yhs.blog.springboot.jpa.domain.token.jwt.util.TokenUtil;
 import jakarta.servlet.http.HttpServletRequest;
@@ -21,6 +24,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
@@ -46,6 +50,7 @@ public class PostApiController {
         private final TokenProvider tokenProvider;
         private final S3Service s3Service;
         private final UserRepository userRepository;
+        private final CategoryRepository categoryRepository;
 
         // ResponseEntity의 <?>와일드 카드 대신 sealed 클래스를 사용해 특정 클래스들만 상속하게 제한함
         @PostMapping(value = "/{blogId}/posts", produces = MediaType.APPLICATION_JSON_VALUE, consumes = MediaType.APPLICATION_JSON_VALUE)
@@ -64,24 +69,37 @@ public class PostApiController {
         public ResponseEntity<ApiResponse> findAllPosts(@PathVariable(name = "blogId", required = false) String blogId,
                         @RequestParam(name = "keyword", required = false) String keyword,
                         @RequestParam(name = "searchType", required = false) SearchType searchType,
-                        @RequestParam(name = "categoryUuid", required = false) String categoryUuid,
+                        @RequestParam(name = "category", required = false) String category, // 검색할때는 카테고리를 쿼리 파라미터에 포함
                         @PageableDefault(page = 0, size = 10, sort = { "createdAt",
                                         "id" }, direction = Sort.Direction.DESC) Pageable pageable) {
-                                                
+
                 Page<PostResponse> postResponses;
 
                 if (blogId != null) {
-                        // 특정 사용자의 전체 게시글 처리 
-                        // 게시글 전체는 특정 사용자 즉 정확한 해당 사용자의 게시글만 조회 가능하도록 구현(userIdentifier 사용)
+
+                        // 특정 사용자의 전체 게시글 처리
+                        // 특정 사용자 즉 정확한 해당 사용자의 게시글만 조회 가능하도록 구현(blogId 사용)
                         User user = userRepository.findByBlogId(blogId)
-                                        .orElseThrow(() -> new RuntimeException(
-                                                        "User not found with user identifier " + blogId));
+                                        .orElseThrow(() -> new ResourceNotFoundException(blogId + "사용자를 찾을 수 없습니다."));
                         Long userId = user.getId();
-                        // List<PostResponse> postResponses = postService.getPostListByUserId(userId);
-                        postResponses = postService.getAllPostsSpecificUser(userId, keyword, searchType, categoryUuid,
+
+                        if (category != null) {
+                                Category categoryEntity = categoryRepository.findByNameAndUserId(category, userId)
+                                                .orElseThrow(() -> new ResourceNotFoundException(
+                                                                category + " 카테고리를 찾을 수 없습니다."));
+
+                                String categoryId = categoryEntity.getId();
+
+                                postResponses = postService.getAllPostsSpecificUser(userId, keyword, searchType,
+                                                categoryId,
+                                                pageable);
+                        }
+
+                        // CustomPageableResolver에 의해 변환된 PageRequest 객체가 전달된다.
+                        postResponses = postService.getAllPostsSpecificUser(userId, keyword, searchType, null,
                                         pageable);
                 } else {
-                        // 모든 사용자의 전체 게시글 조회 
+                        // 모든 사용자의 전체 게시글 조회
                         postResponses = postService.getAllPostsAllUser(keyword, searchType, pageable);
 
                 }
@@ -89,6 +107,96 @@ public class PostApiController {
                 PageResponse<PostResponse> pageResponse = new PageResponse<>(postResponses);
 
                 return ResponseEntity.ok(new SuccessResponse<>(pageResponse, "게시글 응답에 성공하였습니다."));
+        }
+
+        // 경로 변수는 CustomPageableResolver가 작동이 안해서 int pageNumber = page - 1;로 처리. 쿼리
+        // 파라미터에만 작동이 되는건가?
+        @GetMapping("/{blogId}/posts/page/{page}")
+        public ResponseEntity<ApiResponse> getPostsByPage(
+                        @PathVariable("blogId") String blogId,
+                        @PathVariable("page") Integer page, // String 값으로 넘어오게 되는데, Spring의 타입 컨버터가 자동으로 String →
+                                                            // Integer 변환
+                        @PageableDefault(page = 0, size = 10, sort = { "createdAt",
+                                        "id" }, direction = Sort.Direction.DESC) Pageable pageable) {
+
+                int pageNumber = page - 1;
+
+                User user = userRepository.findByBlogId(blogId)
+                                .orElseThrow(() -> new ResourceNotFoundException(blogId + "사용자를 찾을 수 없습니다."));
+
+                PageRequest pageRequest = PageRequest.of(
+                                pageNumber,
+                                pageable.getPageSize(),
+                                pageable.getSort());
+
+                Long userId = user.getId();
+
+                Page<PostResponse> postResponses = postService.getAllPostsSpecificUser(userId, null, null,
+                                null,
+                                pageRequest);
+
+                PageResponse<PostResponse> pageResponse = new PageResponse<>(postResponses);
+
+                return ResponseEntity.ok(new SuccessResponse<>(pageResponse, page + "번 페이지 게시글 응답에 성공하였습니다."));
+        }
+
+        @GetMapping("/{blogId}/categories/{category}/posts")
+        public ResponseEntity<ApiResponse> getPostsByCategoryAndUser(
+                        @PathVariable("blogId") String blogId,
+                        @PathVariable("category") String category,
+                        @PageableDefault(page = 0, size = 10, sort = { "createdAt",
+                                        "id" }, direction = Sort.Direction.DESC) Pageable pageable) {
+
+                User user = userRepository.findByBlogId(blogId)
+                                .orElseThrow(() -> new ResourceNotFoundException(blogId + "사용자를 찾을 수 없습니다."));
+                Long userId = user.getId();
+
+                Category categoryEntity = categoryRepository.findByNameAndUserId(category, userId)
+                                .orElseThrow(() -> new ResourceNotFoundException(category + " 카테고리를 찾을 수 없습니다."));
+
+                String categoryId = categoryEntity.getId();
+
+                Page<PostResponse> postResponses = postService.getAllPostsSpecificUser(userId, null, null, categoryId,
+                                pageable);
+
+                PageResponse<PostResponse> pageResponse = new PageResponse<>(postResponses);
+
+                return ResponseEntity.ok(new SuccessResponse<>(pageResponse, "특정 카테고리별 게시글 응답에 성공하였습니다."));
+        }
+
+        @GetMapping("/{blogId}/categories/{category}/posts/page/{page}")
+        public ResponseEntity<ApiResponse> getPostsByCategoryAndPage(
+                        @PathVariable("blogId") String blogId,
+                        @PathVariable("category") String category,
+                        @PathVariable("page") Integer page,
+                        @PageableDefault(page = 0, size = 10, sort = { "createdAt",
+                                        "id" }, direction = Sort.Direction.DESC) Pageable pageable) {
+
+                int pageNumber = page - 1;
+
+                User user = userRepository.findByBlogId(blogId)
+                                .orElseThrow(() -> new ResourceNotFoundException(blogId + "사용자를 찾을 수 없습니다."));
+
+                Long userId = user.getId();
+
+                Category categoryEntity = categoryRepository.findByNameAndUserId(category, userId)
+                                .orElseThrow(() -> new ResourceNotFoundException(category + " 카테고리를 찾을 수 없습니다."));
+
+                String categoryId = categoryEntity.getId();
+
+                PageRequest pageRequest = PageRequest.of(
+                                pageNumber,
+                                pageable.getPageSize(),
+                                pageable.getSort());
+
+                Page<PostResponse> postResponses = postService.getAllPostsSpecificUser(userId, null, null,
+                                categoryId,
+                                pageRequest);
+
+                PageResponse<PostResponse> pageResponse = new PageResponse<>(postResponses);
+
+                return ResponseEntity.ok(new SuccessResponse<>(pageResponse,
+                                String.format("%s 카테고리 %d번 페이지 게시글 응답에 성공하였습니다.", category, page)));
         }
 
         @GetMapping("/{blogId}/posts/{postId}")
@@ -105,8 +213,7 @@ public class PostApiController {
 
                 // url 경로에서 받은 userIdentifier을 통해 정확히 해당 사용자의 게시글을 가져오기 위함
                 Long userId = userRepository.findByBlogId(blogId)
-                                .orElseThrow(() -> new RuntimeException(
-                                                "User not found with user identifier " + blogId))
+                                .orElseThrow(() -> new ResourceNotFoundException(blogId + "사용자를 찾을 수 없습니다."))
                                 .getId();
 
                 // 로그인한 사용자의 userId
@@ -137,8 +244,7 @@ public class PostApiController {
                         @RequestBody PostUpdateRequest postUpdateRequest) {
 
                 Long userId = userRepository.findByBlogId(blogId)
-                                .orElseThrow(() -> new RuntimeException(
-                                                "User not found with user identifier " + blogId))
+                                .orElseThrow(() -> new ResourceNotFoundException(blogId + "사용자를 찾을 수 없습니다."))
                                 .getId();
 
                 Post updatedPost = postService.updatePostByPostId(postId, userId,

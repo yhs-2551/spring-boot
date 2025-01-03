@@ -61,10 +61,8 @@ public class CategoryServiceImpl implements CategoryService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<CategoryResponse> getAllCategoriesWithChildrenByUserId() {
-
-        Long userId = TokenUtil.extractUserIdFromRequestToken(request, tokenProvider);
-
+    public List<CategoryResponse> getAllCategoriesWithChildrenByUserId(Long userId) {
+ 
         List<Category> categories = categoryRepository.findAllWithChildrenByUserId(userId);
 
         if (categories.isEmpty()) {
@@ -89,7 +87,7 @@ public class CategoryServiceImpl implements CategoryService {
             if (category.getPosts() != null && !category.getPosts().isEmpty()) {
                 throw new IllegalStateException("Category with UUID: " + categoryUuid + " cannot be deleted because it has posts.");
             }
-            log.info("Deleting category with UUID: {}", categoryUuid);
+            log.debug("Deleting category with UUID: {}", categoryUuid);
             categoryRepository.delete(category);
 
         } else {

@@ -2,6 +2,9 @@ package com.yhs.blog.springboot.jpa.domain.category.controller;
 
 
 import com.yhs.blog.springboot.jpa.domain.token.jwt.provider.TokenProvider;
+import com.yhs.blog.springboot.jpa.domain.user.entity.User;
+import com.yhs.blog.springboot.jpa.domain.user.repository.UserRepository;
+import com.yhs.blog.springboot.jpa.exception.custom.ResourceNotFoundException;
 import com.yhs.blog.springboot.jpa.domain.category.dto.request.CategoryRequestPayLoad;
 import com.yhs.blog.springboot.jpa.domain.category.dto.response.CategoryResponse;
 import com.yhs.blog.springboot.jpa.common.response.ApiResponse;
@@ -25,7 +28,7 @@ import java.util.List;
 public class CategoryApiController {
 
     private final CategoryService categoryService;
-    private final TokenProvider tokenProvider;
+    private final UserRepository userRepository;
 
     @PostMapping
     @PreAuthorize("#userBlogId == authentication.name")
@@ -40,12 +43,16 @@ public class CategoryApiController {
                         "create new category."));
     }
 
-    // 특정 사용자의 모든 카테고리 조회
+    // 특정 사용자의 모든 카테고리 조회. 모든 사용자가 볼 수 있어야 해서 preauthorize 제거
     @GetMapping
-    @PreAuthorize("#userBlogId == authentication.name")
-    public ResponseEntity<ApiResponse> getAllCategoriesWithChildrenByUserId(@P("userBlogId") @PathVariable("blogId") String blogId) {
+    public ResponseEntity<ApiResponse> getAllCategoriesWithChildrenByUserId(@PathVariable("blogId") String blogId) {
 
-        List<CategoryResponse> categories = categoryService.getAllCategoriesWithChildrenByUserId();
+        User user = userRepository.findByBlogId(blogId)
+                .orElseThrow(() -> new ResourceNotFoundException(blogId + "사용자를 찾을 수 없습니다."));
+
+        Long userId = user.getId();
+
+        List<CategoryResponse> categories = categoryService.getAllCategoriesWithChildrenByUserId(userId);
 
         return ResponseEntity.status(HttpStatus.OK)
                 .body(new SuccessResponse<List<CategoryResponse>>(categories, "Success " +

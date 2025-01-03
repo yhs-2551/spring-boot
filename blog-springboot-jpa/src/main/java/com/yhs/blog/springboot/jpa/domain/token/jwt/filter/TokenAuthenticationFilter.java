@@ -22,18 +22,24 @@ public class TokenAuthenticationFilter extends OncePerRequestFilter {
 
     // 이 필터는 모든 HTTP 요청을 가로채고, 요청이 컨트롤러에 도달하기 전에 특정 로직을 처리
     @Override
-    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
+    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
+            throws ServletException, IOException {
         String requestURI = request.getRequestURI();
-        String method = request.getMethod();
+        String method = request.getMethod(); 
 
         // GET 요청에 대한 예외 처리
         // 초기 토큰을 가져오는 GET 요청의 경우 검증 필요 없음
         if (method.equals("GET") &&
                 (requestURI.equals("/api/token/initial-token") ||
                         requestURI.equals("/api/token/new-token") ||
-                        //특정 게시글 조회 (GET /api/posts/{id}) 및 게시글 목록 조회는 토큰 검증이 필요 없음
+                        // 특정 게시글 조회 (GET /api/posts/{id}) 및 게시글 목록 조회는 토큰 검증이 필요 없음
                         requestURI.matches("/api/[^/]+/posts") ||
+                        requestURI.matches("/api/[^/]+/posts/page/[^/]+") ||
                         requestURI.matches("/api/[^/]+/posts/[^/]+") ||
+                        requestURI.matches("/api/[^/]+/categories") ||
+                        requestURI.matches("/api/[^/]+/categories/[^/]+/posts") ||
+                        requestURI.matches("/api/[^/]+/categories/[^/]+/posts/page/[^/]+") ||
+                        requestURI.matches("/api/users/[^/]+/profile") ||
                         requestURI.startsWith("/api/posts") ||
                         // username, Email, BlogId 체크는 토큰 검증이 필요 없음
                         requestURI.startsWith("/api/check/") ||
@@ -41,8 +47,7 @@ public class TokenAuthenticationFilter extends OncePerRequestFilter {
                         requestURI.equals("/swagger-ui.html") ||
                         requestURI.startsWith("/swagger-ui/") ||
                         requestURI.startsWith("/v3/api-docs") ||
-                        requestURI.startsWith("/swagger-resources/")
-                )) {
+                        requestURI.startsWith("/swagger-resources/"))) {
             // 이 경로에 대해서는 필터를 적용하지 않고 다음 필터로 넘김
             filterChain.doFilter(request, response);
             return;
@@ -55,8 +60,7 @@ public class TokenAuthenticationFilter extends OncePerRequestFilter {
                         requestURI.equals("/api/users/login") ||
                         requestURI.equals("/api/users/logout") ||
                         requestURI.equals("/api/users/verify-email") ||
-                        requestURI.equals("/api/oauth2/users")
-                        )) {
+                        requestURI.equals("/api/oauth2/users"))) {
             filterChain.doFilter(request, response);
             return;
         }
@@ -98,5 +102,3 @@ public class TokenAuthenticationFilter extends OncePerRequestFilter {
     }
 
 }
-
-
