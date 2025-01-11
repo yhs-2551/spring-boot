@@ -6,6 +6,8 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.log4j.Log4j2;
+
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.filter.OncePerRequestFilter;
@@ -13,6 +15,7 @@ import org.springframework.web.filter.OncePerRequestFilter;
 import java.io.IOException;
 
 @RequiredArgsConstructor
+@Log4j2
 public class TokenAuthenticationFilter extends OncePerRequestFilter {
 
     private final TokenProvider tokenProvider;
@@ -25,7 +28,7 @@ public class TokenAuthenticationFilter extends OncePerRequestFilter {
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
             throws ServletException, IOException {
         String requestURI = request.getRequestURI();
-        String method = request.getMethod(); 
+        String method = request.getMethod();
 
         // GET 요청에 대한 예외 처리
         // 초기 토큰을 가져오는 GET 요청의 경우 검증 필요 없음
@@ -69,7 +72,7 @@ public class TokenAuthenticationFilter extends OncePerRequestFilter {
 
         if (authorizationHeader == null || !authorizationHeader.startsWith("Bearer ")) {
 
-            System.out.println("authorizationHeader오류 실행 내부");
+            log.debug("authorizationHeader오류 실행 내부");
 
             // 상태 코드 401 설정
             response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
@@ -80,11 +83,11 @@ public class TokenAuthenticationFilter extends OncePerRequestFilter {
 
         String accessToken = authorizationHeader.substring(TOKEN_PREFIX.length());
 
-        System.out.println("실행 dofilterinternal 유효성검사 전");
+        log.debug("실행 dofilterinternal 유효성검사 전");
 
         if (!tokenProvider.validateAccessToken(accessToken)) {
 
-            System.out.println("실행 dofilterinternal 유효성검사 후 - 실패 ");
+            log.debug("실행 dofilterinternal 유효성검사 후 - 실패 ");
             // 상태 코드 401 설정
             response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
             // 응답 메시지 작성
@@ -96,7 +99,7 @@ public class TokenAuthenticationFilter extends OncePerRequestFilter {
         Authentication authentication = tokenProvider.getAuthentication(accessToken);
         SecurityContextHolder.getContext().setAuthentication(authentication);
 
-        System.out.println("실행 dofilterinternal 유효성검사 후 - 성공 ");
+        log.debug("실행 dofilterinternal 유효성검사 후 - 성공 ");
 
         filterChain.doFilter(request, response);
     }

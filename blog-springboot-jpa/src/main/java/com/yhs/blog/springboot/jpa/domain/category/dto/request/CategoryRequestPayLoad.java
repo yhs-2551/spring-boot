@@ -13,5 +13,5 @@ import java.util.List;
 @ToString
 public class CategoryRequestPayLoad {
     List<CategoryRequest> categories;
-    List<String> categoryToDelete;
+    List<CategoryRequest> categoryToDelete;
 }

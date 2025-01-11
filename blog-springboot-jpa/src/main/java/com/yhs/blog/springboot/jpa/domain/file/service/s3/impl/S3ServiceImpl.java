@@ -1,11 +1,9 @@
 package com.yhs.blog.springboot.jpa.domain.file.service.s3.impl;
 
-import com.yhs.blog.springboot.jpa.domain.token.jwt.provider.TokenProvider;
 import com.yhs.blog.springboot.jpa.domain.file.dto.request.FileRequest;
 import com.yhs.blog.springboot.jpa.domain.file.service.s3.S3Service;
 import com.yhs.blog.springboot.jpa.domain.post.dto.request.PostRequest;
 import com.yhs.blog.springboot.jpa.domain.post.dto.request.PostUpdateRequest;
-import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Value;
@@ -16,6 +14,8 @@ import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.CopyObjectRequest;
 import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
+import software.amazon.awssdk.services.s3.model.ListObjectsV2Request;
+import software.amazon.awssdk.services.s3.model.ListObjectsV2Response;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import software.amazon.awssdk.services.s3.model.S3Exception;
 
@@ -31,32 +31,31 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class S3ServiceImpl implements S3Service {
     private final S3Client s3Client;
-    private final TokenProvider tokenProvider;
-    private final HttpServletRequest request;
 
     @Value("${aws.s3.bucketName}")
     private String buketName;
 
-//    private String getUserFolder() {
-//        String email = TokenUtil.extractEmailFromRequestToken(request, tokenProvider);
-//        return email.substring(0, email.indexOf('@'));
-//    }
+    // private String getUserFolder() {
+    // String email = TokenUtil.extractEmailFromRequestToken(request,
+    // tokenProvider);
+    // return email.substring(0, email.indexOf('@'));
+    // }
 
+    @Override
     public String tempUploadFile(MultipartFile file, String folder, String blogId) throws IOException {
 
-//        String userFolder = getUserFolder();
+        // String userFolder = getUserFolder();
 
-        log.info("userFolder >>>> " + blogId);
 
         // 대표 이미지 구분하기 위함
         if (folder == null || folder.isEmpty()) {
-            folder = Objects.requireNonNull(file.getContentType()).startsWith("image/") ?
-                    blogId + "/temp/images/" : blogId + "/temp/files/";
+            folder = Objects.requireNonNull(file.getContentType()).startsWith("image/") ? blogId + "/temp/images/"
+                    : blogId + "/temp/files/";
         } else if (folder.equals("featured")) {
             folder = blogId + "/temp/" + folder + "/";
         }
         String fileName = folder + UUID.randomUUID() + "-" + file.getOriginalFilename();
-        log.info("fileName >>>> " + fileName);
+
         try {
             PutObjectRequest putObjectRequest = PutObjectRequest.builder()
                     .bucket(buketName)
@@ -70,7 +69,48 @@ public class S3ServiceImpl implements S3Service {
             throw new IOException("Failed to upload file to S3", e);
         }
 
+    }
 
+    @Override
+    public void deleteProfileImage(String blogId) {
+        String folder = blogId + "/final/profile/";
+
+        // 폴더 내 모든 객체 삭제. ListObjects는 버킷 내 객체들을 나열한다.
+        ListObjectsV2Request listRequest = ListObjectsV2Request.builder()
+                .bucket(buketName)
+                .prefix(folder)
+                .build();
+
+        ListObjectsV2Response listResponse = s3Client.listObjectsV2(listRequest);
+        listResponse.contents().forEach(obj -> {
+            s3Client.deleteObject(DeleteObjectRequest.builder()
+                    .bucket(buketName)
+                    .key(obj.key())
+                    .build());
+        });
+    }
+
+    @Override
+    public String uploadProfileImage(MultipartFile file, String blogId) throws IOException {
+
+        deleteProfileImage(blogId);
+
+        String folder = blogId + "/final/profile/";
+
+        String fileName = folder + UUID.randomUUID() + "-" + file.getOriginalFilename();
+
+        try {
+            PutObjectRequest putObjectRequest = PutObjectRequest.builder()
+                    .bucket(buketName)
+                    .key(fileName)
+                    .contentType(file.getContentType())
+                    .build();
+
+            s3Client.putObject(putObjectRequest, RequestBody.fromInputStream(file.getInputStream(), file.getSize()));
+            return s3Client.utilities().getUrl(builder -> builder.bucket(buketName).key(fileName)).toExternalForm();
+        } catch (S3Exception e) {
+            throw new IOException("Failed to upload profile image to S3", e);
+        }
     }
 
     @Async
@@ -78,14 +118,12 @@ public class S3ServiceImpl implements S3Service {
     public void processCreatePostS3TempOperation(PostRequest postRequest, String blogId) {
         try {
 
-            // 나중에 쓰레드명 제대로 나오지 확인해야함
             log.info("sAWS TEMP- Thread: {}", Thread.currentThread().getName());
 
-//            String userFolder = getUserFolder();
+            // String userFolder = getUserFolder();
 
             // AWS S3 final 폴더에 최종 업로드 및 temp 폴더에 저장되어 있는 불필요한 이미지 및 파일 삭제 처리 로직
-            List<String> tempfileUrls =
-                    postRequest.getFiles().stream().map(FileRequest::getFileUrl).toList();
+            List<String> tempfileUrls = postRequest.getFiles().stream().map(FileRequest::getFileUrl).toList();
 
             processTempFilesToFinal(tempfileUrls, blogId);
 
@@ -106,15 +144,16 @@ public class S3ServiceImpl implements S3Service {
     @Override
     @Async
     public void processUpdatePostS3TempOperation(PostUpdateRequest postUpdateRequest,
-                                                 String blogId) {
+            String blogId) {
 
         try {
 
-//            String userFolder = getUserFolder();
+            // String userFolder = getUserFolder();
 
             // AWS S3 final 폴더에 최종 업로드 및 temp 폴더에 저장되어 있는 불필요한 이미지 및 파일 삭제 처리 로직
 
-            // 수정 요청을 했을때 수정 페이지에 기존에 존재하던(글 작성 시 발행된) final 경로 파일들은 제외하고 에디터에 새롭게 등록되는, 즉 파일 경로에
+            // 수정 요청을 했을때 수정 페이지에 기존에 존재하던(글 작성 시 발행된) final 경로 파일들은 제외하고 에디터에 새롭게 등록되는, 즉
+            // 파일 경로에
             // temp가 포함되어있는 파일들만 가져옴
             List<String> tempfileUrls = postUpdateRequest.getFiles().stream()
                     .map(FileRequest::getFileUrl)
@@ -139,7 +178,7 @@ public class S3ServiceImpl implements S3Service {
 
     private void processTempFilesToFinal(List<String> tempfileUrls, String blogId) throws IOException {
 
-//        String userFolder = getUserFolder();
+        // String userFolder = getUserFolder();
 
         for (String tempFileUrl : tempfileUrls) {
             String finalFolder;
@@ -152,10 +191,9 @@ public class S3ServiceImpl implements S3Service {
         }
     }
 
-
     private void moveTempFilesToFinal(String tempFileUrl, String finalFolder, String blogId) throws IOException {
 
-//        String userFolder = getUserFolder();
+        // String userFolder = getUserFolder();
 
         String fileName = tempFileUrl.substring(tempFileUrl.lastIndexOf("/") + 1);
 
@@ -172,7 +210,6 @@ public class S3ServiceImpl implements S3Service {
 
         String tempFullPath = tempFolder + fileName;
         String finalFullPath = finalFolder + fileName;
-
 
         try {
             CopyObjectRequest copyObjectRequest = CopyObjectRequest.builder()
@@ -199,7 +236,7 @@ public class S3ServiceImpl implements S3Service {
 
     private void tempDeleteFile(String fileUrl, String blogId) {
 
-//        String userFolder = getUserFolder();
+        // String userFolder = getUserFolder();
 
         String fileName = fileUrl.substring(fileUrl.lastIndexOf("/") + 1);
         fileName = URLDecoder.decode(fileName, StandardCharsets.UTF_8);
@@ -230,6 +267,5 @@ public class S3ServiceImpl implements S3Service {
             throw new RuntimeException("Failed to delete file from S3", e);
         }
     }
-
 
 }

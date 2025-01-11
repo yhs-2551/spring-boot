@@ -15,6 +15,5 @@ public class CategoryResponse {
     private String name;
     private String categoryUuidParent;
     private List<CategoryResponse> children;
-    private int childrenCount;
     private int postCount;
 }

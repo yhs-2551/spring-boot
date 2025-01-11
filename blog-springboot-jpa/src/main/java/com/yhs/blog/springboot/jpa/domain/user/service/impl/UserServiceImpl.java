@@ -2,15 +2,19 @@ package com.yhs.blog.springboot.jpa.domain.user.service.impl;
 
 import com.yhs.blog.springboot.jpa.aop.duplicatecheck.DuplicateCheck;
 import com.yhs.blog.springboot.jpa.aop.ratelimit.RateLimit;
+import com.yhs.blog.springboot.jpa.domain.file.service.s3.S3Service;
 import com.yhs.blog.springboot.jpa.domain.oauth2.dto.request.AdditionalInfoRequest;
+import com.yhs.blog.springboot.jpa.domain.post.event.elasticsearch.PostDeletedEvent;
 import com.yhs.blog.springboot.jpa.domain.token.jwt.provider.TokenProvider;
 import com.yhs.blog.springboot.jpa.domain.token.jwt.service.TokenManagementService;
 import com.yhs.blog.springboot.jpa.domain.user.dto.request.SignUpUserRequest;
+import com.yhs.blog.springboot.jpa.domain.user.dto.request.UserSettingsRequest;
 import com.yhs.blog.springboot.jpa.domain.user.dto.response.DuplicateCheckResponse;
 import com.yhs.blog.springboot.jpa.domain.user.dto.response.RateLimitResponse;
 import com.yhs.blog.springboot.jpa.domain.user.dto.response.SignUpResponseWithHeaders;
 import com.yhs.blog.springboot.jpa.domain.user.dto.response.SignUpUserResponse;
-import com.yhs.blog.springboot.jpa.domain.user.dto.response.UserProfileResponse;
+import com.yhs.blog.springboot.jpa.domain.user.dto.response.UserPrivateProfileResponse;
+import com.yhs.blog.springboot.jpa.domain.user.dto.response.UserPublicProfileResponse;
 import com.yhs.blog.springboot.jpa.domain.user.entity.User;
 import com.yhs.blog.springboot.jpa.domain.user.repository.UserRepository;
 import com.yhs.blog.springboot.jpa.domain.user.service.UserService;
@@ -22,11 +26,14 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpStatus; 
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
+import java.io.IOException;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
@@ -39,9 +46,13 @@ public class UserServiceImpl implements UserService {
     private final UserRepository userRepository;
     private final RedisTemplate<String, Boolean> redisTemplateBoolean;
     private final RedisTemplate<String, String> redisTemplateString;
-    private final RedisTemplate<String, UserProfileResponse> userProfileRedisTemplate;
+    private final RedisTemplate<String, UserPublicProfileResponse> userPublicProfileRedisTemplate;
+    private final RedisTemplate<String, UserPrivateProfileResponse> userPrivateProfileRedisTemplate;
     private final TokenProvider tokenProvider;
     private final TokenManagementService tokenManagementService;
+    private final S3Service s3Service;
+
+    private static final long PROFILE_CACHE_HOURS = 24L; // 프론트는 12시간, redis 캐시를 활용해 DB 부하를 감소하기 위해 2배인 24시간으로 설정
 
     // private static final long CACHE_TTL = 24 * 60 * 60; // 1일
 
@@ -130,8 +141,8 @@ public class UserServiceImpl implements UserService {
     @Override
     @Transactional(readOnly = true)
     public User findUserById(Long userId) {
-        return userRepository.findById(userId).orElseThrow(() -> new IllegalArgumentException(
-                "User not found"));
+        return userRepository.findById(userId).orElseThrow(() -> new ResourceNotFoundException(userId +
+                "번 사용자를 찾지 못했습니다."));
     }
 
     @Override
@@ -142,11 +153,11 @@ public class UserServiceImpl implements UserService {
 
     @Override
     @Transactional(readOnly = true)
-    public UserProfileResponse findUserByBlogId(String blogId) {
-        String cacheKey = "userProfile:" + blogId;
+    public UserPublicProfileResponse findUserByBlogId(String blogId) {
+        String cacheKey = "userPublicProfile:" + blogId;
 
         // Try to get user from cache first
-        UserProfileResponse cachedUser = userProfileRedisTemplate.opsForValue().get(cacheKey);
+        UserPublicProfileResponse cachedUser = userPublicProfileRedisTemplate.opsForValue().get(cacheKey);
         if (cachedUser != null) {
             return cachedUser;
         }
@@ -159,13 +170,82 @@ public class UserServiceImpl implements UserService {
 
         User user = optionalUser.get();
 
-        UserProfileResponse userProfileResponseDTO = new UserProfileResponse(user.getBlogId(), user.getUsername());
+        UserPublicProfileResponse userPublicProfileResponseDTO = new UserPublicProfileResponse(user.getBlogId(),
+                user.getBlogName(),
+                user.getUsername(), user.getProfileImageUrl());
 
         // blogId는 사용자가 프론트측에서 계정 정보를 변경하지 않는 한 유지된다.
-        // 따라서 그때 캐시 무효화를 할 수 있지만, 만약 사용자가 탈퇴를 하거나, 또 다른 의도치 않은 상황을 대비해 30일로 설정
-        userProfileRedisTemplate.opsForValue().set(cacheKey, userProfileResponseDTO, 30, TimeUnit.DAYS);
+        // 따라서 그때 캐시 무효화를 할 수 있지만, 만약 사용자가 탈퇴를 하거나, 또 다른 의도치 않은 상황을 대비해 만료 시간 명시적으로 설정
+        userPublicProfileRedisTemplate.opsForValue().set(cacheKey, userPublicProfileResponseDTO, PROFILE_CACHE_HOURS, TimeUnit.HOURS);
 
-        return userProfileResponseDTO;
+        return userPublicProfileResponseDTO;
+    }
+
+    @Transactional(readOnly = true)
+    @Override
+    public UserPrivateProfileResponse findUserByTokenAndByBlogId(String blogId) {
+
+        String cacheKey = "userPrivateProfile:" + blogId;
+
+        // Try to get user from cache first
+        UserPrivateProfileResponse cachedUser = userPrivateProfileRedisTemplate.opsForValue().get(cacheKey);
+        if (cachedUser != null) {
+            return cachedUser;
+        }
+
+        // If not in cache, get from database
+        Optional<User> optionalUser = userRepository.findByBlogId(blogId);
+        if (optionalUser.isEmpty()) {
+            throw new ResourceNotFoundException(blogId + "를 가지고 있는 사용자를 찾지 못하였습니다.");
+        }
+
+        User findUser = optionalUser.get();
+
+        UserPrivateProfileResponse userPrivateProfileResponseDTO = new UserPrivateProfileResponse(findUser.getEmail(),
+                findUser.getBlogId(), findUser.getBlogName(),
+                findUser.getUsername(), findUser.getProfileImageUrl());
+
+        userPrivateProfileRedisTemplate.opsForValue().set(cacheKey, userPrivateProfileResponseDTO, PROFILE_CACHE_HOURS, TimeUnit.HOURS);
+
+        return userPrivateProfileResponseDTO;
+    }
+
+    @Override
+    @Transactional
+    public void updateUserSettings(String blogId, UserSettingsRequest userSettingsRequest) throws IOException {
+
+        User user = userRepository.findByBlogId(blogId).orElseThrow(() -> new ResourceNotFoundException(blogId +
+                "를 가지고 있는 사용자를 찾지 못하였습니다."));
+
+        String oldUsername = user.getUsername();
+
+        if (userSettingsRequest.profileImage() != null && !userSettingsRequest.profileImage().isEmpty()) {
+            String awsS3FileUrl = s3Service.uploadProfileImage(userSettingsRequest.profileImage(), blogId);
+
+            user.profileUpdate(userSettingsRequest.username(), userSettingsRequest.blogName(),
+                    awsS3FileUrl);
+        } else {
+
+            s3Service.deleteProfileImage(blogId);
+
+            user.profileUpdate(userSettingsRequest.username(), userSettingsRequest.blogName(),
+                    "https://iceamericano-blog-storage.s3.ap-northeast-2.amazonaws.com/default/default-avatar-profile.webp");
+        }
+
+        userRepository.save(user);
+
+        TransactionSynchronizationManager.registerSynchronization(
+                new TransactionSynchronization() {
+                    @Override
+                    public void afterCommit() {
+                        // 사용자 정보 변경 시 캐시 무효화. 트랜잭션이 성공적으로 커밋되어야만 redis 캐시 무효화
+                        userPublicProfileRedisTemplate.delete("userPublicProfile:" + blogId);
+                        userPrivateProfileRedisTemplate.delete("userPrivateProfile:" + blogId);
+                        redisTemplateBoolean.delete("username:" + oldUsername);
+                    }
+
+                });
+
     }
 
     @Override
@@ -182,15 +262,14 @@ public class UserServiceImpl implements UserService {
         boolean userExists = userRepository.existsByBlogId(blogId);
 
         if (userExists) {
-            // 캐시에 저장. 사용자는 회원탈퇴 하는 경우 아니면 계속 존재하기 때문에, 만료시간을 설정하지 않음. 즉 무한대.
-            // redisTemplate.opsForValue().set(cacheKey, userExists, CACHE_TTL,
-            // TimeUnit.SECONDS);
-            redisTemplateBoolean.opsForValue().set(cacheKey, true);
+            // 캐시에 저장.  
+            redisTemplateBoolean.opsForValue().set(cacheKey, true, PROFILE_CACHE_HOURS, TimeUnit.HOURS);
         }
 
         return false;
     }
 
+    // 아래는 회원가입 시 중복확인 관련 
     @Override
     @DuplicateCheck(type = "BlogId")
     @Transactional(readOnly = true)
@@ -232,11 +311,8 @@ public class UserServiceImpl implements UserService {
         boolean isExists = dbCheck.get();
         if (isExists) {
             // DB 조회 성공
-            // 캐시에 저장. 일단 무한대. 나중에 사용자 계정 변경 및 계정 탈퇴 시 캐시 무효화할 예정
-            // 즉 한번 중복확인 체크하면 사용자가 계정 변경 시 사용자명(닉네임), 블로그아이디를 재설정 or 계정 탈퇴 하는거 아닌 이상 항상 같음
-            // redisTemplate.opsForValue().set(cacheKey, userExists, CACHE_TTL,
-            // TimeUnit.SECONDS);
-            redisTemplateBoolean.opsForValue().set(cacheKey, true);
+            // 캐시에 저장. 일단 무한대.  사용자 계정 변경 및 계정 탈퇴 시 무효화 필요요
+            redisTemplateBoolean.opsForValue().set(cacheKey, true, PROFILE_CACHE_HOURS, TimeUnit.HOURS);
             return new DuplicateCheckResponse(true, existMessage, false);
         }
 

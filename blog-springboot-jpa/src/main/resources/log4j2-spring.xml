@@ -4,27 +4,36 @@
         <!-- ConsoleAppender: 로그를 콘솔에 출력 -->
         <Console name="Console" target="SYSTEM_OUT">
             <PatternLayout pattern="%d{yyyy-MM-dd HH:mm:ss.SSS} [%t] %-5level %logger{36} - %msg%n"/>
+            <Encoder charset="UTF-8" />  <!-- 파일 인코딩 추가. vscode에서 git bash를 기본값으로 사용하면 콘솔에서 한글이 깨져서 추가해봤지만 결론은 소용 없음. command prompt 사용해야함 -->
         </Console>
+
+        <!-- append="false"를 통해 앱 재시작마다 로그 파일 내용 덮어쓰기  -->
+        <File name="FileAppender" fileName="logs/application.log" append="false"> 
+            <PatternLayout pattern="%d{yyyy-MM-dd HH:mm:ss.SSS} [%t] %-5level %logger{36} - %msg%n" />
+            <Encoder charset="UTF-8" />  <!-- 파일 인코딩 추가 필수. 안하면 로그파일에서 글자 깨짐-->
+        </File>
     </Appenders>
+
 
     <Loggers>
         <!-- Root logger: 기본 로그 레벨 설정 -->
         <Root level="debug">
-            <AppenderRef ref="Console"/>
+            <AppenderRef ref="Console" />
+            <AppenderRef ref="FileAppender" />
         </Root>
 
         <!-- Hibernate SQL 로그 레벨 설정 -->
         <Logger name="org.hibernate.SQL" level="debug" additivity="false">
-            <AppenderRef ref="Console"/>
+            <AppenderRef ref="Console" />
         </Logger>
 
         <!-- 바인딩된 파라미터 값 로그 레벨 설정 -->
         <Logger name="org.hibernate.type.descriptor.sql" level="trace" additivity="false">
-            <AppenderRef ref="Console"/>
+            <AppenderRef ref="Console" />
         </Logger>
 
-         <Logger name="org.hibernate.type" level="trace" additivity="false">
-          <AppenderRef ref="Console"/>
+        <Logger name="org.hibernate.type" level="trace" additivity="false">
+            <AppenderRef ref="Console" />
         </Logger>
     </Loggers>
 </Configuration>

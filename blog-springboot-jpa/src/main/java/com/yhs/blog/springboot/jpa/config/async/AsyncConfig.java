@@ -24,7 +24,6 @@ import java.util.concurrent.ThreadPoolExecutor;
 
 @Configuration
 @EnableAsync
-@EnableRetry
 @Log4j2
 // @EnableRetry @Retryable과 함께 사용하는 경우에 사용. 나의 경우 스프링 Bean 방식 사용
 public class AsyncConfig implements AsyncConfigurer {

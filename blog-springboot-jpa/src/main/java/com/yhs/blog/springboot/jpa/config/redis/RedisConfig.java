@@ -12,7 +12,8 @@ import org.springframework.data.redis.serializer.StringRedisSerializer;
 
 import com.fasterxml.jackson.databind.ObjectMapper; 
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import com.yhs.blog.springboot.jpa.domain.user.dto.response.UserProfileResponse;
+import com.yhs.blog.springboot.jpa.domain.user.dto.response.UserPrivateProfileResponse; 
+import com.yhs.blog.springboot.jpa.domain.user.dto.response.UserPublicProfileResponse;
  
 
 @Configuration
@@ -41,15 +42,34 @@ public class RedisConfig {
     }
 
     @Bean
-    public RedisTemplate<String, UserProfileResponse> userProfileRedisTemplate(RedisConnectionFactory connectionFactory) {
-        RedisTemplate<String, UserProfileResponse> redisTemplate = new RedisTemplate<>();
+    public RedisTemplate<String, UserPublicProfileResponse> userPublicProfileRedisTemplate(RedisConnectionFactory connectionFactory) {
+        RedisTemplate<String, UserPublicProfileResponse> redisTemplate = new RedisTemplate<>();
         redisTemplate.setConnectionFactory(connectionFactory);
 
         ObjectMapper objectMapper = new ObjectMapper();
         objectMapper.registerModule(new JavaTimeModule());
 
-        Jackson2JsonRedisSerializer<UserProfileResponse> serializer = new Jackson2JsonRedisSerializer<>(objectMapper,
-        UserProfileResponse.class);
+        Jackson2JsonRedisSerializer<UserPublicProfileResponse> serializer = new Jackson2JsonRedisSerializer<>(objectMapper,
+        UserPublicProfileResponse.class);
+
+        redisTemplate.setKeySerializer(new StringRedisSerializer());
+        redisTemplate.setValueSerializer(serializer);
+
+        redisTemplate.afterPropertiesSet();
+        return redisTemplate;
+    }
+
+    
+    @Bean
+    public RedisTemplate<String, UserPrivateProfileResponse> userPrivateProfileRedisTemplate(RedisConnectionFactory connectionFactory) {
+        RedisTemplate<String, UserPrivateProfileResponse> redisTemplate = new RedisTemplate<>();
+        redisTemplate.setConnectionFactory(connectionFactory);
+
+        ObjectMapper objectMapper = new ObjectMapper();
+        objectMapper.registerModule(new JavaTimeModule());
+
+        Jackson2JsonRedisSerializer<UserPrivateProfileResponse> serializer = new Jackson2JsonRedisSerializer<>(objectMapper,
+        UserPrivateProfileResponse.class);
 
         redisTemplate.setKeySerializer(new StringRedisSerializer());
         redisTemplate.setValueSerializer(serializer);

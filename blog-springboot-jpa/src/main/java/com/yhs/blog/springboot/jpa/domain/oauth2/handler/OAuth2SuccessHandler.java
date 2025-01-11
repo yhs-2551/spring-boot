@@ -79,14 +79,15 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
             // 리프레시 토큰 생성
             String refreshToken;
             if (isRememberMe) {
+                // 리프레시 토큰에 관한 redis key 이메일이 아닌 id를 사용한 이유는 로그아웃할 때 jwt에서 이메일을 추출할 수 없기 때문
                 refreshToken = tokenProvider.generateToken(user.get(),
                         TokenManagementService.REMEMBER_ME_REFRESH_TOKEN_DURATION);
-                redisTemplate.opsForValue().set(TokenManagementService.RT_PREFIX + user.get().getEmail(), refreshToken,
+                redisTemplate.opsForValue().set(TokenManagementService.RT_PREFIX + user.get().getId(), refreshToken,
                         TokenManagementService.REMEMBER_ME_REFRESH_TOKEN_TTL, TimeUnit.SECONDS);
 
             } else {
                 refreshToken = tokenProvider.generateToken(user.get(), TokenManagementService.REFRESH_TOKEN_DURATION);
-                redisTemplate.opsForValue().set(TokenManagementService.RT_PREFIX + user.get().getEmail(), refreshToken,
+                redisTemplate.opsForValue().set(TokenManagementService.RT_PREFIX + user.get().getId(), refreshToken,
                         TokenManagementService.REFRESH_TOKEN_TTL, TimeUnit.SECONDS);
 
             }

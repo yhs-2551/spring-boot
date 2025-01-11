@@ -6,14 +6,19 @@ import com.yhs.blog.springboot.jpa.common.response.ApiResponse;
 import com.yhs.blog.springboot.jpa.common.response.ErrorResponse;
 import com.yhs.blog.springboot.jpa.common.response.SuccessResponse;
 import com.yhs.blog.springboot.jpa.common.util.cookie.CookieUtil;
+import com.yhs.blog.springboot.jpa.domain.post.repository.search.SearchType;
 import com.yhs.blog.springboot.jpa.domain.token.jwt.provider.TokenProvider;
 import com.yhs.blog.springboot.jpa.domain.token.jwt.service.TokenManagementService;
+import com.yhs.blog.springboot.jpa.domain.token.jwt.util.TokenUtil;
 import com.yhs.blog.springboot.jpa.domain.user.dto.request.LoginRequest;
 import com.yhs.blog.springboot.jpa.domain.user.dto.request.SignUpUserRequest;
+import com.yhs.blog.springboot.jpa.domain.user.dto.request.UserSettingsRequest;
 import com.yhs.blog.springboot.jpa.domain.user.dto.request.VerifyEmailRequest;
 import com.yhs.blog.springboot.jpa.domain.user.dto.response.DuplicateCheckResponse;
-import com.yhs.blog.springboot.jpa.domain.user.dto.response.RateLimitResponse; 
-import com.yhs.blog.springboot.jpa.domain.user.dto.response.UserProfileResponse;
+import com.yhs.blog.springboot.jpa.domain.user.dto.response.RateLimitResponse;
+import com.yhs.blog.springboot.jpa.domain.user.dto.response.SignUpUserResponse;
+import com.yhs.blog.springboot.jpa.domain.user.dto.response.UserPrivateProfileResponse;
+import com.yhs.blog.springboot.jpa.domain.user.dto.response.UserPublicProfileResponse;
 import com.yhs.blog.springboot.jpa.domain.user.entity.User;
 import com.yhs.blog.springboot.jpa.domain.user.service.EmailService;
 import com.yhs.blog.springboot.jpa.domain.user.service.UserService;
@@ -33,13 +38,16 @@ import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.parameters.P;
 import org.springframework.security.web.authentication.SimpleUrlAuthenticationSuccessHandler;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
@@ -91,7 +99,7 @@ public class UserApiController extends SimpleUrlAuthenticationSuccessHandler {
         @RateLimit(key = "Login")
         @PostMapping("/api/users/login")
         @Transactional // saveRefreshToken DB작업 있어서 트랜잭션 추가해야함
-        public ResponseEntity<SuccessResponse<Void>> login(@RequestBody @Valid LoginRequest loginRequest,
+        public ResponseEntity<ApiResponse> login(@RequestBody @Valid LoginRequest loginRequest,
                         HttpServletRequest request,
                         HttpServletResponse response) throws ServletException, IOException {
 
@@ -110,14 +118,14 @@ public class UserApiController extends SimpleUrlAuthenticationSuccessHandler {
                 if (loginRequest.getRememberMe()) {
                         refreshToken = tokenProvider.generateToken(user,
                                         TokenManagementService.REMEMBER_ME_REFRESH_TOKEN_DURATION);
-                        redisTemplate.opsForValue().set(TokenManagementService.RT_PREFIX + user.getEmail(),
+                        redisTemplate.opsForValue().set(TokenManagementService.RT_PREFIX + user.getId(),
                                         refreshToken,
                                         TokenManagementService.REMEMBER_ME_REFRESH_TOKEN_TTL, TimeUnit.SECONDS);
 
                 } else {
                         refreshToken = tokenProvider.generateToken(user, TokenManagementService.REFRESH_TOKEN_DURATION);
 
-                        redisTemplate.opsForValue().set(TokenManagementService.RT_PREFIX + user.getEmail(),
+                        redisTemplate.opsForValue().set(TokenManagementService.RT_PREFIX + user.getId(),
                                         refreshToken,
                                         TokenManagementService.REFRESH_TOKEN_TTL, TimeUnit.SECONDS);
 
@@ -137,7 +145,8 @@ public class UserApiController extends SimpleUrlAuthenticationSuccessHandler {
                 // 않도록 함.
                 super.clearAuthenticationAttributes(request);
 
-                return ResponseEntity.ok().headers(headers).body(new SuccessResponse<>("로그인에 성공하였습니다."));
+                return ResponseEntity.ok().headers(headers)
+                                .body(new SuccessResponse<>("로그인에 성공하였습니다."));
 
         }
 
@@ -161,23 +170,43 @@ public class UserApiController extends SimpleUrlAuthenticationSuccessHandler {
                 try {
                         // tokenProvider.gerUserId()에서 내부적으로 만료된 토큰인지 유효성 검사를 함. 이때 만료된 토큰이면 아래
                         // ExpiredJwtException Catch문으로 넘어간다.
-                        String email = tokenProvider.getEmail(token);
 
-                        redisTemplate.delete(TokenManagementService.RT_PREFIX + email);
+                        Long userId = tokenProvider.getUserId(token);
+
+                        redisTemplate.delete(TokenManagementService.RT_PREFIX + userId);
 
                         return ResponseEntity.ok("로그아웃에 성공하였습니다.");
 
                 } catch (ExpiredJwtException e) {
                         // 만료된 토큰일 때도 userId를 추출 가능 (ExpiredJwtException을 통해 Claims에 접근) 즉
                         // ExpiredJwtException을 통해 만료된 토큰에 있는 Claims에 접근한다.
-                        String email = tokenProvider.getEmail(token);
-                        redisTemplate.delete(TokenManagementService.RT_PREFIX + email);
+                        Long userId = e.getClaims().get("id", Long.class);
+
+                        redisTemplate.delete(TokenManagementService.RT_PREFIX + userId);
+
                         return ResponseEntity.ok("로그아웃에 성공하였습니다.");
 
                 } catch (Exception e) {
                         log.error("Error deleting refresh token for userId: ", e);
                         // 유효하지 않은 토큰(서명이 잘못되거나 변조된 경우 등 즉 비정상적인 토큰일 경우)이면 거부 한다.
                         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("유효하지 않은 토큰입니다.");
+                }
+
+        }
+
+        /* formData를 객체에 바인딩하기 위해서  RequestBody 대신 ModelAttribute 사용 한다 */
+        @PatchMapping("/api/users/{blogId}/settings")
+        @PreAuthorize("#userBlogId == authentication.name")
+        public ResponseEntity<ApiResponse> updateSettings(
+                        @P("userBlogId") @PathVariable("blogId") String blogId,
+                        @ModelAttribute @Valid UserSettingsRequest settingsRequest) {
+                try {
+                        userService.updateUserSettings(blogId, settingsRequest);
+                        return ResponseEntity.ok()
+                                        .body(new SuccessResponse<>("사용자 설정이 성공적으로 업데이트되었습니다."));
+                } catch (Exception e) {
+                        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new ErrorResponse(
+                                        "사용자 프로필 업데이트 중 오류가 발생했습니다", HttpStatus.INTERNAL_SERVER_ERROR.value()));
                 }
 
         }
@@ -189,9 +218,19 @@ public class UserApiController extends SimpleUrlAuthenticationSuccessHandler {
          * @return 사용자의 프로필 정보를 포함한 ResponseEntity
          */
         @GetMapping("/api/users/{blogId}/profile")
-        public ResponseEntity<ApiResponse> getProfile(@PathVariable("blogId") String blogId) {
-                UserProfileResponse userProfile = userService.findUserByBlogId(blogId);
-                return ResponseEntity.ok().body(new SuccessResponse<>(userProfile, "사용자 정보 조회를 성공하였습니다."));
+        public ResponseEntity<ApiResponse> getUserProfilePublic(@PathVariable("blogId") String blogId) {
+                UserPublicProfileResponse publicUserProfile = userService.findUserByBlogId(blogId);
+                return ResponseEntity.ok().body(new SuccessResponse<>(publicUserProfile, "공개 사용자 정보 조회를 성공하였습니다."));
+        }
+
+        // 토큰 필터에서 인증 검사 끝나서 여기서 isAuthenticaed()필요x
+        @GetMapping("/api/users/profile/private")
+        public ResponseEntity<ApiResponse> getUserProfilePrivate(HttpServletRequest request) {
+
+                String blogId = TokenUtil.extractBlogIdFromRequestToken(request, tokenProvider);
+
+                UserPrivateProfileResponse privateUserProfile = userService.findUserByTokenAndByBlogId(blogId);
+                return ResponseEntity.ok().body(new SuccessResponse<>(privateUserProfile, "비공개 사용자 정보 조회를 성공하였습니다."));
         }
 
         @GetMapping("/api/check/blog-id/exists/{blogId}")

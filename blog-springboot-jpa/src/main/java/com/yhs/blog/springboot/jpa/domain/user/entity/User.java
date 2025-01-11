@@ -29,6 +29,8 @@ import java.util.Set;
 @Table(name = "Users")
 public class User extends BaseEntity implements UserDetails {
 
+    private static final String DEFAULT_PROFILE_IMAGE_URL = "https://iceamericano-blog-storage.s3.ap-northeast-2.amazonaws.com/default/default-avatar-profile.webp";
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -39,12 +41,23 @@ public class User extends BaseEntity implements UserDetails {
     @Column(nullable = false, length = 50, unique = true)
     private String blogId;
 
+    @Column(nullable = false, length = 32, unique = true)
+    private String blogName;
+
+    @PrePersist
+    public void prePersist() {
+        this.blogName = this.username + "의 DevLog";
+    }
+
     // OAUTH2 사용자의 경우 비밀번호를 저장할 필요가 없기 때문에 nullable true 설정
     @Column(nullable = true, length = 255)
     private String password;
 
     @Column(nullable = false, length = 100, unique = true)
     private String email;
+
+    @Column(name = "profile_image_url", nullable = true, length = 255)
+    private String profileImageUrl = DEFAULT_PROFILE_IMAGE_URL;
 
     @LastModifiedDate
     @Column(name = "updated_at")
@@ -80,7 +93,6 @@ public class User extends BaseEntity implements UserDetails {
     @Enumerated(EnumType.STRING)
     @Column(length = 10, nullable = false)
     private UserRole role = UserRole.USER;
-
 
     // 권한 반환 SimpleGrantedAuthority는 GrantedAuthority의 구현체
     @Override
@@ -129,6 +141,13 @@ public class User extends BaseEntity implements UserDetails {
         this.username = username;
         this.blogId = blogId;
         this.role = role != null ? role : UserRole.USER;
+    }
+
+    public User profileUpdate(String username, String blogName, String profileImageUrl) {
+        this.username = username;
+        this.blogName = blogName;
+        this.profileImageUrl = profileImageUrl;
+        return this;
     }
 
     public User update(String username) {

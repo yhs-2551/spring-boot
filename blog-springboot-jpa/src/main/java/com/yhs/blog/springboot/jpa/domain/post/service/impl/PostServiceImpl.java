@@ -75,6 +75,7 @@ public class PostServiceImpl implements PostService {
             Pageable pageable) {
 
         if (categoryId != null) {
+
             return postRepository.findPostsByUserIdAndCategoryId(userId, categoryId, keyword, searchType, pageable);
         }
         return postRepository.findPostsByUserId(userId, keyword, searchType, pageable);
@@ -137,7 +138,6 @@ public class PostServiceImpl implements PostService {
     public PostResponse createNewPost(PostRequest postRequest, HttpServletRequest request) {
         try {
 
-            log.info("PostRequest >>>> " + postRequest);
             Long userId = TokenUtil.extractUserIdFromRequestToken(request, tokenProvider);
             User user = userService.findUserById(userId);
 

@@ -47,3 +47,6 @@ build/generated/querydsl/
 document.md
 
 dummy.sql
+
+# Log files
+logs/

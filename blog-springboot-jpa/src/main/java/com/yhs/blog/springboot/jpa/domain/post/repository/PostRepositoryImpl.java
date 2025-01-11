@@ -5,16 +5,13 @@ import java.util.stream.Collectors;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.elasticsearch.NoSuchIndexException;
+import org.springframework.data.domain.Pageable; 
 import org.springframework.stereotype.Repository;
 import org.springframework.util.StringUtils;
 
 import com.querydsl.core.BooleanBuilder;
 
-import com.querydsl.jpa.impl.JPAQueryFactory;
-import com.yhs.blog.springboot.jpa.domain.category.entity.Category;
-import com.yhs.blog.springboot.jpa.domain.category.repository.CategoryRepository;
+import com.querydsl.jpa.impl.JPAQueryFactory; 
 import com.yhs.blog.springboot.jpa.domain.post.dto.response.PostResponse;
 import com.yhs.blog.springboot.jpa.domain.post.entity.Post;
 import com.yhs.blog.springboot.jpa.domain.post.entity.QPost;
@@ -23,7 +20,7 @@ import com.yhs.blog.springboot.jpa.domain.post.repository.search.SearchType;
 import com.yhs.blog.springboot.jpa.domain.post.repository.search.document.PostDocument;
 import com.yhs.blog.springboot.jpa.exception.custom.ElasticsearchCustomException;
 import com.yhs.blog.springboot.jpa.exception.custom.QueryDslCustomException;
-import com.yhs.blog.springboot.jpa.exception.custom.ResourceNotFoundException;
+ 
 
 import co.elastic.clients.elasticsearch._types.ElasticsearchException;
 import lombok.RequiredArgsConstructor;
@@ -35,8 +32,7 @@ import lombok.extern.log4j.Log4j2;
 public class PostRepositoryImpl implements PostRepositoryCustom {
 
         private final JPAQueryFactory queryFactory;
-        private final PostSearchRepository searchRepository;
-        private final CategoryRepository categoryRepository;
+        private final PostSearchRepository searchRepository; 
 
         @Override
         public Page<PostResponse> findPostsAllUser(String keyword, SearchType searchType, Pageable pageable) {
@@ -122,6 +118,7 @@ public class PostRepositoryImpl implements PostRepositoryCustom {
 
                 // 검색어가 있는 경우 Elasticsearch 사용
                 if (StringUtils.hasText(keyword)) {
+
                         try {
                                 Page<PostDocument> searchResult = switch (searchType) {
                                         case TITLE ->
@@ -137,6 +134,7 @@ public class PostRepositoryImpl implements PostRepositoryCustom {
                                                                 String.valueOf(userId),
                                                                 categoryId, pageable);
                                 };
+
                                 return searchResult.map(PostResponse::fromDocument);
 
                         } catch (ElasticsearchException e) {

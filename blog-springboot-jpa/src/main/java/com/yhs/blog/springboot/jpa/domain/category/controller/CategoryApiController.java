@@ -1,7 +1,5 @@
 package com.yhs.blog.springboot.jpa.domain.category.controller;
 
-
-import com.yhs.blog.springboot.jpa.domain.token.jwt.provider.TokenProvider;
 import com.yhs.blog.springboot.jpa.domain.user.entity.User;
 import com.yhs.blog.springboot.jpa.domain.user.repository.UserRepository;
 import com.yhs.blog.springboot.jpa.exception.custom.ResourceNotFoundException;
@@ -38,6 +36,7 @@ public class CategoryApiController {
         List<CategoryResponse> categoryResponse =
                 categoryService.createCategory(categoryRequestPayLoad);
 
+
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(new SuccessResponse<List<CategoryResponse>>(categoryResponse, "Success " +
                         "create new category."));
@@ -46,7 +45,7 @@ public class CategoryApiController {
     // 특정 사용자의 모든 카테고리 조회. 모든 사용자가 볼 수 있어야 해서 preauthorize 제거
     @GetMapping
     public ResponseEntity<ApiResponse> getAllCategoriesWithChildrenByUserId(@PathVariable("blogId") String blogId) {
-
+ 
         User user = userRepository.findByBlogId(blogId)
                 .orElseThrow(() -> new ResourceNotFoundException(blogId + "사용자를 찾을 수 없습니다."));
 

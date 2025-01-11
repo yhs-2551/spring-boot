@@ -40,6 +40,9 @@ public class CategoryServiceImpl implements CategoryService {
         // 카테고리 삭제 작업
         if (categoryRequestPayLoad.getCategoryToDelete() != null && !categoryRequestPayLoad.getCategoryToDelete().isEmpty()) {
             categoryRequestPayLoad.getCategoryToDelete().forEach(this::deleteCategory);
+             // 삭제된 엔티티들 즉 영속성 컨텍스트 변경 사항을 즉시 DB에 반영. 이게 없으면, 프론트에서 부모에서 자식 카테고리를 없애고 해당 부모 카테고리를 제거할 때 duplicate key 에러 발생
+             // 만약 동일한 트랜잭션 내에서 이후에 작업이 실패하면 트랜잭션 완료가 아니기 때문에 flush로 작업한 내용도 롤백됨. 트랜잭션의 원자성 보장
+            categoryRepository.flush();
         }
 
         // 모든 엔티티 먼저 일괄 저장
@@ -74,24 +77,28 @@ public class CategoryServiceImpl implements CategoryService {
 
     }
 
-    @Transactional
-    private void deleteCategory(String categoryUuid) {
-        Optional<Category> categoryOptional = categoryRepository.findById(categoryUuid);
+    private void deleteCategory(CategoryRequest categoryRequest) {
+
+        log.info("실행>>>>>>>>>>>>>>>>>>>>>");
+        
+        Optional<Category> categoryOptional = categoryRepository.findById(categoryRequest.getCategoryUuid());
+
         if (categoryOptional.isPresent()) {
 
             Category category = categoryOptional.get();
 
-            if (category.getChildren() != null && !category.getChildren().isEmpty()) {
-                throw new IllegalStateException("Category with UUID: " + categoryUuid + " cannot be deleted because it has child categories.");
+            if (categoryRequest.getChildren() != null && !categoryRequest.getChildren().isEmpty()) {
+ 
+                throw new IllegalStateException("Category with UUID: " + categoryRequest.getCategoryUuid() + " cannot be deleted because it has child categories.");
             }
             if (category.getPosts() != null && !category.getPosts().isEmpty()) {
-                throw new IllegalStateException("Category with UUID: " + categoryUuid + " cannot be deleted because it has posts.");
+                throw new IllegalStateException("Category with UUID: " + categoryRequest.getCategoryUuid() + " cannot be deleted because it has posts.");
             }
-            log.debug("Deleting category with UUID: {}", categoryUuid);
+            log.debug("Deleting category with UUID: {}", categoryRequest.getCategoryUuid());
             categoryRepository.delete(category);
 
         } else {
-            throw new ResourceNotFoundException("Category not found for UUID: " + categoryUuid);
+            throw new ResourceNotFoundException("Category not found for UUID: " + categoryRequest.getCategoryUuid());
         }
     }
 

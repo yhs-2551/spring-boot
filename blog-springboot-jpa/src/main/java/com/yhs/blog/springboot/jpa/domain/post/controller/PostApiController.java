@@ -93,11 +93,13 @@ public class PostApiController {
                                 postResponses = postService.getAllPostsSpecificUser(userId, keyword, searchType,
                                                 categoryId,
                                                 pageable);
+                        } else {
+
+                                // CustomPageableResolver에 의해 변환된 PageRequest 객체가 전달된다.
+                                postResponses = postService.getAllPostsSpecificUser(userId, keyword, searchType, null,
+                                                pageable);
                         }
 
-                        // CustomPageableResolver에 의해 변환된 PageRequest 객체가 전달된다.
-                        postResponses = postService.getAllPostsSpecificUser(userId, keyword, searchType, null,
-                                        pageable);
                 } else {
                         // 모든 사용자의 전체 게시글 조회
                         postResponses = postService.getAllPostsAllUser(keyword, searchType, pageable);
@@ -206,22 +208,19 @@ public class PostApiController {
                 return ResponseEntity.ok().body(postResponse);
         }
 
+ 
         @GetMapping("/{blogId}/posts/{postId}/verify-author")
         public ResponseEntity<Map<String, Boolean>> verifyAuthor(HttpServletRequest request,
                         @PathVariable("postId") Long postId,
                         @PathVariable("blogId") String blogId) {
-
-                // url 경로에서 받은 userIdentifier을 통해 정확히 해당 사용자의 게시글을 가져오기 위함
-                Long userId = userRepository.findByBlogId(blogId)
-                                .orElseThrow(() -> new ResourceNotFoundException(blogId + "사용자를 찾을 수 없습니다."))
-                                .getId();
+ 
 
                 // 로그인한 사용자의 userId
-                Long userIdFromAccessToken = TokenUtil.extractUserIdFromRequestToken(request,
+                String userBlogIdFromAccessToken = TokenUtil.extractBlogIdFromRequestToken(request,
                                 tokenProvider);
 
                 // 로그인한 사용자와 실제 게시글 작성자가 같은지 최종적으로 확인
-                boolean isAuthor = userId.equals(userIdFromAccessToken);
+                boolean isAuthor = blogId.equals(userBlogIdFromAccessToken);
 
                 Map<String, Boolean> response = new HashMap<>();
                 response.put("isAuthor", isAuthor);
@@ -255,37 +254,6 @@ public class PostApiController {
                                 .body(new SuccessResponse<PostUpdateResponse>(postUpdateResponse,
                                                 "Success update post" +
                                                                 "."));
-        }
-
-        // Swagger api에서 파일을 선택하기 위해서 consumes = "multipart/form-data"를 지정해 주어야 함.
-        @PreAuthorize("#userBlogId == authentication.name")
-        @PostMapping(value = "/{blogId}/temp/files/upload", consumes = "multipart/form-data", produces = MediaType.TEXT_PLAIN_VALUE)
-        public ResponseEntity<String> uploadFile(
-                        @RequestParam("file") MultipartFile file,
-                        @RequestParam(value = "featured", required = false) String featured,
-                        @P("userBlogId") @PathVariable("blogId") String blogId,
-                        HttpServletRequest request) {
-
-                try {
-
-                        if (Objects.requireNonNull(file.getContentType()).startsWith("image/")
-                                        && file.getSize() > 5 * 1024 * 1024) { // 5MB
-                                // limit for image files
-                                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                                                .body("Image file size exceeds the limit of 5MB");
-                        } else if (!file.getContentType().startsWith("image/") && file.getSize() > 10 * 1024 * 1024) {
-                                // 10MB limit for other files
-                                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                                                .body("File size exceeds the limit of 10MB");
-                        }
-
-                        String fileUrl = s3Service.tempUploadFile(file, featured, blogId);
-
-                        return ResponseEntity.ok(fileUrl);
-                } catch (Exception e) {
-                        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Failed to upload file");
-                }
-
         }
 
 }

@@ -16,6 +16,17 @@ public class TokenUtil {
         throw new IllegalArgumentException("Invalid or missing Authorization header");
     }
 
+    public static String extractBlogIdFromRequestToken(HttpServletRequest request, TokenProvider tokenProvider) {
+        String authorizationHeader = request.getHeader("Authorization");
+
+        if (authorizationHeader != null && authorizationHeader.startsWith("Bearer ")) {
+            String accessToken = authorizationHeader.substring(7);
+            return tokenProvider.getBlogId(accessToken);
+        }
+
+        throw new IllegalArgumentException("Invalid or missing Authorization header");
+    }
+
 //    public static String extractEmailFromRequestToken(HttpServletRequest request, TokenProvider tokenProvider) {
 //        String authorizationHeader = request.getHeader("Authorization");
 //

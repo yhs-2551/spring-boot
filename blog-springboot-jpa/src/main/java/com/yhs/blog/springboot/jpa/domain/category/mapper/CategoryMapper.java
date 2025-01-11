@@ -28,8 +28,6 @@ public class CategoryMapper {
                         category.getChildren().stream()
                                 .map(child -> from(child, cache))
                                 .collect(Collectors.toList()) : Collections.emptyList(),
-                category.getChildren() != null && !category.getChildren().isEmpty() ?
-                        category.getChildren().size() : 0,
                 category.getPosts() != null && !category.getPosts().isEmpty() ?
                         category.getPosts().size() : 0
         );
@@ -52,13 +50,10 @@ public class CategoryMapper {
                                         subCategory.getName(),
                                         category.getId(),
                                         Collections.emptyList(), // 2단계 자식은 자식이 존재하지 않으니 빈배열로
-                                        0, // 2단계 자식은 자식이 존재하지 않으니 값은 항상 0
                                         subCategory.getPosts() != null && !subCategory.getPosts().isEmpty() ?
                                                 subCategory.getPosts().size() : 0
                                 ))
                                 .collect(Collectors.toList()) : Collections.emptyList(), // 최상위에자식이 없으면 빈배열로 반환
-                category.getChildren() != null && !category.getChildren().isEmpty() ?
-                        category.getChildren().size() : 0,
                 category.getPosts() != null && !category.getPosts().isEmpty() ?
                         category.getPosts().size() : 0
 
