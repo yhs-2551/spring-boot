@@ -82,14 +82,14 @@ public class TokenApiController {
         HttpHeaders headers = new HttpHeaders();
         String getRefreshTokenCookie = tokenManagementService.getRefreshTokenCookie(request);
 
-        if (!(StringUtils.hasText(getRefreshTokenCookie))) {
+        if (getRefreshTokenCookie == null || !(StringUtils.hasText(getRefreshTokenCookie))) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-            .body(new ErrorResponse("세션이 만료되었습니다. 다시 로그인해주세요.", HttpStatus.UNAUTHORIZED.value()));
+                    .body(new ErrorResponse("세션이 만료되었습니다. 다시 로그인해주세요.", HttpStatus.UNAUTHORIZED.value()));
         }
 
         Long userId = tokenProvider.getUserId(getRefreshTokenCookie);
         // RefreshToken을 이용해 새로운 액세스 토큰 발급
-        if (getRefreshTokenCookie != null && userId != null // Long은 wrapper 클래스라 null 비교 가능 
+        if (userId != null // Long은 wrapper 클래스라 null 비교 가능
                 && tokenProvider.validateRefreshToken(getRefreshTokenCookie, userId)) {
             // 리프레시 토큰이 유효하다면 새로운 액세스 토큰 발급
             String newAccessToken = tokenService.createNewAccessToken(getRefreshTokenCookie);

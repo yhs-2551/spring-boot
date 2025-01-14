@@ -46,8 +46,7 @@ public class WebOAuthFormJwtSecurityConfig {
     private final OAuth2UserCustomService oAuth2UserCustomService;
     private final TokenProvider tokenProvider;
     private final TokenManagementService tokenManagementService;
-    private final UserServiceImpl userService;
-    private final TokenServiceImpl tokenService;
+    private final UserServiceImpl userService; 
     private final CustomUserDetailsService userDetailService;
     private final RedisTemplate<String, String> redisTemplate;
 
@@ -157,7 +156,7 @@ public class WebOAuthFormJwtSecurityConfig {
                         .requestMatchers(HttpMethod.POST, "/api/users/logout").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/users/verify-email").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/oauth2/users").permitAll()
-
+                        .requestMatchers(HttpMethod.POST, "/api/admin/batch/cleanup").permitAll()
                         // 나머지는 인증 필요
                         .anyRequest().authenticated()
                 // 그 외의 모든 요청은 USER 또는 ADMIN 권한을 가진 사용자만 접근 가능. 임시로 주석. 나중에 적용

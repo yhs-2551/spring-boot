@@ -63,7 +63,9 @@ public class TokenAuthenticationFilter extends OncePerRequestFilter {
                         requestURI.equals("/api/users/login") ||
                         requestURI.equals("/api/users/logout") ||
                         requestURI.equals("/api/users/verify-email") ||
-                        requestURI.equals("/api/oauth2/users"))) {
+                        requestURI.equals("/api/oauth2/users") ||
+                        requestURI.equals("/api/admin/batch/cleanup") // 배치 테스트용으로 추가 
+                        )) {
             filterChain.doFilter(request, response);
             return;
         }

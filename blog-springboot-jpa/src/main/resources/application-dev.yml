@@ -40,6 +40,12 @@ spring:
 
                 # Enables detailed logging for Hibernate parameter values
                 type: trace
+    
+    batch:
+        job:
+            enabled: false # true면 앱 시작 시 스케줄러에 의해 관리되는 job을 제외하고 모든 Job이 자동 실행. 나의 경우 직접 제어하므로 false로 설정
+        jdbc:
+            initialize-schema: always # 배치 메타테이블 생성/업데이트용
 
     servlet:
         multipart:

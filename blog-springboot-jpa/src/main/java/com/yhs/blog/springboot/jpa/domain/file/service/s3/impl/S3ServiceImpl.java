@@ -33,7 +33,7 @@ public class S3ServiceImpl implements S3Service {
     private final S3Client s3Client;
 
     @Value("${aws.s3.bucketName}")
-    private String buketName;
+    private String bucketName;
 
     // private String getUserFolder() {
     // String email = TokenUtil.extractEmailFromRequestToken(request,
@@ -58,13 +58,13 @@ public class S3ServiceImpl implements S3Service {
 
         try {
             PutObjectRequest putObjectRequest = PutObjectRequest.builder()
-                    .bucket(buketName)
+                    .bucket(bucketName)
                     .key(fileName)
                     .contentType(file.getContentType())
                     .build();
 
             s3Client.putObject(putObjectRequest, RequestBody.fromInputStream(file.getInputStream(), file.getSize()));
-            return s3Client.utilities().getUrl(builder -> builder.bucket(buketName).key(fileName)).toExternalForm();
+            return s3Client.utilities().getUrl(builder -> builder.bucket(bucketName).key(fileName)).toExternalForm();
         } catch (S3Exception e) {
             throw new IOException("Failed to upload file to S3", e);
         }
@@ -77,14 +77,14 @@ public class S3ServiceImpl implements S3Service {
 
         // 폴더 내 모든 객체 삭제. ListObjects는 버킷 내 객체들을 나열한다.
         ListObjectsV2Request listRequest = ListObjectsV2Request.builder()
-                .bucket(buketName)
+                .bucket(bucketName)
                 .prefix(folder)
                 .build();
 
         ListObjectsV2Response listResponse = s3Client.listObjectsV2(listRequest);
         listResponse.contents().forEach(obj -> {
             s3Client.deleteObject(DeleteObjectRequest.builder()
-                    .bucket(buketName)
+                    .bucket(bucketName)
                     .key(obj.key())
                     .build());
         });
@@ -101,13 +101,13 @@ public class S3ServiceImpl implements S3Service {
 
         try {
             PutObjectRequest putObjectRequest = PutObjectRequest.builder()
-                    .bucket(buketName)
+                    .bucket(bucketName)
                     .key(fileName)
                     .contentType(file.getContentType())
                     .build();
 
             s3Client.putObject(putObjectRequest, RequestBody.fromInputStream(file.getInputStream(), file.getSize()));
-            return s3Client.utilities().getUrl(builder -> builder.bucket(buketName).key(fileName)).toExternalForm();
+            return s3Client.utilities().getUrl(builder -> builder.bucket(bucketName).key(fileName)).toExternalForm();
         } catch (S3Exception e) {
             throw new IOException("Failed to upload profile image to S3", e);
         }
@@ -213,16 +213,16 @@ public class S3ServiceImpl implements S3Service {
 
         try {
             CopyObjectRequest copyObjectRequest = CopyObjectRequest.builder()
-                    .sourceBucket(buketName)
+                    .sourceBucket(bucketName)
                     .sourceKey(tempFullPath)
-                    .destinationBucket(buketName)
+                    .destinationBucket(bucketName)
                     .destinationKey(finalFullPath)
                     .build();
 
             s3Client.copyObject(copyObjectRequest);
 
             DeleteObjectRequest deleteObjectRequest = DeleteObjectRequest.builder()
-                    .bucket(buketName)
+                    .bucket(bucketName)
                     .key(tempFullPath)
                     .build();
 
@@ -259,7 +259,7 @@ public class S3ServiceImpl implements S3Service {
 
         try {
             DeleteObjectRequest deleteObjectRequest = DeleteObjectRequest.builder()
-                    .bucket(buketName)
+                    .bucket(bucketName)
                     .key(fullPath)
                     .build();
             s3Client.deleteObject(deleteObjectRequest);

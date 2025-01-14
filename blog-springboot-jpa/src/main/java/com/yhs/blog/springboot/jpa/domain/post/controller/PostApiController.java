@@ -48,7 +48,6 @@ public class PostApiController {
 
         private final PostService postService;
         private final TokenProvider tokenProvider;
-        private final S3Service s3Service;
         private final UserRepository userRepository;
         private final CategoryRepository categoryRepository;
 
