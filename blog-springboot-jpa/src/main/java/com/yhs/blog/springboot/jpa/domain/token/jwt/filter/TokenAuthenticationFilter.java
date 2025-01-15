@@ -99,6 +99,12 @@ public class TokenAuthenticationFilter extends OncePerRequestFilter {
         }
 
         Authentication authentication = tokenProvider.getAuthentication(accessToken);
+
+        log.debug("Authentication principal: {}", 
+        authentication.getPrincipal());
+        
+
+
         SecurityContextHolder.getContext().setAuthentication(authentication);
 
         log.debug("실행 dofilterinternal 유효성검사 후 - 성공 ");

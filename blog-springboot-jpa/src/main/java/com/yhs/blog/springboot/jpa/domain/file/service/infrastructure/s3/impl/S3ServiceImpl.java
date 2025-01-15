@@ -1,9 +1,11 @@
-package com.yhs.blog.springboot.jpa.domain.file.service.s3.impl;
+package com.yhs.blog.springboot.jpa.domain.file.service.infrastructure.s3.impl;
 
 import com.yhs.blog.springboot.jpa.domain.file.dto.request.FileRequest;
-import com.yhs.blog.springboot.jpa.domain.file.service.s3.S3Service;
+import com.yhs.blog.springboot.jpa.domain.file.service.infrastructure.s3.S3Service;
 import com.yhs.blog.springboot.jpa.domain.post.dto.request.PostRequest;
 import com.yhs.blog.springboot.jpa.domain.post.dto.request.PostUpdateRequest;
+import com.yhs.blog.springboot.jpa.exception.custom.S3OperationException;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Value;
@@ -25,6 +27,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 
 @Log4j2
 @Service
@@ -35,17 +38,8 @@ public class S3ServiceImpl implements S3Service {
     @Value("${aws.s3.bucketName}")
     private String bucketName;
 
-    // private String getUserFolder() {
-    // String email = TokenUtil.extractEmailFromRequestToken(request,
-    // tokenProvider);
-    // return email.substring(0, email.indexOf('@'));
-    // }
-
     @Override
     public String tempUploadFile(MultipartFile file, String folder, String blogId) throws IOException {
-
-        // String userFolder = getUserFolder();
-
 
         // 대표 이미지 구분하기 위함
         if (folder == null || folder.isEmpty()) {
@@ -66,7 +60,7 @@ public class S3ServiceImpl implements S3Service {
             s3Client.putObject(putObjectRequest, RequestBody.fromInputStream(file.getInputStream(), file.getSize()));
             return s3Client.utilities().getUrl(builder -> builder.bucket(bucketName).key(fileName)).toExternalForm();
         } catch (S3Exception e) {
-            throw new IOException("Failed to upload file to S3", e);
+            throw new IOException("tempUploadFile: AWS S3에 파일 업로드에 실패하였습니다.", e);
         }
 
     }
@@ -109,15 +103,16 @@ public class S3ServiceImpl implements S3Service {
             s3Client.putObject(putObjectRequest, RequestBody.fromInputStream(file.getInputStream(), file.getSize()));
             return s3Client.utilities().getUrl(builder -> builder.bucket(bucketName).key(fileName)).toExternalForm();
         } catch (S3Exception e) {
-            throw new IOException("Failed to upload profile image to S3", e);
+            throw new IOException("uploadProfileImage: AWS S3에 파일 업로드에 실패하였습니다.", e);
         }
     }
 
+    // 실패 원인이 일시적이지 않기 때문에 재시도 불필요 하다고 판단
     @Async
     @Override
-    public void processCreatePostS3TempOperation(PostRequest postRequest, String blogId) {
-        try {
+    public CompletableFuture<Void> processCreatePostS3TempOperation(PostRequest postRequest, String blogId) {
 
+        try {
             log.info("sAWS TEMP- Thread: {}", Thread.currentThread().getName());
 
             // String userFolder = getUserFolder();
@@ -136,14 +131,17 @@ public class S3ServiceImpl implements S3Service {
                 tempDeleteFile(tempFileUrl, blogId);
             }
 
-        } catch (IOException e) {
-            log.error("Failed to process S3 operations", e);
+            return CompletableFuture.completedFuture(null);
+        } catch (Exception ex) {
+            throw new S3OperationException("processCreatePostS3TempOperation 에러 발생", ex);
+
         }
+
     }
 
     @Override
     @Async
-    public void processUpdatePostS3TempOperation(PostUpdateRequest postUpdateRequest,
+    public CompletableFuture<Void> processUpdatePostS3TempOperation(PostUpdateRequest postUpdateRequest,
             String blogId) {
 
         try {
@@ -171,14 +169,16 @@ public class S3ServiceImpl implements S3Service {
                 tempDeleteFile(tempFileUrl, blogId);
             }
 
-        } catch (IOException e) {
-            log.error("Failed to process S3 operations", e);
+            return CompletableFuture.completedFuture(null);
+
+        } catch (Exception ex) {
+            throw new S3OperationException("processUpdatePostS3TempOperation 에러 발생", ex);
+
         }
+
     }
 
-    private void processTempFilesToFinal(List<String> tempfileUrls, String blogId) throws IOException {
-
-        // String userFolder = getUserFolder();
+    private void processTempFilesToFinal(List<String> tempfileUrls, String blogId) {
 
         for (String tempFileUrl : tempfileUrls) {
             String finalFolder;
@@ -191,9 +191,7 @@ public class S3ServiceImpl implements S3Service {
         }
     }
 
-    private void moveTempFilesToFinal(String tempFileUrl, String finalFolder, String blogId) throws IOException {
-
-        // String userFolder = getUserFolder();
+    private void moveTempFilesToFinal(String tempFileUrl, String finalFolder, String blogId) {
 
         String fileName = tempFileUrl.substring(tempFileUrl.lastIndexOf("/") + 1);
 
@@ -211,26 +209,21 @@ public class S3ServiceImpl implements S3Service {
         String tempFullPath = tempFolder + fileName;
         String finalFullPath = finalFolder + fileName;
 
-        try {
-            CopyObjectRequest copyObjectRequest = CopyObjectRequest.builder()
-                    .sourceBucket(bucketName)
-                    .sourceKey(tempFullPath)
-                    .destinationBucket(bucketName)
-                    .destinationKey(finalFullPath)
-                    .build();
+        CopyObjectRequest copyObjectRequest = CopyObjectRequest.builder()
+                .sourceBucket(bucketName)
+                .sourceKey(tempFullPath)
+                .destinationBucket(bucketName)
+                .destinationKey(finalFullPath)
+                .build();
 
-            s3Client.copyObject(copyObjectRequest);
+        s3Client.copyObject(copyObjectRequest);
 
-            DeleteObjectRequest deleteObjectRequest = DeleteObjectRequest.builder()
-                    .bucket(bucketName)
-                    .key(tempFullPath)
-                    .build();
+        DeleteObjectRequest deleteObjectRequest = DeleteObjectRequest.builder()
+                .bucket(bucketName)
+                .key(tempFullPath)
+                .build();
 
-            s3Client.deleteObject(deleteObjectRequest);
-
-        } catch (S3Exception e) {
-            throw new IOException("Failed to move file from temp to final folder", e);
-        }
+        s3Client.deleteObject(deleteObjectRequest);
 
     }
 
@@ -257,15 +250,12 @@ public class S3ServiceImpl implements S3Service {
         }
         String fullPath = folder + fileName;
 
-        try {
-            DeleteObjectRequest deleteObjectRequest = DeleteObjectRequest.builder()
-                    .bucket(bucketName)
-                    .key(fullPath)
-                    .build();
-            s3Client.deleteObject(deleteObjectRequest);
-        } catch (S3Exception e) {
-            throw new RuntimeException("Failed to delete file from S3", e);
-        }
+        DeleteObjectRequest deleteObjectRequest = DeleteObjectRequest.builder()
+                .bucket(bucketName)
+                .key(fullPath)
+                .build();
+        s3Client.deleteObject(deleteObjectRequest);
+
     }
 
 }

@@ -1,6 +1,7 @@
 package com.yhs.blog.springboot.jpa.domain.user.service;
 
 import com.yhs.blog.springboot.jpa.domain.oauth2.dto.request.AdditionalInfoRequest;
+import com.yhs.blog.springboot.jpa.domain.oauth2.dto.request.OAuth2SignUpResponse;
 import com.yhs.blog.springboot.jpa.domain.user.dto.request.SignUpUserRequest;
 import com.yhs.blog.springboot.jpa.domain.user.dto.request.UserSettingsRequest;
 import com.yhs.blog.springboot.jpa.domain.user.dto.response.DuplicateCheckResponse;
@@ -18,7 +19,7 @@ import java.util.Optional;
 public interface UserService {
     SignUpUserResponse createUser(SignUpUserRequest signUpUserRequest);
 
-    RateLimitResponse createOAuth2User(String email, AdditionalInfoRequest additionalInfoRequest,
+    RateLimitResponse<OAuth2SignUpResponse> createOAuth2User(String email, AdditionalInfoRequest additionalInfoRequest,
             HttpServletRequest request, HttpServletResponse response);
 
     User findUserById(Long userId);

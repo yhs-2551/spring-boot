@@ -7,17 +7,11 @@ import com.yhs.blog.springboot.jpa.domain.post.dto.response.PostResponse;
 import com.yhs.blog.springboot.jpa.domain.post.dto.response.PostUpdateResponse;
 import com.yhs.blog.springboot.jpa.common.response.ApiResponse;
 import com.yhs.blog.springboot.jpa.common.response.SuccessResponse;
-import com.yhs.blog.springboot.jpa.domain.post.entity.Post;
 import com.yhs.blog.springboot.jpa.domain.post.repository.search.SearchType;
-import com.yhs.blog.springboot.jpa.domain.user.entity.User;
 import com.yhs.blog.springboot.jpa.domain.user.repository.UserRepository;
 import com.yhs.blog.springboot.jpa.dto.response.PageResponse;
-import com.yhs.blog.springboot.jpa.exception.custom.ResourceNotFoundException;
 import com.yhs.blog.springboot.jpa.domain.post.service.PostService;
-import com.yhs.blog.springboot.jpa.domain.category.entity.Category;
 import com.yhs.blog.springboot.jpa.domain.category.repository.CategoryRepository;
-import com.yhs.blog.springboot.jpa.domain.file.service.s3.S3Service;
-import com.yhs.blog.springboot.jpa.domain.token.jwt.util.TokenUtil;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -32,24 +26,20 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.parameters.P;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.multipart.MultipartFile;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Objects;
 
 @RequiredArgsConstructor
 @RestController
 @RequestMapping("/api")
 @Log4j2
-public class PostApiController {
+public class PostController {
 
         private final PostService postService;
-        private final TokenProvider tokenProvider;
-        private final UserRepository userRepository;
-        private final CategoryRepository categoryRepository;
 
         // ResponseEntity의 <?>와일드 카드 대신 sealed 클래스를 사용해 특정 클래스들만 상속하게 제한함
         @PostMapping(value = "/{blogId}/posts", produces = MediaType.APPLICATION_JSON_VALUE, consumes = MediaType.APPLICATION_JSON_VALUE)
@@ -78,24 +68,14 @@ public class PostApiController {
 
                         // 특정 사용자의 전체 게시글 처리
                         // 특정 사용자 즉 정확한 해당 사용자의 게시글만 조회 가능하도록 구현(blogId 사용)
-                        User user = userRepository.findByBlogId(blogId)
-                                        .orElseThrow(() -> new ResourceNotFoundException(blogId + "사용자를 찾을 수 없습니다."));
-                        Long userId = user.getId();
-
                         if (category != null) {
-                                Category categoryEntity = categoryRepository.findByNameAndUserId(category, userId)
-                                                .orElseThrow(() -> new ResourceNotFoundException(
-                                                                category + " 카테고리를 찾을 수 없습니다."));
 
-                                String categoryId = categoryEntity.getId();
-
-                                postResponses = postService.getAllPostsSpecificUser(userId, keyword, searchType,
-                                                categoryId,
+                                postResponses = postService.getAllPostsSpecificUser(blogId, keyword, searchType,
+                                                category,
                                                 pageable);
                         } else {
 
-                                // CustomPageableResolver에 의해 변환된 PageRequest 객체가 전달된다.
-                                postResponses = postService.getAllPostsSpecificUser(userId, keyword, searchType, null,
+                                postResponses = postService.getAllPostsSpecificUser(blogId, keyword, searchType, null,
                                                 pageable);
                         }
 
@@ -106,8 +86,6 @@ public class PostApiController {
                 }
 
                 PageResponse<PostResponse> pageResponse = new PageResponse<>(postResponses);
-
-                log.info("pageResponse:>>>> {}", pageResponse);
 
                 return ResponseEntity.ok(new SuccessResponse<>(pageResponse, "게시글 응답에 성공하였습니다."));
         }
@@ -124,17 +102,12 @@ public class PostApiController {
 
                 int pageNumber = page - 1;
 
-                User user = userRepository.findByBlogId(blogId)
-                                .orElseThrow(() -> new ResourceNotFoundException(blogId + "사용자를 찾을 수 없습니다."));
-
                 PageRequest pageRequest = PageRequest.of(
                                 pageNumber,
                                 pageable.getPageSize(),
                                 pageable.getSort());
 
-                Long userId = user.getId();
-
-                Page<PostResponse> postResponses = postService.getAllPostsSpecificUser(userId, null, null,
+                Page<PostResponse> postResponses = postService.getAllPostsSpecificUser(blogId, null, null,
                                 null,
                                 pageRequest);
 
@@ -150,16 +123,7 @@ public class PostApiController {
                         @PageableDefault(page = 0, size = 10, sort = { "createdAt",
                                         "id" }, direction = Sort.Direction.DESC) Pageable pageable) {
 
-                User user = userRepository.findByBlogId(blogId)
-                                .orElseThrow(() -> new ResourceNotFoundException(blogId + "사용자를 찾을 수 없습니다."));
-                Long userId = user.getId();
-
-                Category categoryEntity = categoryRepository.findByNameAndUserId(category, userId)
-                                .orElseThrow(() -> new ResourceNotFoundException(category + " 카테고리를 찾을 수 없습니다."));
-
-                String categoryId = categoryEntity.getId();
-
-                Page<PostResponse> postResponses = postService.getAllPostsSpecificUser(userId, null, null, categoryId,
+                Page<PostResponse> postResponses = postService.getAllPostsSpecificUser(blogId, null, null, category,
                                 pageable);
 
                 PageResponse<PostResponse> pageResponse = new PageResponse<>(postResponses);
@@ -177,23 +141,13 @@ public class PostApiController {
 
                 int pageNumber = page - 1;
 
-                User user = userRepository.findByBlogId(blogId)
-                                .orElseThrow(() -> new ResourceNotFoundException(blogId + "사용자를 찾을 수 없습니다."));
-
-                Long userId = user.getId();
-
-                Category categoryEntity = categoryRepository.findByNameAndUserId(category, userId)
-                                .orElseThrow(() -> new ResourceNotFoundException(category + " 카테고리를 찾을 수 없습니다."));
-
-                String categoryId = categoryEntity.getId();
-
                 PageRequest pageRequest = PageRequest.of(
                                 pageNumber,
                                 pageable.getPageSize(),
                                 pageable.getSort());
 
-                Page<PostResponse> postResponses = postService.getAllPostsSpecificUser(userId, null, null,
-                                categoryId,
+                Page<PostResponse> postResponses = postService.getAllPostsSpecificUser(blogId, null, null,
+                                category,
                                 pageRequest);
 
                 PageResponse<PostResponse> pageResponse = new PageResponse<>(postResponses);
@@ -209,19 +163,14 @@ public class PostApiController {
                 return ResponseEntity.ok().body(postResponse);
         }
 
- 
+        @PreAuthorize("isAuthenticated()") // 없어도 tokenAuthenticationFilter에 의해 검증되긴 하지만, 가독성을 위해 추가
         @GetMapping("/{blogId}/posts/{postId}/verify-author")
-        public ResponseEntity<Map<String, Boolean>> verifyAuthor(HttpServletRequest request,
-                        @PathVariable("postId") Long postId,
+        public ResponseEntity<Map<String, Boolean>> verifyAuthor(
+                        @AuthenticationPrincipal org.springframework.security.core.userdetails.User user,
                         @PathVariable("blogId") String blogId) {
- 
-
-                // 로그인한 사용자의 userId
-                String userBlogIdFromAccessToken = TokenUtil.extractBlogIdFromRequestToken(request,
-                                tokenProvider);
 
                 // 로그인한 사용자와 실제 게시글 작성자가 같은지 최종적으로 확인
-                boolean isAuthor = blogId.equals(userBlogIdFromAccessToken);
+                boolean isAuthor = blogId.equals(user.getUsername());
 
                 Map<String, Boolean> response = new HashMap<>();
                 response.put("isAuthor", isAuthor);
@@ -243,13 +192,8 @@ public class PostApiController {
                         @P("userBlogId") @PathVariable("blogId") String blogId,
                         @RequestBody PostUpdateRequest postUpdateRequest) {
 
-                Long userId = userRepository.findByBlogId(blogId)
-                                .orElseThrow(() -> new ResourceNotFoundException(blogId + "사용자를 찾을 수 없습니다."))
-                                .getId();
-
-                Post updatedPost = postService.updatePostByPostId(postId, userId,
+                PostUpdateResponse postUpdateResponse = postService.updatePostByPostId(postId, blogId,
                                 postUpdateRequest);
-                PostUpdateResponse postUpdateResponse = new PostUpdateResponse(updatedPost);
 
                 return ResponseEntity.status(HttpStatus.OK)
                                 .body(new SuccessResponse<PostUpdateResponse>(postUpdateResponse,

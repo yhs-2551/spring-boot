@@ -6,6 +6,7 @@ import com.yhs.blog.springboot.jpa.domain.category.dto.request.CategoryRequestPa
 import com.yhs.blog.springboot.jpa.domain.category.dto.response.CategoryResponse;
 import com.yhs.blog.springboot.jpa.domain.category.entity.Category;
 import com.yhs.blog.springboot.jpa.domain.user.entity.User;
+import com.yhs.blog.springboot.jpa.exception.custom.CategoryDeletionException;
 import com.yhs.blog.springboot.jpa.exception.custom.ResourceNotFoundException;
 import com.yhs.blog.springboot.jpa.domain.category.repository.CategoryRepository;
 import com.yhs.blog.springboot.jpa.domain.category.service.CategoryService;
@@ -38,10 +39,13 @@ public class CategoryServiceImpl implements CategoryService {
         log.info("categoryRequestPayLoad >>>>>>> " + categoryRequestPayLoad);
 
         // 카테고리 삭제 작업
-        if (categoryRequestPayLoad.getCategoryToDelete() != null && !categoryRequestPayLoad.getCategoryToDelete().isEmpty()) {
+        if (categoryRequestPayLoad.getCategoryToDelete() != null
+                && !categoryRequestPayLoad.getCategoryToDelete().isEmpty()) {
             categoryRequestPayLoad.getCategoryToDelete().forEach(this::deleteCategory);
-             // 삭제된 엔티티들 즉 영속성 컨텍스트 변경 사항을 즉시 DB에 반영. 이게 없으면, 프론트에서 부모에서 자식 카테고리를 없애고 해당 부모 카테고리를 제거할 때 duplicate key 에러 발생
-             // 만약 동일한 트랜잭션 내에서 이후에 작업이 실패하면 트랜잭션 완료가 아니기 때문에 flush로 작업한 내용도 롤백됨. 트랜잭션의 원자성 보장
+            // 삭제된 엔티티들 즉 영속성 컨텍스트 변경 사항을 즉시 DB에 반영. 이게 없으면, 프론트에서 부모에서 자식 카테고리를 없애고 해당 부모
+            // 카테고리를 제거할 때 duplicate key 에러 발생
+            // 만약 동일한 트랜잭션 내에서 이후에 작업이 실패하면 트랜잭션 완료가 아니기 때문에 flush로 작업한 내용도 롤백됨. 트랜잭션의 원자성
+            // 보장
             categoryRepository.flush();
         }
 
@@ -64,23 +68,24 @@ public class CategoryServiceImpl implements CategoryService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<CategoryResponse> getAllCategoriesWithChildrenByUserId(Long userId) {
- 
+    public List<CategoryResponse> getAllCategoriesWithChildrenByUserId(String blogId) {
+
+        Long userId = userService.findUserByBlogId(blogId).id();
+
         List<Category> categories = categoryRepository.findAllWithChildrenByUserId(userId);
 
         if (categories.isEmpty()) {
             log.info("No categories found for user ID: {}", userId);
-            return Collections.emptyList();  // 불변 빈 배열 반환
+            return Collections.emptyList(); // 불변 빈 배열 반환
         }
         return categories.stream().map(CategoryMapper::of).collect(Collectors.toList());
-
 
     }
 
     private void deleteCategory(CategoryRequest categoryRequest) {
 
         log.info("실행>>>>>>>>>>>>>>>>>>>>>");
-        
+
         Optional<Category> categoryOptional = categoryRepository.findById(categoryRequest.getCategoryUuid());
 
         if (categoryOptional.isPresent()) {
@@ -88,20 +93,21 @@ public class CategoryServiceImpl implements CategoryService {
             Category category = categoryOptional.get();
 
             if (categoryRequest.getChildren() != null && !categoryRequest.getChildren().isEmpty()) {
- 
-                throw new IllegalStateException("Category with UUID: " + categoryRequest.getCategoryUuid() + " cannot be deleted because it has child categories.");
+
+                throw new CategoryDeletionException("카테고리 UUID: " + categoryRequest.getCategoryUuid()
+                        + " 자식 카테고리가 존재하여 삭제할 수 없습니다.");
             }
             if (category.getPosts() != null && !category.getPosts().isEmpty()) {
-                throw new IllegalStateException("Category with UUID: " + categoryRequest.getCategoryUuid() + " cannot be deleted because it has posts.");
+                throw new CategoryDeletionException("카테고리 UUID: " + categoryRequest.getCategoryUuid()
+                        + " 게시글이 존재하여 삭제할 수 없습니다.");
             }
-            log.debug("Deleting category with UUID: {}", categoryRequest.getCategoryUuid());
+            log.debug("삭제 진행 카테고리 UUID: {}", categoryRequest.getCategoryUuid());
             categoryRepository.delete(category);
 
         } else {
-            throw new ResourceNotFoundException("Category not found for UUID: " + categoryRequest.getCategoryUuid());
+            throw new ResourceNotFoundException("카테고리 UUID: " + categoryRequest.getCategoryUuid() + "를 찾을 수 없습니다.");
         }
     }
-
 
     private List<Category> saveChildrenCategories(List<CategoryRequest> childrenRequests) {
         long childOrderIndex = 0;
@@ -116,7 +122,7 @@ public class CategoryServiceImpl implements CategoryService {
 
     // 새롭게 요청으로 추가된 최상위 카테고리 저장 및 자식은 재귀적으로 저장.
     private Category createSingleCategory(CategoryRequest categoryRequest,
-                                          long orderIndex) {
+            long orderIndex) {
 
         Long userId = TokenUtil.extractUserIdFromRequestToken(request, tokenProvider);
         User user = userService.findUserById(userId);
@@ -154,12 +160,11 @@ public class CategoryServiceImpl implements CategoryService {
 
         }
 
-
         return category;// 최종적으로 부모 카테고리 리턴
     }
 
     private Category saveCategoryHierarchy(CategoryRequest categoryRequest,
-                                           long orderIndex) {
+            long orderIndex) {
 
         // Check if the category exists
         Optional<Category> existingCategory = categoryRepository.findById(categoryRequest.getCategoryUuid());
@@ -169,17 +174,16 @@ public class CategoryServiceImpl implements CategoryService {
             category = existingCategory.get();
             category.setName(categoryRequest.getName());
 
-
             // Set new parent category if it exists
             Category parentCategory = categoryRequest.getCategoryUuidParent() != null
                     ? Category.builder().id(categoryRequest.getCategoryUuidParent()).build()
                     : null;
 
             // Set new children categories with incremented orderIndex
-            List<Category> newChildren = categoryRequest.getChildren() != null && !categoryRequest.getChildren().isEmpty()
-                    ? saveChildrenCategories(categoryRequest.getChildren())
-                    : Collections.emptyList();
-
+            List<Category> newChildren = categoryRequest.getChildren() != null
+                    && !categoryRequest.getChildren().isEmpty()
+                            ? saveChildrenCategories(categoryRequest.getChildren())
+                            : Collections.emptyList();
 
             category.setParent(parentCategory);
             category.setChildren(newChildren);
@@ -191,9 +195,20 @@ public class CategoryServiceImpl implements CategoryService {
 
         }
 
-
-        // 새롭게 생성 시 또는 수정 시 한번의 save 메서드로 처리 CASCADE.PERSIST를 이용하여 부모가 저장될때 자식도 같이 저장되게 처리
+        // 새롭게 생성 시 또는 수정 시 한번의 save 메서드로 처리 CASCADE.PERSIST를 이용하여 부모가 저장될때 자식도 같이 저장되게
+        // 처리
         return categoryRepository.save(category);
+    }
+
+    @Override
+    public Category findCategoryByNameAndUserId(String categoryName, Long userId) {
+
+        Category category = categoryRepository.findByNameAndUserId(categoryName, userId)
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        categoryName + " 카테고리를 찾을 수 없습니다."));
+
+        return category;
+
     }
 
 }

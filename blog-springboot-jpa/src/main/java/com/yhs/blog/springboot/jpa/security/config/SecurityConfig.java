@@ -3,7 +3,7 @@ package com.yhs.blog.springboot.jpa.security.config;
 import com.yhs.blog.springboot.jpa.domain.oauth2.filter.RememberMeAuthenticationFilter;
 import com.yhs.blog.springboot.jpa.domain.oauth2.handler.OAuth2SuccessHandler;
 import com.yhs.blog.springboot.jpa.domain.oauth2.repository.OAuth2AuthorizationRequestBasedOnCookieRepository;
-import com.yhs.blog.springboot.jpa.domain.oauth2.service.OAuth2UserCustomService;
+import com.yhs.blog.springboot.jpa.domain.oauth2.service.OAuth2UserLoadService;
 import com.yhs.blog.springboot.jpa.domain.token.jwt.filter.TokenAuthenticationFilter;
 import com.yhs.blog.springboot.jpa.domain.token.jwt.provider.TokenProvider;
 import com.yhs.blog.springboot.jpa.domain.token.jwt.service.TokenManagementService;
@@ -41,9 +41,9 @@ import java.util.List;
 @EnableWebSecurity
 @EnableMethodSecurity(prePostEnabled = true)
 @RequiredArgsConstructor
-public class WebOAuthFormJwtSecurityConfig {
+public class SecurityConfig {
 
-    private final OAuth2UserCustomService oAuth2UserCustomService;
+    private final OAuth2UserLoadService oAuth2UserCustomService;
     private final TokenProvider tokenProvider;
     private final TokenManagementService tokenManagementService;
     private final UserServiceImpl userService; 

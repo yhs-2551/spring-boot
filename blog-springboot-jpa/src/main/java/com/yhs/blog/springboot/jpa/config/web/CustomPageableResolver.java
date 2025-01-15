@@ -21,11 +21,6 @@ public class CustomPageableResolver extends PageableHandlerMethodArgumentResolve
         // 원본 Pageable 객체 생성
         Pageable pageable = super.resolveArgument(methodParameter, mavContainer, webRequest, binderFactory);
 
-        log.debug("Pageable 정보: page={}, size={}, sort={}",
-                pageable.getPageNumber(),
-                pageable.getPageSize(),
-                pageable.getSort());
-
         // 새로운 PageRequest 객체 반환 (1-based → 0-based 변환)
         // page 파라미터가 없는 경우 pageable.getPageNumber()는 0 반환
         return PageRequest.of(

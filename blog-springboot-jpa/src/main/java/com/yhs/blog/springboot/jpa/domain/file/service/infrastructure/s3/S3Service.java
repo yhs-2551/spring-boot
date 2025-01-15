@@ -1,4 +1,4 @@
-package com.yhs.blog.springboot.jpa.domain.file.service.s3;
+package com.yhs.blog.springboot.jpa.domain.file.service.infrastructure.s3;
 
 import com.yhs.blog.springboot.jpa.domain.post.dto.request.PostRequest;
 import com.yhs.blog.springboot.jpa.domain.post.dto.request.PostUpdateRequest;
@@ -6,6 +6,7 @@ import org.springframework.scheduling.annotation.Async;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.util.concurrent.CompletableFuture;
 
 public interface S3Service {
 
@@ -18,9 +19,9 @@ public interface S3Service {
 //    public void tempDeleteFile(String fileUrl);
 //    void moveTempFilesToFinal(String tempFileUrl, String finalFolder) throws IOException;
     @Async
-    void processCreatePostS3TempOperation(PostRequest postRequest, String blogId);
+    CompletableFuture<Void> processCreatePostS3TempOperation(PostRequest postRequest, String blogId);
     @Async
-    void processUpdatePostS3TempOperation(PostUpdateRequest postUpdateRequest,
+    CompletableFuture<Void> processUpdatePostS3TempOperation(PostUpdateRequest postUpdateRequest,
                                           String blogId);
 
 }

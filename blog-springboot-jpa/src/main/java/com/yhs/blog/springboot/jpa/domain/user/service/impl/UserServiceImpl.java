@@ -1,17 +1,16 @@
 package com.yhs.blog.springboot.jpa.domain.user.service.impl;
 
 import com.yhs.blog.springboot.jpa.aop.duplicatecheck.DuplicateCheck;
-import com.yhs.blog.springboot.jpa.aop.ratelimit.RateLimit;
-import com.yhs.blog.springboot.jpa.domain.file.service.s3.S3Service;
+import com.yhs.blog.springboot.jpa.common.token.GenerateAndReturnTokenService;
+import com.yhs.blog.springboot.jpa.domain.file.service.infrastructure.s3.S3Service;
 import com.yhs.blog.springboot.jpa.domain.oauth2.dto.request.AdditionalInfoRequest;
-import com.yhs.blog.springboot.jpa.domain.post.event.elasticsearch.PostDeletedEvent;
+import com.yhs.blog.springboot.jpa.domain.oauth2.dto.request.OAuth2SignUpResponse;
 import com.yhs.blog.springboot.jpa.domain.token.jwt.provider.TokenProvider;
 import com.yhs.blog.springboot.jpa.domain.token.jwt.service.TokenManagementService;
 import com.yhs.blog.springboot.jpa.domain.user.dto.request.SignUpUserRequest;
 import com.yhs.blog.springboot.jpa.domain.user.dto.request.UserSettingsRequest;
 import com.yhs.blog.springboot.jpa.domain.user.dto.response.DuplicateCheckResponse;
 import com.yhs.blog.springboot.jpa.domain.user.dto.response.RateLimitResponse;
-import com.yhs.blog.springboot.jpa.domain.user.dto.response.SignUpResponseWithHeaders;
 import com.yhs.blog.springboot.jpa.domain.user.dto.response.SignUpUserResponse;
 import com.yhs.blog.springboot.jpa.domain.user.dto.response.UserPrivateProfileResponse;
 import com.yhs.blog.springboot.jpa.domain.user.dto.response.UserPublicProfileResponse;
@@ -25,8 +24,6 @@ import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.data.redis.core.RedisTemplate;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpStatus; 
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -48,9 +45,8 @@ public class UserServiceImpl implements UserService {
     private final RedisTemplate<String, String> redisTemplateString;
     private final RedisTemplate<String, UserPublicProfileResponse> userPublicProfileRedisTemplate;
     private final RedisTemplate<String, UserPrivateProfileResponse> userPrivateProfileRedisTemplate;
-    private final TokenProvider tokenProvider;
-    private final TokenManagementService tokenManagementService;
     private final S3Service s3Service;
+    private final GenerateAndReturnTokenService generateAndReturnTokenService;
 
     private static final long PROFILE_CACHE_HOURS = 24L; // 프론트는 12시간, redis 캐시를 활용해 DB 부하를 감소하기 위해 2배인 24시간으로 설정
 
@@ -70,22 +66,20 @@ public class UserServiceImpl implements UserService {
                     // .role(User.UserRole.ADMIN) 일단 기본값인 user로 사용
                     .build();
 
-            User reponseUser = userRepository.save(user);
-            return new SignUpUserResponse(reponseUser.getId(), reponseUser.getBlogId(), reponseUser.getUsername(),
-                    reponseUser.getEmail());
+            User responseUser = userRepository.save(user);
+            return new SignUpUserResponse(responseUser.getId(), responseUser.getBlogId(), responseUser.getUsername(),
+                    responseUser.getEmail());
 
         } catch (Exception ex) {
-            throw new UserCreationException("An error occurred while creating the user: " + ex.getMessage());
+            throw new UserCreationException("사용자 생성 중 오류가 발생하였습니다. " + ex.getMessage());
         }
     }
 
     @Override
     @Transactional
-    @RateLimit(key = "OAuth2Signup")
-    public RateLimitResponse createOAuth2User(String email, AdditionalInfoRequest additionalInfoRequest,
+    public RateLimitResponse<OAuth2SignUpResponse> createOAuth2User(String email,
+            AdditionalInfoRequest additionalInfoRequest,
             HttpServletRequest request, HttpServletResponse response) {
-
-        HttpHeaders headers = new HttpHeaders();
 
         User user = User.builder()
                 .blogId(additionalInfoRequest.getBlogId())
@@ -95,46 +89,25 @@ public class UserServiceImpl implements UserService {
 
         User responseUser = userRepository.save(user); // 영속성 컨텍스트에 등록됨에 따라 user의 pk인 id값이 결정됨
 
-        // 아래는 OAuth2 신규 사용자 토큰 발급 로직
         String rememberMe = redisTemplateString.opsForValue().get("RM:" + email);
         boolean isRememberMe = Boolean.parseBoolean(rememberMe);
-
-        log.debug("OAuth2 User isRememberMe: {}", isRememberMe);
-
-        // 리프레시 토큰 발급 및 Redis에 저장
-        String refreshToken;
-        if (isRememberMe) {
-            refreshToken = tokenProvider.generateToken(user, TokenManagementService.REMEMBER_ME_REFRESH_TOKEN_DURATION);
-            redisTemplateString.opsForValue().set(TokenManagementService.RT_PREFIX + email, refreshToken,
-                    TokenManagementService.REMEMBER_ME_REFRESH_TOKEN_TTL, TimeUnit.SECONDS);
-        } else {
-            refreshToken = tokenProvider.generateToken(user, TokenManagementService.REFRESH_TOKEN_DURATION);
-            redisTemplateString.opsForValue().set(TokenManagementService.RT_PREFIX + email, refreshToken,
-                    TokenManagementService.REFRESH_TOKEN_TTL, TimeUnit.SECONDS);
-
-        }
 
         // Redis에 저장된 rememberMe 정보 삭제
         redisTemplateString.delete("RM:" + email);
 
-        // 생성된 리프레시 토큰을 클라이언트측 쿠키에 저장 -> 클라이언트에서 액세스 토큰이 만료되면 재발급 요청하기 위함
-        tokenManagementService.addRefreshTokenToCookie(request, response, refreshToken, isRememberMe);
+        String refreshToken = generateAndReturnTokenService.OAuth2NewUserGenerateRefreshToken(email, user,
+                isRememberMe);
 
-        // Access Token 생성
-        String accessToken = tokenProvider.generateToken(user, TokenManagementService.ACCESS_TOKEN_DURATION);
+        String accessToken = generateAndReturnTokenService.OAuth2NewUserGenerateAccessToken(user);
 
-        // 응답 헤더에 액세스 토큰 추가
-        headers.set("Authorization", "Bearer " + accessToken);
-
-        SignUpUserResponse signUpUserResponse = new SignUpUserResponse(responseUser.getId(), responseUser.getBlogId(),
+        SignUpUserResponse userInfo = new SignUpUserResponse(responseUser.getId(), responseUser.getBlogId(),
                 responseUser.getUsername(),
                 responseUser.getEmail());
 
-        SignUpResponseWithHeaders signUpResponseWithHeaders = new SignUpResponseWithHeaders(signUpUserResponse,
-                headers);
+        OAuth2SignUpResponse oAuth2SignUpResponse = new OAuth2SignUpResponse(userInfo, refreshToken, accessToken,
+                isRememberMe);
 
-        return new RateLimitResponse(true, "OAuth2 신규 사용자 등록에 성공하였습니다.", HttpStatus.CREATED.value(),
-                signUpResponseWithHeaders);
+        return new RateLimitResponse<OAuth2SignUpResponse>(true, oAuth2SignUpResponse);
 
     }
 
@@ -170,13 +143,15 @@ public class UserServiceImpl implements UserService {
 
         User user = optionalUser.get();
 
-        UserPublicProfileResponse userPublicProfileResponseDTO = new UserPublicProfileResponse(user.getBlogId(),
+        UserPublicProfileResponse userPublicProfileResponseDTO = new UserPublicProfileResponse(user.getId(),
+                user.getBlogId(),
                 user.getBlogName(),
                 user.getUsername(), user.getProfileImageUrl());
 
         // blogId는 사용자가 프론트측에서 계정 정보를 변경하지 않는 한 유지된다.
         // 따라서 그때 캐시 무효화를 할 수 있지만, 만약 사용자가 탈퇴를 하거나, 또 다른 의도치 않은 상황을 대비해 만료 시간 명시적으로 설정
-        userPublicProfileRedisTemplate.opsForValue().set(cacheKey, userPublicProfileResponseDTO, PROFILE_CACHE_HOURS, TimeUnit.HOURS);
+        userPublicProfileRedisTemplate.opsForValue().set(cacheKey, userPublicProfileResponseDTO, PROFILE_CACHE_HOURS,
+                TimeUnit.HOURS);
 
         return userPublicProfileResponseDTO;
     }
@@ -205,7 +180,8 @@ public class UserServiceImpl implements UserService {
                 findUser.getBlogId(), findUser.getBlogName(),
                 findUser.getUsername(), findUser.getProfileImageUrl());
 
-        userPrivateProfileRedisTemplate.opsForValue().set(cacheKey, userPrivateProfileResponseDTO, PROFILE_CACHE_HOURS, TimeUnit.HOURS);
+        userPrivateProfileRedisTemplate.opsForValue().set(cacheKey, userPrivateProfileResponseDTO, PROFILE_CACHE_HOURS,
+                TimeUnit.HOURS);
 
         return userPrivateProfileResponseDTO;
     }
@@ -262,14 +238,14 @@ public class UserServiceImpl implements UserService {
         boolean userExists = userRepository.existsByBlogId(blogId);
 
         if (userExists) {
-            // 캐시에 저장.  
+            // 캐시에 저장.
             redisTemplateBoolean.opsForValue().set(cacheKey, true, PROFILE_CACHE_HOURS, TimeUnit.HOURS);
         }
 
         return false;
     }
 
-    // 아래는 회원가입 시 중복확인 관련 
+    // 아래는 회원가입 시 중복확인 관련
     @Override
     @DuplicateCheck(type = "BlogId")
     @Transactional(readOnly = true)
@@ -311,7 +287,7 @@ public class UserServiceImpl implements UserService {
         boolean isExists = dbCheck.get();
         if (isExists) {
             // DB 조회 성공
-            // 캐시에 저장. 일단 무한대.  사용자 계정 변경 및 계정 탈퇴 시 무효화 필요요
+            // 캐시에 저장. 일단 무한대. 사용자 계정 변경 및 계정 탈퇴 시 무효화 필요요
             redisTemplateBoolean.opsForValue().set(cacheKey, true, PROFILE_CACHE_HOURS, TimeUnit.HOURS);
             return new DuplicateCheckResponse(true, existMessage, false);
         }

@@ -21,12 +21,13 @@ import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.util.WebUtils;
 
 @Log4j2
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/token")
-public class TokenApiController {
+public class TokenController {
 
     private final TokenProvider tokenProvider;
     private final TokenManagementService tokenManagementService;
@@ -37,16 +38,12 @@ public class TokenApiController {
     public ResponseEntity<String> createInitialToken(HttpServletRequest request,
             HttpServletResponse response,
             Authentication authentication) {
+
         String accessToken = null;
 
-        Cookie[] cookies = request.getCookies();
-        if (cookies != null) {
-            for (Cookie cookie : cookies) {
-                if ("access_token".equals(cookie.getName())) {
-                    accessToken = cookie.getValue();
-                }
-            }
-        }
+        Cookie accessTokenCookie = WebUtils.getCookie(request, "access_token");
+        assert accessTokenCookie != null;
+        accessToken = accessTokenCookie.getValue();
 
         if (accessToken == null) {
             log.debug("쿠키에 액세스 토큰이 존재하지 않습니다.");
@@ -75,34 +72,28 @@ public class TokenApiController {
         return ResponseEntity.ok(new SuccessResponse<>("액세스 토큰이 유효합니다."));
     }
 
+    // 이전에는 만료된 액세스 토큰을 사용하여 새로운 액세스 토큰을 재발급했으나,
+    // 이는 보안 측면에서 취약점이 될 수 있어 현재는 만료된 세션에 대해 재로그인을 요구하도록 변경.
+    // 레디스에 저장한 리프레시 토큰은 자동으로 삭제 되기 때문에 추가 처리 불필요. 프론트측 쿠키도 만료시간되면 브라우저에서 자동 삭제 처리
     @Transactional(readOnly = true)
     @GetMapping("/new-token")
     public ResponseEntity<ApiResponse> createNewAccessRefreshToken(HttpServletRequest request,
             HttpServletResponse response) {
         HttpHeaders headers = new HttpHeaders();
-        String getRefreshTokenCookie = tokenManagementService.getRefreshTokenCookie(request);
+        String getRefreshTokenByCookie = tokenManagementService.getRefreshTokenCookie(request);
 
-        if (getRefreshTokenCookie == null || !(StringUtils.hasText(getRefreshTokenCookie))) {
+        // null, 빈 문자열, 공백 문자열 모두 체크
+        if (!(StringUtils.hasText(getRefreshTokenByCookie))) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body(new ErrorResponse("세션이 만료되었습니다. 다시 로그인해주세요.", HttpStatus.UNAUTHORIZED.value()));
         }
 
-        Long userId = tokenProvider.getUserId(getRefreshTokenCookie);
-        // RefreshToken을 이용해 새로운 액세스 토큰 발급
-        if (userId != null // Long은 wrapper 클래스라 null 비교 가능
-                && tokenProvider.validateRefreshToken(getRefreshTokenCookie, userId)) {
-            // 리프레시 토큰이 유효하다면 새로운 액세스 토큰 발급
-            String newAccessToken = tokenService.createNewAccessToken(getRefreshTokenCookie);
-            // 응답 헤더에 액세스 토큰 추가
-            headers.set("Authorization", "Bearer " + newAccessToken);
-            return ResponseEntity.ok().headers(headers).body(new SuccessResponse<>("새로운 엑세스 토큰이 헤더에 포함되어 전송되었습니다."));
-        } else {
-            // 이전에는 만료된 액세스 토큰을 사용하여 새로운 액세스 토큰을 재발급했으나,
-            // 이는 보안 측면에서 취약점이 될 수 있어 현재는 만료된 세션에 대해 재로그인을 요구하도록 변경.
-            // 레디스에 저장한 리프레시 토큰은 자동으로 삭제 되기 때문에 추가 처리 불필요. 프론트측 쿠키도 만료시간되면 브라우저에서 자동 삭제 처리
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body(new ErrorResponse("세션이 만료되었습니다. 다시 로그인해주세요.", HttpStatus.UNAUTHORIZED.value()));
-        }
+        // 리프레시 토큰이 유효하다면 새로운 액세스 토큰 발급
+        String newAccessToken = tokenService.createNewAccessToken(getRefreshTokenByCookie);
+        // 응답 헤더에 액세스 토큰 추가
+        headers.set("Authorization", "Bearer " + newAccessToken);
+        return ResponseEntity.ok().headers(headers).body(new SuccessResponse<>("새로운 엑세스 토큰이 헤더에 포함되어 전송되었습니다."));
+
     }
 
 }

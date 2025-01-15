@@ -1,12 +1,14 @@
 package com.yhs.blog.springboot.jpa.domain.post.service.impl;
 
 import com.yhs.blog.springboot.jpa.domain.file.mapper.FileMapper;
+import com.yhs.blog.springboot.jpa.domain.file.service.infrastructure.s3.S3Service;
 import com.yhs.blog.springboot.jpa.domain.token.jwt.provider.TokenProvider;
 import com.yhs.blog.springboot.jpa.domain.post.dto.request.FeaturedImageRequest;
 import com.yhs.blog.springboot.jpa.domain.file.dto.request.FileRequest;
 import com.yhs.blog.springboot.jpa.domain.post.dto.request.PostRequest;
 import com.yhs.blog.springboot.jpa.domain.post.dto.request.PostUpdateRequest;
 import com.yhs.blog.springboot.jpa.domain.post.dto.response.PostResponse;
+import com.yhs.blog.springboot.jpa.domain.post.dto.response.PostUpdateResponse;
 import com.yhs.blog.springboot.jpa.domain.category.entity.Category;
 import com.yhs.blog.springboot.jpa.domain.post.entity.FeaturedImage;
 import com.yhs.blog.springboot.jpa.domain.file.entity.File;
@@ -18,15 +20,14 @@ import com.yhs.blog.springboot.jpa.domain.post.entity.enums.PostStatus;
 import com.yhs.blog.springboot.jpa.domain.post.event.elasticsearch.PostCreatedEvent;
 import com.yhs.blog.springboot.jpa.domain.post.event.elasticsearch.PostDeletedEvent;
 import com.yhs.blog.springboot.jpa.domain.post.event.elasticsearch.PostUpdatedEvent;
-import com.yhs.blog.springboot.jpa.domain.user.entity.User;
-import com.yhs.blog.springboot.jpa.domain.category.repository.CategoryRepository;
+import com.yhs.blog.springboot.jpa.domain.user.entity.User; 
+import com.yhs.blog.springboot.jpa.domain.category.service.CategoryService;
 import com.yhs.blog.springboot.jpa.domain.post.repository.FeaturedImageRepository;
 import com.yhs.blog.springboot.jpa.domain.post.repository.PostRepository;
 import com.yhs.blog.springboot.jpa.domain.post.repository.PostTagRepository;
 import com.yhs.blog.springboot.jpa.domain.post.repository.TagRepository;
 import com.yhs.blog.springboot.jpa.domain.post.repository.search.SearchType;
 import com.yhs.blog.springboot.jpa.domain.post.service.PostService;
-import com.yhs.blog.springboot.jpa.domain.file.service.s3.S3Service;
 import com.yhs.blog.springboot.jpa.domain.user.service.UserService;
 import com.yhs.blog.springboot.jpa.exception.custom.ResourceNotFoundException;
 import com.yhs.blog.springboot.jpa.domain.post.mapper.PostMapper;
@@ -52,7 +53,7 @@ import java.util.*;
 public class PostServiceImpl implements PostService {
 
     private final UserService userService;
-    private final CategoryRepository categoryRepository;
+    private final CategoryService categoryService;
     private final PostRepository postRepository;
     private final TokenProvider tokenProvider;
     private final FeaturedImageRepository featuredImageRepository;
@@ -70,14 +71,19 @@ public class PostServiceImpl implements PostService {
 
     @Override
     @Transactional(readOnly = true)
-    public Page<PostResponse> getAllPostsSpecificUser(Long userId, String keyword, SearchType searchType,
-            String categoryId,
+    public Page<PostResponse> getAllPostsSpecificUser(String blogId, String keyword, SearchType searchType,
+            String categoryName,
             Pageable pageable) {
 
-        if (categoryId != null) {
+        Long userId = userService.findUserByBlogId(blogId).id();
+
+        if (categoryName != null) {
+
+            String categoryId = categoryService.findCategoryByNameAndUserId(categoryName, userId).getId();
 
             return postRepository.findPostsByUserIdAndCategoryId(userId, categoryId, keyword, searchType, pageable);
         }
+
         return postRepository.findPostsByUserId(userId, keyword, searchType, pageable);
     }
 
@@ -143,8 +149,7 @@ public class PostServiceImpl implements PostService {
 
             Category category;
             if (postRequest.getCategoryName() != null) {
-                category = categoryRepository.findByNameAndUserId(postRequest.getCategoryName(), userId)
-                        .orElse(null);
+                category = categoryService.findCategoryByNameAndUserId(postRequest.getCategoryName(), userId);
             } else {
                 category = null;
             }
@@ -186,8 +191,10 @@ public class PostServiceImpl implements PostService {
 
     @Transactional
     @Override
-    public Post updatePostByPostId(Long postId, Long userId,
+    public PostUpdateResponse updatePostByPostId(Long postId, String blogId,
             PostUpdateRequest postUpdateRequest) {
+
+        Long userId = userService.findUserByBlogId(blogId).id();
 
         User user = userService.findUserById(userId);
 
@@ -196,8 +203,8 @@ public class PostServiceImpl implements PostService {
 
         Category category;
         if (postUpdateRequest.getCategoryName() != null) {
-            category = categoryRepository.findByNameAndUserId(postUpdateRequest.getCategoryName(), userId)
-                    .orElse(null);
+            category = categoryService.findCategoryByNameAndUserId(postUpdateRequest.getCategoryName(), userId);
+
         } else {
             category = null;
         }
@@ -237,7 +244,8 @@ public class PostServiceImpl implements PostService {
 
                 });
 
-        return updatedPost;
+        return new PostUpdateResponse(updatedPost);
+
     }
 
     // 아래쪽은 헬퍼 메서드

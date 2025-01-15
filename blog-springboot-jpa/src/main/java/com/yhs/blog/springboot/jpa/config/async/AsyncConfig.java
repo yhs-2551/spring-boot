@@ -13,6 +13,7 @@ import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 
 import com.yhs.blog.springboot.jpa.exception.custom.ElasticsearchCustomException;
+import com.yhs.blog.springboot.jpa.exception.custom.S3OperationException;
 
 import co.elastic.clients.elasticsearch._types.ElasticsearchException;
 import lombok.extern.log4j.Log4j2;
@@ -80,8 +81,15 @@ public class AsyncConfig implements AsyncConfigurer {
                                 .map(Throwable::getMessage)
                                 .orElse("원인 불명"));
                 // 추가 에러 처리 로직 (모니터링 알림 등)
+            } else if (ex instanceof S3OperationException s3Ex) { // S3 관련 예외 처리
+                log.error(
+                        "S3 오류 발생 - 메시지: {}, 원인: {}",
+                        s3Ex.getMessage(),
+                        Optional.ofNullable(s3Ex.getCause())
+                                .map(Throwable::getMessage)
+                                .orElse("원인 불명"));
             }
         };
     }
-    
+
 }

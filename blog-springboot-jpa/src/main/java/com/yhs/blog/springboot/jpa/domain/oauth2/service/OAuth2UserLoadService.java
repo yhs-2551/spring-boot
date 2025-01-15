@@ -13,7 +13,7 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 @Service
 @Log4j2
-public class OAuth2UserCustomService extends DefaultOAuth2UserService {
+public class OAuth2UserLoadService extends DefaultOAuth2UserService {
 
     protected OAuth2User callSuperLoadUser(OAuth2UserRequest request) {
         return super.loadUser(request);

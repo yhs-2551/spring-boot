@@ -7,6 +7,8 @@ import com.yhs.blog.springboot.jpa.domain.post.entity.Comment;
 import com.yhs.blog.springboot.jpa.domain.post.entity.Like;
 import com.yhs.blog.springboot.jpa.domain.post.entity.Post;
 import com.yhs.blog.springboot.jpa.domain.post.entity.PostTag;
+import com.yhs.blog.springboot.jpa.domain.user.type.UserRole;
+
 import jakarta.persistence.*;
 import lombok.*;
 import org.springframework.data.annotation.LastModifiedDate;
@@ -62,11 +64,6 @@ public class User extends BaseEntity implements UserDetails {
     @LastModifiedDate
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
-
-
-    public enum UserRole {
-        USER, ADMIN
-    }
 
     @OneToMany(mappedBy = "user", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<Post> posts;

@@ -13,9 +13,9 @@ import java.util.Optional;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 
-import com.yhs.blog.springboot.jpa.domain.user.entity.User;
-import com.yhs.blog.springboot.jpa.domain.user.entity.User.UserRole;
+import com.yhs.blog.springboot.jpa.domain.user.entity.User; 
 import com.yhs.blog.springboot.jpa.domain.user.repository.UserRepository;
+import com.yhs.blog.springboot.jpa.domain.user.type.UserRole;
  
 
 @ExtendWith(MockitoExtension.class)
