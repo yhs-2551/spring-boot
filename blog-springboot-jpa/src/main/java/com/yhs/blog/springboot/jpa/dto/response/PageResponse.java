@@ -5,8 +5,10 @@ import java.util.List;
 import org.springframework.data.domain.Page;
 
 import lombok.Getter;
+import lombok.ToString;
 
 @Getter
+@ToString
 public class PageResponse<T> {
     private final int currentPage;
     private final int totalPages;

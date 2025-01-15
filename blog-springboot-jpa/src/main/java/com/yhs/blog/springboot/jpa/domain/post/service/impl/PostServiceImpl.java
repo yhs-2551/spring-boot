@@ -151,13 +151,16 @@ public class PostServiceImpl implements PostService {
 
             FeaturedImage featuredImage = processFeaturedImage(postRequest.getFeaturedImage());
 
+            // temp -> final로 변환
+            String convertedContent = postRequest.getContent().replace(user.getBlogId() + "/temp/",
+                    user.getBlogId() + "/final/");
+
             // 포스트 생성 시 user를 넘겨주면 외래키 연관관계 설정으로 인해 posts테이블에 user_id 값이 자동으로 들어간다.
             // category, featuredImage또한 마찬가지.
-            Post post = PostMapper.create(user, category, postRequest.getTitle(), postRequest.getContent(),
+            Post post = PostMapper.create(user, category, postRequest.getTitle(), convertedContent,
                     postRequest.getPostStatus(), postRequest.getCommentsEnabled(), featuredImage);
             post.setFiles(processFiles(post, postRequest.getFiles(), user));
             post.setPostTags(processTags(post, postRequest.getTags(), user));
-
             postRepository.save(post);
 
             TransactionSynchronizationManager.registerSynchronization(
@@ -213,7 +216,11 @@ public class PostServiceImpl implements PostService {
 
         FeaturedImage featuredImage = processFeaturedImage(postUpdateRequest.getFeaturedImage());
 
-        post.update(category, postUpdateRequest.getTitle(), postUpdateRequest.getContent(), newFiles, newPostTags,
+        // temp -> final로 변환
+        String convertedContent = postUpdateRequest.getContent().replace(user.getBlogId() + "/temp/",
+                user.getBlogId() + "/final/");
+
+        post.update(category, postUpdateRequest.getTitle(), convertedContent, newFiles, newPostTags,
                 PostStatus.valueOf(postUpdateRequest.getPostStatus().toUpperCase()),
                 CommentsEnabled.valueOf(postUpdateRequest.getCommentsEnabled().toUpperCase()), featuredImage);
         s3Service.processUpdatePostS3TempOperation(postUpdateRequest, user.getBlogId());
@@ -243,6 +250,7 @@ public class PostServiceImpl implements PostService {
                 // 최종적으로 post를 저장시에 aws 파일 저장 위치를 temp -> final로 변경하기 때문에 final로 변경하는 로직 추가.
                 // 따라서 db에 final 경로로 저장한다.
                 String updatedFileUrl = fileRequest.getFileUrl().replace("/temp/", "/final/");
+
                 File file = FileMapper.create(fileRequest, post, user, updatedFileUrl);
                 files.add(file);
             }

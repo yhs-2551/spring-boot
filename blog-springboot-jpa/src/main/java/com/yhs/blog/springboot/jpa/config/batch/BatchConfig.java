@@ -1,15 +1,11 @@
 package com.yhs.blog.springboot.jpa.config.batch;
 
-import java.time.LocalDateTime;
-import java.time.ZoneId;
-import java.time.temporal.ChronoUnit;
-import java.util.Iterator;
-import java.util.List;
-import java.util.stream.Collector;
-import java.util.stream.Collectors;
-
+import com.yhs.blog.springboot.jpa.domain.user.repository.UserRepository;
+import jakarta.annotation.PostConstruct;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.log4j.Log4j2;
 import org.springframework.batch.core.Job;
-import org.springframework.batch.core.Step; 
+import org.springframework.batch.core.Step;
 import org.springframework.batch.core.job.builder.JobBuilder;
 import org.springframework.batch.core.launch.support.RunIdIncrementer;
 import org.springframework.batch.core.repository.JobRepository;
@@ -21,16 +17,17 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.transaction.PlatformTransactionManager;
-import com.yhs.blog.springboot.jpa.domain.user.repository.UserRepository;
-
-import jakarta.annotation.PostConstruct;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.log4j.Log4j2;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
 import software.amazon.awssdk.services.s3.model.ListObjectsV2Request;
 import software.amazon.awssdk.services.s3.model.ListObjectsV2Response;
 import software.amazon.awssdk.services.s3.model.S3Object;
+
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.temporal.ChronoUnit;
+import java.util.Iterator;
+import java.util.List;
 
 /**
  * AWS S3의 임시 파일을 정리하기 위한 Spring Batch 설정 클래스.
@@ -67,7 +64,7 @@ import software.amazon.awssdk.services.s3.model.S3Object;
 
 /**
  * 필터링된 S3Objects를 삭제하는 ItemWriter를 생성.
- * S3 버킷에서 객체들의 실제 삭제를 수행. 
+ * S3 버킷에서 객체들의 실제 삭제를 수행.
  *
  * @return S3 객체를 삭제하기 위한 ItemWriter 인스턴스
  */
@@ -83,12 +80,11 @@ public class BatchConfig {
     private final UserRepository userRepository;
     private List<String> userBlogIds;
 
-
     @PostConstruct
     public void init() {
         userBlogIds = userRepository.findAll().stream().map(user -> user.getBlogId()).toList();
+        log.info("사용자 블로그 ID 목록: {}", userBlogIds);
     }
-
 
     @Value("${aws.s3.bucketName}")
     private String bucketName;
@@ -96,19 +92,19 @@ public class BatchConfig {
     @Bean
     public Job cleanupTempFilesJob() {
         return new JobBuilder("cleanupTempFilesJob", jobRepository)
-            .start(cleanupTempFilesStep())
-            .incrementer(new RunIdIncrementer())
-            .build();
+                .start(cleanupTempFilesStep())
+                .incrementer(new RunIdIncrementer())
+                .build();
     }
 
     @Bean
     public Step cleanupTempFilesStep() {
         return new StepBuilder("cleanupTempFilesStep", jobRepository)
-            .<S3Object, S3Object>chunk(10, transactionManager)
-            .reader(s3TempFileReader())
-            .processor(s3TempFileProcessor())
-            .writer(s3TempFileWriter())
-            .build();
+                .<S3Object, S3Object>chunk(10, transactionManager)
+                .reader(s3TempFileReader())
+                .processor(s3TempFileProcessor())
+                .writer(s3TempFileWriter())
+                .build();
     }
 
     @Bean
@@ -128,18 +124,19 @@ public class BatchConfig {
                         return null;
                     iterator = currentResponse.contents().iterator();
                 }
-                return iterator.hasNext() ? iterator.next() : null; //10개 중 하나씩 읽어들임. 1개씩 processor로 전달
+                return iterator.hasNext() ? iterator.next() : null; // 10개 중 하나씩 읽어들임. 1개씩 processor로 전달
             }
 
             private ListObjectsV2Response fetchNextBatch() { // 다음 10개 batch를 가져옴
                 try {
 
                     if (currentUserIndex >= userBlogIds.size()) {
-                        return null;  // 모든 사용자 처리 완료
+                        return null; // 모든 사용자 처리 완료
                     }
 
                     String currentUserBlogId = userBlogIds.get(currentUserIndex);
 
+                    log.info("현재 사용자: {}", currentUserBlogId);
 
                     ListObjectsV2Request request = ListObjectsV2Request.builder()
                             .bucket(bucketName)
@@ -151,12 +148,19 @@ public class BatchConfig {
 
                     log.debug("조회된 객체 수: {}", response.contents().size());
 
-                    if (!response.hasContents() && continuationToken == null) {
-                        currentUserIndex++;  // 다음 사용자로
+                    if (!response.hasContents()) {
+                        currentUserIndex++; // 다음 사용자로
+                        continuationToken = null; // 토큰 초기화를 하지 않으면 같은 사용자의 데이터를 반복해서 조회 즉 무한루프에 걸리게 되고, 다음 사용자로 넘어가지 않게 된다. 
                         return fetchNextBatch();
                     }
 
-                    continuationToken = response.nextContinuationToken();
+                    if (response.nextContinuationToken() == null) {
+                        currentUserIndex++; // 다음 페이지가 없으면 다음 사용자로
+                        continuationToken = null; // 토큰 초기화
+                    } else {
+                        continuationToken = response.nextContinuationToken();
+                    }
+
                     return response;
                 } catch (Exception e) {
                     log.error("S3 파일 조회 실패", e);
@@ -171,16 +175,15 @@ public class BatchConfig {
         return item -> {
             String key = item.key();
 
-            log.info("s3TempFileProcessor로 넘어온 파일 {}", key); 
+            log.info("s3TempFileProcessor로 넘어온 파일 {}", key);
 
             // {userId}/temp/ 패턴 확인
             if (key.contains("/temp/")) {
                 LocalDateTime now = LocalDateTime.now();
                 LocalDateTime fileDate = LocalDateTime.ofInstant(
-                    item.lastModified(),
-                    ZoneId.systemDefault()
-                );
-                
+                        item.lastModified(),
+                        ZoneId.systemDefault());
+
                 if (ChronoUnit.DAYS.between(fileDate, now) >= 7) {
                     return item;
                 }
@@ -188,6 +191,7 @@ public class BatchConfig {
             return null;
         };
     }
+
     // 10개 모이션 writer에서 삭제
     @Bean
     public ItemWriter<S3Object> s3TempFileWriter() {

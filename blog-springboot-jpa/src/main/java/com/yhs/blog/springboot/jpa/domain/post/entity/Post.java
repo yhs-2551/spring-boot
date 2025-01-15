@@ -16,6 +16,7 @@ import java.util.List;
 import java.util.Set;
 
 //나중에 첨부파일 컬럼도 추가해야 한다.
+@ToString
 @EntityListeners(AuditingEntityListener.class)
 @Getter
 @Setter

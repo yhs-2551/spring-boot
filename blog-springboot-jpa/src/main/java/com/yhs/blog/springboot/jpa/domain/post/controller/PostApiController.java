@@ -107,6 +107,8 @@ public class PostApiController {
 
                 PageResponse<PostResponse> pageResponse = new PageResponse<>(postResponses);
 
+                log.info("pageResponse:>>>> {}", pageResponse);
+
                 return ResponseEntity.ok(new SuccessResponse<>(pageResponse, "게시글 응답에 성공하였습니다."));
         }
 

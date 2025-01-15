@@ -16,6 +16,7 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
 @Builder
+@ToString
 public class File extends BaseEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
