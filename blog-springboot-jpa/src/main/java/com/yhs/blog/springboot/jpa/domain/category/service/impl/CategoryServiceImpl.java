@@ -1,5 +1,6 @@
 package com.yhs.blog.springboot.jpa.domain.category.service.impl;
 
+import com.yhs.blog.springboot.jpa.domain.token.jwt.claims.ClaimsExtractor;
 import com.yhs.blog.springboot.jpa.domain.token.jwt.provider.TokenProvider;
 import com.yhs.blog.springboot.jpa.domain.category.dto.request.CategoryRequest;
 import com.yhs.blog.springboot.jpa.domain.category.dto.request.CategoryRequestPayLoad;
@@ -28,8 +29,8 @@ import java.util.stream.Collectors;
 public class CategoryServiceImpl implements CategoryService {
 
     private final CategoryRepository categoryRepository;
-    private final UserService userService;
-    private final TokenProvider tokenProvider;
+    private final UserService userService; 
+    private final ClaimsExtractor claimsExtractor;
     private final HttpServletRequest request;
 
     @Override
@@ -124,7 +125,7 @@ public class CategoryServiceImpl implements CategoryService {
     private Category createSingleCategory(CategoryRequest categoryRequest,
             long orderIndex) {
 
-        Long userId = TokenUtil.extractUserIdFromRequestToken(request, tokenProvider);
+        Long userId = TokenUtil.extractUserIdFromRequestToken(request, claimsExtractor);
         User user = userService.findUserById(userId);
 
         Category parentCategory;

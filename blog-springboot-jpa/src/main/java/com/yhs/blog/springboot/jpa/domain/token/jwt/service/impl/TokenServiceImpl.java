@@ -1,7 +1,9 @@
 package com.yhs.blog.springboot.jpa.domain.token.jwt.service.impl;
 
+import com.yhs.blog.springboot.jpa.domain.token.jwt.claims.ClaimsExtractor;
 import com.yhs.blog.springboot.jpa.domain.token.jwt.provider.TokenProvider;
 import com.yhs.blog.springboot.jpa.domain.token.jwt.service.TokenService;
+import com.yhs.blog.springboot.jpa.domain.token.jwt.validation.TokenValidator;
 import com.yhs.blog.springboot.jpa.domain.user.entity.User;
 import com.yhs.blog.springboot.jpa.domain.user.service.UserService;
 import com.yhs.blog.springboot.jpa.exception.custom.UnauthorizedException;
@@ -16,15 +18,17 @@ import java.time.Duration;
 public class TokenServiceImpl implements TokenService {
 
     private final TokenProvider tokenProvider;
+    private final TokenValidator tokenValidator;
+    private final ClaimsExtractor claimsExtractor;
     private final UserService userService;
 
     @Override
     public String createNewAccessToken(String refreshToken) {
 
-        Long userId = tokenProvider.getUserId(refreshToken);
+        Long userId = claimsExtractor.getUserId(refreshToken);
 
         if (userId != null // Long은 wrapper 클래스라 null 비교 가능
-                && tokenProvider.validateRefreshToken(refreshToken, userId)) {
+                && tokenValidator.validateRefreshToken(refreshToken, userId)) {
             //
             User user = userService.findUserById(userId);
 

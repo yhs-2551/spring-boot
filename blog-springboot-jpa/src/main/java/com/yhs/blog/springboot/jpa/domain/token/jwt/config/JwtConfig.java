@@ -14,7 +14,7 @@ import java.nio.charset.StandardCharsets;
 @Getter
 @Component
 @ConfigurationProperties("jwt") // properties파일에서 설정한 jwt를 가져오기 위함
-public class JwtProperties {
+public class JwtConfig {
     private String issuer;
     private String secretKeyString;
     private SecretKey secretKey;

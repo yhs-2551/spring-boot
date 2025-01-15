@@ -1,7 +1,7 @@
 package com.yhs.blog.springboot.jpa.common.token;
 
 import com.yhs.blog.springboot.jpa.domain.token.jwt.provider.TokenProvider;
-import com.yhs.blog.springboot.jpa.domain.token.jwt.service.TokenManagementService;
+import com.yhs.blog.springboot.jpa.domain.token.jwt.service.TokenCookieManager;
 import com.yhs.blog.springboot.jpa.domain.user.dto.request.LoginRequest;
 import com.yhs.blog.springboot.jpa.domain.user.entity.User;
 import com.yhs.blog.springboot.jpa.domain.user.service.AuthenticationService;
@@ -31,17 +31,17 @@ public class GenerateAndReturnTokenService {
 
         if (loginRequest.getRememberMe()) {
             refreshToken = tokenProvider.generateToken(user,
-                    TokenManagementService.REMEMBER_ME_REFRESH_TOKEN_DURATION);
-            redisTemplate.opsForValue().set(TokenManagementService.RT_PREFIX + user.getId(),
+                    TokenCookieManager.REMEMBER_ME_REFRESH_TOKEN_DURATION);
+            redisTemplate.opsForValue().set(TokenCookieManager.RT_PREFIX + user.getId(),
                     refreshToken,
-                    TokenManagementService.REMEMBER_ME_REFRESH_TOKEN_TTL, TimeUnit.SECONDS);
+                    TokenCookieManager.REMEMBER_ME_REFRESH_TOKEN_TTL, TimeUnit.SECONDS);
 
         } else {
-            refreshToken = tokenProvider.generateToken(user, TokenManagementService.REFRESH_TOKEN_DURATION);
+            refreshToken = tokenProvider.generateToken(user, TokenCookieManager.REFRESH_TOKEN_DURATION);
 
-            redisTemplate.opsForValue().set(TokenManagementService.RT_PREFIX + user.getId(),
+            redisTemplate.opsForValue().set(TokenCookieManager.RT_PREFIX + user.getId(),
                     refreshToken,
-                    TokenManagementService.REFRESH_TOKEN_TTL, TimeUnit.SECONDS);
+                    TokenCookieManager.REFRESH_TOKEN_TTL, TimeUnit.SECONDS);
 
         }
 
@@ -55,13 +55,13 @@ public class GenerateAndReturnTokenService {
         // 리프레시 토큰 발급 및 Redis에 저장
         String refreshToken;
         if (isRememberMe) {
-            refreshToken = tokenProvider.generateToken(user, TokenManagementService.REMEMBER_ME_REFRESH_TOKEN_DURATION);
-            redisTemplate.opsForValue().set(TokenManagementService.RT_PREFIX + email, refreshToken,
-                    TokenManagementService.REMEMBER_ME_REFRESH_TOKEN_TTL, TimeUnit.SECONDS);
+            refreshToken = tokenProvider.generateToken(user, TokenCookieManager.REMEMBER_ME_REFRESH_TOKEN_DURATION);
+            redisTemplate.opsForValue().set(TokenCookieManager.RT_PREFIX + email, refreshToken,
+                    TokenCookieManager.REMEMBER_ME_REFRESH_TOKEN_TTL, TimeUnit.SECONDS);
         } else {
-            refreshToken = tokenProvider.generateToken(user, TokenManagementService.REFRESH_TOKEN_DURATION);
-            redisTemplate.opsForValue().set(TokenManagementService.RT_PREFIX + email, refreshToken,
-                    TokenManagementService.REFRESH_TOKEN_TTL, TimeUnit.SECONDS);
+            refreshToken = tokenProvider.generateToken(user, TokenCookieManager.REFRESH_TOKEN_DURATION);
+            redisTemplate.opsForValue().set(TokenCookieManager.RT_PREFIX + email, refreshToken,
+                    TokenCookieManager.REFRESH_TOKEN_TTL, TimeUnit.SECONDS);
 
         }
 
@@ -73,7 +73,7 @@ public class GenerateAndReturnTokenService {
 
         User user = authenticationService.getAuthenticatedUser(loginRequest);
         // Access Token 생성
-        String accessToken = tokenProvider.generateToken(user, TokenManagementService.ACCESS_TOKEN_DURATION);
+        String accessToken = tokenProvider.generateToken(user, TokenCookieManager.ACCESS_TOKEN_DURATION);
         return accessToken;
 
     }
@@ -82,7 +82,7 @@ public class GenerateAndReturnTokenService {
     public String OAuth2NewUserGenerateAccessToken(User user) {
 
         // Access Token 생성
-        String accessToken = tokenProvider.generateToken(user, TokenManagementService.ACCESS_TOKEN_DURATION);
+        String accessToken = tokenProvider.generateToken(user, TokenCookieManager.ACCESS_TOKEN_DURATION);
         return accessToken;
 
     }

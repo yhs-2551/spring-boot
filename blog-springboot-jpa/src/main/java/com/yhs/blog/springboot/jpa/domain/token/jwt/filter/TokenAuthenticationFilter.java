@@ -1,6 +1,9 @@
 package com.yhs.blog.springboot.jpa.domain.token.jwt.filter;
 
+import com.yhs.blog.springboot.jpa.domain.token.jwt.provider.AuthenticationProvider;
 import com.yhs.blog.springboot.jpa.domain.token.jwt.provider.TokenProvider;
+import com.yhs.blog.springboot.jpa.domain.token.jwt.validation.TokenValidator;
+
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -17,8 +20,9 @@ import java.io.IOException;
 @RequiredArgsConstructor
 @Log4j2
 public class TokenAuthenticationFilter extends OncePerRequestFilter {
-
-    private final TokenProvider tokenProvider;
+ 
+    private final TokenValidator tokenValidator;
+    private final AuthenticationProvider authenticationProvider;
 
     private final static String HEADER_AUTHORIZATION = "Authorization";
     private final static String TOKEN_PREFIX = "Bearer ";
@@ -87,7 +91,7 @@ public class TokenAuthenticationFilter extends OncePerRequestFilter {
 
         log.debug("실행 dofilterinternal 유효성검사 전");
 
-        if (!tokenProvider.validateAccessToken(accessToken)) {
+        if (!tokenValidator.validateAccessToken(accessToken)) {
 
             log.debug("실행 dofilterinternal 유효성검사 후 - 실패 ");
             // 상태 코드 401 설정
@@ -98,7 +102,7 @@ public class TokenAuthenticationFilter extends OncePerRequestFilter {
 
         }
 
-        Authentication authentication = tokenProvider.getAuthentication(accessToken);
+        Authentication authentication = authenticationProvider.getAuthentication(accessToken);
 
         log.debug("Authentication principal: {}", 
         authentication.getPrincipal());

@@ -2,6 +2,7 @@ package com.yhs.blog.springboot.jpa.domain.post.service.impl;
 
 import com.yhs.blog.springboot.jpa.domain.file.mapper.FileMapper;
 import com.yhs.blog.springboot.jpa.domain.file.service.infrastructure.s3.S3Service;
+import com.yhs.blog.springboot.jpa.domain.token.jwt.claims.ClaimsExtractor;
 import com.yhs.blog.springboot.jpa.domain.token.jwt.provider.TokenProvider;
 import com.yhs.blog.springboot.jpa.domain.post.dto.request.FeaturedImageRequest;
 import com.yhs.blog.springboot.jpa.domain.file.dto.request.FileRequest;
@@ -54,8 +55,8 @@ public class PostServiceImpl implements PostService {
 
     private final UserService userService;
     private final CategoryService categoryService;
-    private final PostRepository postRepository;
-    private final TokenProvider tokenProvider;
+    private final PostRepository postRepository; 
+    private final ClaimsExtractor claimsExtractor;
     private final FeaturedImageRepository featuredImageRepository;
     private final TagRepository tagRepository;
     private final PostTagRepository postTagRepository;
@@ -144,7 +145,7 @@ public class PostServiceImpl implements PostService {
     public PostResponse createNewPost(PostRequest postRequest, HttpServletRequest request) {
         try {
 
-            Long userId = TokenUtil.extractUserIdFromRequestToken(request, tokenProvider);
+            Long userId = TokenUtil.extractUserIdFromRequestToken(request, claimsExtractor);
             User user = userService.findUserById(userId);
 
             Category category;
