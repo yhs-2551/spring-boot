@@ -4,9 +4,9 @@ import com.yhs.blog.springboot.jpa.common.response.ApiResponse;
 import com.yhs.blog.springboot.jpa.common.response.ErrorResponse;
 import com.yhs.blog.springboot.jpa.common.response.SuccessResponse;
 import com.yhs.blog.springboot.jpa.domain.token.jwt.provider.TokenProvider;
-import com.yhs.blog.springboot.jpa.domain.token.jwt.service.TokenCookieManager;
 import com.yhs.blog.springboot.jpa.domain.token.jwt.service.TokenService;
 import com.yhs.blog.springboot.jpa.domain.token.jwt.validation.TokenValidator;
+import com.yhs.blog.springboot.jpa.web.cookie.TokenCookieManager;
 
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
@@ -32,7 +32,6 @@ import org.springframework.web.util.WebUtils;
 public class TokenController {
 
     private final TokenValidator tokenValidator;
-    private final TokenCookieManager tokenManagementService;
     private final TokenService tokenService;
 
     // OAuth2로 로그인하는 사용자자 액세스 토큰 발급 처리
@@ -79,12 +78,12 @@ public class TokenController {
     // 레디스에 저장한 리프레시 토큰은 자동으로 삭제 되기 때문에 추가 처리 불필요. 프론트측 쿠키도 만료시간되면 브라우저에서 자동 삭제 처리
     @Transactional(readOnly = true)
     @GetMapping("/new-token")
-    public ResponseEntity<ApiResponse> createNewAccessRefreshToken(HttpServletRequest request,
+    public ResponseEntity<ApiResponse> createNewAccessByRefreshToken(HttpServletRequest request,
             HttpServletResponse response) {
         HttpHeaders headers = new HttpHeaders();
 
         Cookie cookie = WebUtils.getCookie(request, "refresh_token");
-        
+
         String refreshToken = cookie.getValue();
 
         // null, 빈 문자열, 공백 문자열 모두 체크

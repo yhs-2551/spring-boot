@@ -1,8 +1,8 @@
 package com.yhs.blog.springboot.jpa.domain.token.jwt.provider;
 
 import com.yhs.blog.springboot.jpa.domain.token.jwt.config.JwtConfig;
-import com.yhs.blog.springboot.jpa.domain.token.jwt.service.TokenCookieManager;
-import com.yhs.blog.springboot.jpa.domain.user.entity.User;
+import com.yhs.blog.springboot.jpa.domain.user.entity.User; 
+
 import io.jsonwebtoken.Jwts;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;

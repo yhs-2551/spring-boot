@@ -6,8 +6,8 @@ import com.yhs.blog.springboot.jpa.common.response.SuccessResponse;
 import com.yhs.blog.springboot.jpa.domain.oauth2.dto.request.AdditionalInfoRequest;
 import com.yhs.blog.springboot.jpa.domain.oauth2.dto.request.OAuth2SignUpResponse;
 import com.yhs.blog.springboot.jpa.domain.oauth2.service.OAuth2SignUpService;
-import com.yhs.blog.springboot.jpa.domain.token.jwt.service.TokenCookieManager;
 import com.yhs.blog.springboot.jpa.domain.user.dto.response.RateLimitResponse;
+import com.yhs.blog.springboot.jpa.web.cookie.TokenCookieManager;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -38,8 +38,7 @@ public class OAuth2Controller {
                         HttpServletResponse httpResponse) {
 
                 try {
-                        RateLimitResponse<OAuth2SignUpResponse> rateLimitResponse = oAuth2SignUpService
-                                        .processOAuth2SignUp(request);
+                        RateLimitResponse<OAuth2SignUpResponse> rateLimitResponse = oAuth2SignUpService.processOAuth2SignUp(request);
 
                         if (!rateLimitResponse.isSuccess()) {
                                 return createRateLimitErrorResponse();
@@ -57,23 +56,23 @@ public class OAuth2Controller {
         }
 
         private ResponseEntity<ApiResponse> createSuccessResponse(
-                        OAuth2SignUpResponse response,
+                        OAuth2SignUpResponse oAuth2SignUpResponse,
                         HttpServletRequest request,
-                        HttpServletResponse servletResponse) {
+                        HttpServletResponse response) {
 
                 TokenCookieManager.addRefreshTokenToCookie(
                                 request,
-                                servletResponse,
-                                response.refreshToken(),
-                                response.isRememberMe());
+                                response,
+                                oAuth2SignUpResponse.refreshToken(),
+                                oAuth2SignUpResponse.isRememberMe());
 
                 HttpHeaders headers = new HttpHeaders();
-                headers.set("Authorization", "Bearer " + response.accessToken());
+                headers.set("Authorization", "Bearer " + oAuth2SignUpResponse.accessToken());
 
                 return ResponseEntity.status(HttpStatus.CREATED)
                                 .headers(headers)
                                 .body(new SuccessResponse<>(
-                                                response.userInfo(),
+                                        oAuth2SignUpResponse.userInfo(),
                                                 "OAuth2 신규 사용자 등록에 성공하였습니다."));
         }
 

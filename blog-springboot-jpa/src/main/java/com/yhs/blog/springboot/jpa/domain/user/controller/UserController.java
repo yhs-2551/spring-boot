@@ -6,16 +6,19 @@ import com.yhs.blog.springboot.jpa.common.response.ApiResponse;
 import com.yhs.blog.springboot.jpa.common.response.ErrorResponse;
 import com.yhs.blog.springboot.jpa.common.response.SuccessResponse;
 import com.yhs.blog.springboot.jpa.common.util.cookie.CookieUtil;
-import com.yhs.blog.springboot.jpa.domain.token.jwt.service.TokenCookieManager;
 import com.yhs.blog.springboot.jpa.domain.token.jwt.service.TokenService;
 import com.yhs.blog.springboot.jpa.domain.user.dto.request.LoginRequest;
 import com.yhs.blog.springboot.jpa.domain.user.dto.request.SignUpUserRequest;
 import com.yhs.blog.springboot.jpa.domain.user.dto.request.UserSettingsRequest;
 import com.yhs.blog.springboot.jpa.domain.user.dto.request.VerifyEmailRequest;
 import com.yhs.blog.springboot.jpa.domain.user.dto.response.*;
+import com.yhs.blog.springboot.jpa.domain.user.service.AuthenticationService;
 import com.yhs.blog.springboot.jpa.domain.user.service.EmailService;
 import com.yhs.blog.springboot.jpa.domain.user.service.LogoutProcessService;
 import com.yhs.blog.springboot.jpa.domain.user.service.UserService;
+import com.yhs.blog.springboot.jpa.web.cookie.TokenCookieManager;
+import com.yhs.blog.springboot.jpa.domain.user.entity.User;
+
 import io.jsonwebtoken.ExpiredJwtException;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -46,12 +49,10 @@ import java.io.IOException;
 public class UserController extends SimpleUrlAuthenticationSuccessHandler {
 
         private final UserService userService;
-        // private final TokenProvider tokenProvider;
         private final TokenCookieManager TokenCookieManager;
         private final EmailService emailService;
-        // private final GenerateAndReturnTokenService generateAndReturnTokenService;
-        private final TokenService tokenService;
         private final LogoutProcessService logoutProcessService;
+        private final AuthenticationService authenticationService;
 
         // 회원가입시 이메일 인증코드 전송, 인증코드 재전송 부분 공통 처리
         @PostMapping("/api/users/signup")
@@ -91,17 +92,20 @@ public class UserController extends SimpleUrlAuthenticationSuccessHandler {
                         HttpServletRequest request,
                         HttpServletResponse response) throws ServletException, IOException {
 
+                // 스프링에서 제공하는 User가 아닌 Entity 유저
+                // RateLimitAspect에서 인증 실패에 관한 예외 처리 진행
+                User user = authenticationService.authenticateUser(loginRequest);
+
                 HttpHeaders headers = new HttpHeaders();
 
-                String refreshToken = tokenService.formLoginGenerateRefreshToken(loginRequest);
-                String accessToken = tokenService.formLoginGenerateAccessToken(loginRequest);
+                LoginResultToken loginResultToken = userService.getTokenForLoginUser(user, loginRequest);
 
                 // 생성된 리프레시 토큰을 클라이언트측 쿠키에 저장 -> 클라이언트에서 액세스 토큰이 만료되면 재발급 요청하기 위함
-                TokenCookieManager.addRefreshTokenToCookie(request, response, refreshToken,
+                TokenCookieManager.addRefreshTokenToCookie(request, response, loginResultToken.refreshToken(),
                                 loginRequest.getRememberMe());
 
                 // 응답 헤더에 액세스 토큰 추가
-                headers.set("Authorization", "Bearer " + accessToken);
+                headers.set("Authorization", "Bearer " + loginResultToken.accessToken());
 
                 // 인증 실패와 관련된 정보를 세션에서 제거. 즉 다음에 재로그인할때 만약 이전 인증 실패 정보가 남아있다면 이전 인증 실패 정보가
                 // 남아있지않도록 함.

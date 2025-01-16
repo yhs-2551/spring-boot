@@ -1,10 +1,12 @@
 package com.yhs.blog.springboot.jpa.domain.oauth2.handler;
 
+import com.yhs.blog.springboot.jpa.common.constant.token.TokenConstants;
 import com.yhs.blog.springboot.jpa.domain.oauth2.repository.OAuth2AuthorizationRequestBasedOnCookieRepository;
 import com.yhs.blog.springboot.jpa.domain.token.jwt.provider.TokenProvider;
-import com.yhs.blog.springboot.jpa.domain.token.jwt.service.TokenCookieManager;
 import com.yhs.blog.springboot.jpa.domain.user.entity.User;
 import com.yhs.blog.springboot.jpa.domain.user.service.UserService;
+import com.yhs.blog.springboot.jpa.web.cookie.TokenCookieManager;
+
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
@@ -12,8 +14,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.data.redis.core.RedisTemplate;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.Authentication; 
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.security.web.authentication.SimpleUrlAuthenticationSuccessHandler;
 import org.springframework.stereotype.Component;
@@ -86,14 +87,14 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
             if (isRememberMe) {
                 // 리프레시 토큰에 관한 redis key 이메일이 아닌 id를 사용한 이유는 로그아웃할 때 jwt에서 이메일을 추출할 수 없기 때문
                 refreshToken = tokenProvider.generateToken(user.get(),
-                        TokenCookieManager.REMEMBER_ME_REFRESH_TOKEN_DURATION);
-                redisTemplate.opsForValue().set(TokenCookieManager.RT_PREFIX + user.get().getId(), refreshToken,
-                        TokenCookieManager.REMEMBER_ME_REFRESH_TOKEN_TTL, TimeUnit.SECONDS);
+                        TokenConstants.REMEMBER_ME_REFRESH_TOKEN_DURATION);
+                redisTemplate.opsForValue().set(TokenConstants.RT_PREFIX + user.get().getId(), refreshToken,
+                TokenConstants.REMEMBER_ME_REFRESH_TOKEN_TTL, TimeUnit.SECONDS);
 
             } else {
-                refreshToken = tokenProvider.generateToken(user.get(), TokenCookieManager.REFRESH_TOKEN_DURATION);
-                redisTemplate.opsForValue().set(TokenCookieManager.RT_PREFIX + user.get().getId(), refreshToken,
-                        TokenCookieManager.REFRESH_TOKEN_TTL, TimeUnit.SECONDS);
+                refreshToken = tokenProvider.generateToken(user.get(), TokenConstants.REFRESH_TOKEN_DURATION);
+                redisTemplate.opsForValue().set(TokenConstants.RT_PREFIX + user.get().getId(), refreshToken,
+                TokenConstants.REFRESH_TOKEN_TTL, TimeUnit.SECONDS);
 
             }
 
@@ -101,7 +102,7 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
             tokenCookieManager.addRefreshTokenToCookie(request, response, refreshToken, isRememberMe);
 
             // Access Token 생성
-            String accessToken = tokenProvider.generateToken(user.get(), TokenCookieManager.ACCESS_TOKEN_DURATION);
+            String accessToken = tokenProvider.generateToken(user.get(), TokenConstants.ACCESS_TOKEN_DURATION);
 
             // 초기에 액세스 토큰을 쿠키에 발급 리다이렉트하면 바로 프론트측에서 응답헤더에 접근할 수 없기 때문에.
             tokenCookieManager.handleAccessTokenCookie(request, response, accessToken);

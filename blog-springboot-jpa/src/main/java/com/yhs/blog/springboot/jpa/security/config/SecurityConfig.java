@@ -7,10 +7,11 @@ import com.yhs.blog.springboot.jpa.domain.oauth2.service.OAuth2UserLoadService;
 import com.yhs.blog.springboot.jpa.domain.token.jwt.filter.TokenAuthenticationFilter;
 import com.yhs.blog.springboot.jpa.domain.token.jwt.provider.AuthenticationProvider;
 import com.yhs.blog.springboot.jpa.domain.token.jwt.provider.TokenProvider;
-import com.yhs.blog.springboot.jpa.domain.token.jwt.service.TokenCookieManager;
 import com.yhs.blog.springboot.jpa.domain.token.jwt.validation.TokenValidator;
 import com.yhs.blog.springboot.jpa.domain.user.service.UserService;
 import com.yhs.blog.springboot.jpa.security.service.CustomUserDetailsService;
+import com.yhs.blog.springboot.jpa.web.cookie.TokenCookieManager;
+
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

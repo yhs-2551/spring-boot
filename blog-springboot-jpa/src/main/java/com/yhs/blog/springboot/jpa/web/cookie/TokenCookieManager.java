@@ -1,5 +1,6 @@
-package com.yhs.blog.springboot.jpa.domain.token.jwt.service;
+package com.yhs.blog.springboot.jpa.web.cookie;
 
+import com.yhs.blog.springboot.jpa.common.constant.token.TokenConstants;
 import com.yhs.blog.springboot.jpa.common.util.cookie.CookieUtil;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
@@ -13,21 +14,22 @@ import java.time.Duration;
 @RequiredArgsConstructor
 public class TokenCookieManager {
 
-    public static final String REFRESH_TOKEN_COOKIE_NAME = "refresh_token";
-    public static final Duration REFRESH_TOKEN_DURATION = Duration.ofDays(1);
-    public static final Duration REMEMBER_ME_REFRESH_TOKEN_DURATION = Duration.ofDays(14);
-    public static final long REFRESH_TOKEN_TTL = Duration.ofDays(1).toSeconds();
-    public static final long REMEMBER_ME_REFRESH_TOKEN_TTL = Duration.ofDays(14).toSeconds();
-    public static final String RT_PREFIX = "RT:";
+    // private static final String REFRESH_TOKEN_COOKIE_NAME = "refresh_token";
+    // private static final String ACCESS_TOKEN_COOKIE_NAME = "access_token";
+    // public static final Duration REFRESH_TOKEN_DURATION = Duration.ofDays(1);
+    // public static final Duration REMEMBER_ME_REFRESH_TOKEN_DURATION = Duration.ofDays(14);
+    // public static final long REFRESH_TOKEN_TTL = Duration.ofDays(1).toSeconds();
+    // public static final long REMEMBER_ME_REFRESH_TOKEN_TTL = Duration.ofDays(14).toSeconds();
+    // public static final String RT_PREFIX = "RT:";
 
-    public static final Duration ACCESS_TOKEN_DURATION = Duration.ofHours(1);
+    // public static final Duration ACCESS_TOKEN_DURATION = Duration.ofHours(1);
 
     public void addRefreshTokenToCookie(HttpServletRequest request, HttpServletResponse response, String refreshToken,
             boolean rememberMe) {
 
-        int cookieMaxAge = rememberMe ? (int) REMEMBER_ME_REFRESH_TOKEN_TTL : (int) REFRESH_TOKEN_TTL;
-        CookieUtil.deleteCookie(request, response, REFRESH_TOKEN_COOKIE_NAME);
-        CookieUtil.addCookie(response, REFRESH_TOKEN_COOKIE_NAME, refreshToken, cookieMaxAge);
+        int cookieMaxAge = rememberMe ? (int) TokenConstants.REMEMBER_ME_REFRESH_TOKEN_TTL : (int) TokenConstants.REFRESH_TOKEN_TTL;
+        CookieUtil.deleteCookie(request, response, TokenConstants.REFRESH_TOKEN_COOKIE_NAME);
+        CookieUtil.addCookie(response, TokenConstants.REFRESH_TOKEN_COOKIE_NAME, refreshToken, cookieMaxAge);
     }
 
     public void handleAccessTokenCookie(HttpServletRequest request, HttpServletResponse response, String accessToken) {
@@ -40,7 +42,7 @@ public class TokenCookieManager {
         // 점을 염두에 두어야 한다.
         // 액세스 토큰 HTTP Only 쿠키 저장은, 초기에 응답 헤더로 액세스 토큰을 전송해줄때만 사용하므로 setMaxAge를 60초만 설정.
         // 지정하지 않을 수도 있음.
-        Cookie accessTokenCookie = new Cookie("access_token", accessToken);
+        Cookie accessTokenCookie = new Cookie(TokenConstants.ACCESS_TOKEN_COOKIE_NAME, accessToken);
         accessTokenCookie.setHttpOnly(true); // javascript 에서 접근 불가
         accessTokenCookie.setSecure(false); // true면 HTTPS에서만 전달, 배포 시에 true로 변경 필요
         accessTokenCookie.setPath("/");

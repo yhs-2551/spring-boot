@@ -3,8 +3,8 @@ package com.yhs.blog.springboot.jpa.domain.token.jwt.validation;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Component;
 
-import com.yhs.blog.springboot.jpa.domain.token.jwt.config.JwtConfig;
-import com.yhs.blog.springboot.jpa.domain.token.jwt.service.TokenCookieManager;
+import com.yhs.blog.springboot.jpa.common.constant.token.TokenConstants;
+import com.yhs.blog.springboot.jpa.domain.token.jwt.config.JwtConfig; 
 
 import io.jsonwebtoken.Jwts;
 import lombok.RequiredArgsConstructor;
@@ -36,7 +36,7 @@ public class TokenValidator {
     }
 
     public boolean validateRefreshToken(String token, Long userId) {
-        String storedRefreshToken = redisTemplate.opsForValue().get(TokenCookieManager.RT_PREFIX + userId);
+        String storedRefreshToken = redisTemplate.opsForValue().get(TokenConstants.RT_PREFIX + userId);
         if (storedRefreshToken == null || !storedRefreshToken.equals(token)) {
             log.debug("리프레시 토큰 검증 실패");
             return false;
