@@ -5,20 +5,14 @@ import com.yhs.blog.springboot.jpa.aop.ratelimit.RateLimit;
 import com.yhs.blog.springboot.jpa.common.response.ApiResponse;
 import com.yhs.blog.springboot.jpa.common.response.ErrorResponse;
 import com.yhs.blog.springboot.jpa.common.response.SuccessResponse;
-import com.yhs.blog.springboot.jpa.common.token.GenerateAndReturnTokenService;
 import com.yhs.blog.springboot.jpa.common.util.cookie.CookieUtil;
-import com.yhs.blog.springboot.jpa.domain.token.jwt.provider.TokenProvider;
-import com.yhs.blog.springboot.jpa.domain.token.jwt.service.TokenManagementService;
-import com.yhs.blog.springboot.jpa.domain.token.jwt.util.TokenUtil;
+import com.yhs.blog.springboot.jpa.domain.token.jwt.service.TokenCookieManager;
+import com.yhs.blog.springboot.jpa.domain.token.jwt.service.TokenService;
 import com.yhs.blog.springboot.jpa.domain.user.dto.request.LoginRequest;
 import com.yhs.blog.springboot.jpa.domain.user.dto.request.SignUpUserRequest;
 import com.yhs.blog.springboot.jpa.domain.user.dto.request.UserSettingsRequest;
 import com.yhs.blog.springboot.jpa.domain.user.dto.request.VerifyEmailRequest;
-import com.yhs.blog.springboot.jpa.domain.user.dto.response.DuplicateCheckResponse;
-import com.yhs.blog.springboot.jpa.domain.user.dto.response.RateLimitResponse;
-import com.yhs.blog.springboot.jpa.domain.user.dto.response.SignUpUserResponse;
-import com.yhs.blog.springboot.jpa.domain.user.dto.response.UserPrivateProfileResponse;
-import com.yhs.blog.springboot.jpa.domain.user.dto.response.UserPublicProfileResponse;
+import com.yhs.blog.springboot.jpa.domain.user.dto.response.*;
 import com.yhs.blog.springboot.jpa.domain.user.service.EmailService;
 import com.yhs.blog.springboot.jpa.domain.user.service.LogoutProcessService;
 import com.yhs.blog.springboot.jpa.domain.user.service.UserService;
@@ -52,10 +46,11 @@ import java.io.IOException;
 public class UserController extends SimpleUrlAuthenticationSuccessHandler {
 
         private final UserService userService;
-        private final TokenProvider tokenProvider;
-        private final TokenManagementService tokenManagementService;
+        // private final TokenProvider tokenProvider;
+        private final TokenCookieManager TokenCookieManager;
         private final EmailService emailService;
-        private final GenerateAndReturnTokenService generateAndReturnTokenService;
+        // private final GenerateAndReturnTokenService generateAndReturnTokenService;
+        private final TokenService tokenService;
         private final LogoutProcessService logoutProcessService;
 
         // 회원가입시 이메일 인증코드 전송, 인증코드 재전송 부분 공통 처리
@@ -98,11 +93,11 @@ public class UserController extends SimpleUrlAuthenticationSuccessHandler {
 
                 HttpHeaders headers = new HttpHeaders();
 
-                String refreshToken = generateAndReturnTokenService.formLoginGenerateRefreshToken(loginRequest);
-                String accessToken = generateAndReturnTokenService.formLoginGenerateAccessToken(loginRequest);
+                String refreshToken = tokenService.formLoginGenerateRefreshToken(loginRequest);
+                String accessToken = tokenService.formLoginGenerateAccessToken(loginRequest);
 
                 // 생성된 리프레시 토큰을 클라이언트측 쿠키에 저장 -> 클라이언트에서 액세스 토큰이 만료되면 재발급 요청하기 위함
-                tokenManagementService.addRefreshTokenToCookie(request, response, refreshToken,
+                TokenCookieManager.addRefreshTokenToCookie(request, response, refreshToken,
                                 loginRequest.getRememberMe());
 
                 // 응답 헤더에 액세스 토큰 추가

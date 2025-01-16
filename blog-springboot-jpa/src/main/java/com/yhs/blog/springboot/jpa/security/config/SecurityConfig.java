@@ -7,9 +7,9 @@ import com.yhs.blog.springboot.jpa.domain.oauth2.service.OAuth2UserLoadService;
 import com.yhs.blog.springboot.jpa.domain.token.jwt.filter.TokenAuthenticationFilter;
 import com.yhs.blog.springboot.jpa.domain.token.jwt.provider.AuthenticationProvider;
 import com.yhs.blog.springboot.jpa.domain.token.jwt.provider.TokenProvider;
-import com.yhs.blog.springboot.jpa.domain.token.jwt.service.TokenCookieManager; 
+import com.yhs.blog.springboot.jpa.domain.token.jwt.service.TokenCookieManager;
 import com.yhs.blog.springboot.jpa.domain.token.jwt.validation.TokenValidator;
-import com.yhs.blog.springboot.jpa.domain.user.service.impl.UserServiceImpl;
+import com.yhs.blog.springboot.jpa.domain.user.service.UserService;
 import com.yhs.blog.springboot.jpa.security.service.CustomUserDetailsService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
@@ -48,8 +48,8 @@ public class SecurityConfig {
     private final TokenProvider tokenProvider;
     private final TokenValidator tokenValidator;
     private final AuthenticationProvider authenticationProvider;
-    private final TokenCookieManager tokenManagementService;
-    private final UserServiceImpl userService; 
+    private final TokenCookieManager TokenCookieManager;
+    private final UserService userService;
     private final CustomUserDetailsService userDetailService;
     private final RedisTemplate<String, String> redisTemplate;
 
@@ -119,7 +119,7 @@ public class SecurityConfig {
 
     @Bean
     public OAuth2SuccessHandler oAuth2SuccessHandler() {
-        return new OAuth2SuccessHandler(tokenProvider, tokenManagementService,
+        return new OAuth2SuccessHandler(tokenProvider, TokenCookieManager,
                 oAuth2AuthorizationRequestBasedOnCookieRepository(), userService, redisTemplate);
     }
 

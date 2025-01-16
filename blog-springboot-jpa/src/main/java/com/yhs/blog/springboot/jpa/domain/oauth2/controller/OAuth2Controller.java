@@ -6,7 +6,7 @@ import com.yhs.blog.springboot.jpa.common.response.SuccessResponse;
 import com.yhs.blog.springboot.jpa.domain.oauth2.dto.request.AdditionalInfoRequest;
 import com.yhs.blog.springboot.jpa.domain.oauth2.dto.request.OAuth2SignUpResponse;
 import com.yhs.blog.springboot.jpa.domain.oauth2.service.OAuth2SignUpService;
-import com.yhs.blog.springboot.jpa.domain.token.jwt.service.TokenManagementService;
+import com.yhs.blog.springboot.jpa.domain.token.jwt.service.TokenCookieManager;
 import com.yhs.blog.springboot.jpa.domain.user.dto.response.RateLimitResponse;
 
 import jakarta.servlet.http.HttpServletRequest;
@@ -29,7 +29,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class OAuth2Controller {
 
         private final OAuth2SignUpService oAuth2SignUpService;
-        private final TokenManagementService tokenManagementService;
+        private final TokenCookieManager TokenCookieManager;
 
         @PostMapping("/oauth2/users")
         public ResponseEntity<ApiResponse> oAuth2UserSignup(
@@ -38,7 +38,8 @@ public class OAuth2Controller {
                         HttpServletResponse httpResponse) {
 
                 try {
-                        RateLimitResponse<OAuth2SignUpResponse> rateLimitResponse = oAuth2SignUpService.processOAuth2SignUp(request);
+                        RateLimitResponse<OAuth2SignUpResponse> rateLimitResponse = oAuth2SignUpService
+                                        .processOAuth2SignUp(request);
 
                         if (!rateLimitResponse.isSuccess()) {
                                 return createRateLimitErrorResponse();
@@ -60,7 +61,7 @@ public class OAuth2Controller {
                         HttpServletRequest request,
                         HttpServletResponse servletResponse) {
 
-                tokenManagementService.addRefreshTokenToCookie(
+                TokenCookieManager.addRefreshTokenToCookie(
                                 request,
                                 servletResponse,
                                 response.refreshToken(),

@@ -49,7 +49,7 @@ public class QUser extends EntityPathBase<User> {
 
     public final StringPath profileImageUrl = createString("profileImageUrl");
 
-    public final EnumPath<User.UserRole> role = createEnum("role", User.UserRole.class);
+    public final EnumPath<com.yhs.blog.springboot.jpa.domain.user.type.UserRole> role = createEnum("role", com.yhs.blog.springboot.jpa.domain.user.type.UserRole.class);
 
     public final DateTimePath<java.time.LocalDateTime> updatedAt = createDateTime("updatedAt", java.time.LocalDateTime.class);
 

@@ -1,19 +1,14 @@
 package com.yhs.blog.springboot.jpa.domain.user.service.impl;
 
 import com.yhs.blog.springboot.jpa.aop.duplicatecheck.DuplicateCheck;
-import com.yhs.blog.springboot.jpa.common.token.GenerateAndReturnTokenService;
 import com.yhs.blog.springboot.jpa.domain.file.service.infrastructure.s3.S3Service;
 import com.yhs.blog.springboot.jpa.domain.oauth2.dto.request.AdditionalInfoRequest;
 import com.yhs.blog.springboot.jpa.domain.oauth2.dto.request.OAuth2SignUpResponse;
 import com.yhs.blog.springboot.jpa.domain.token.jwt.provider.TokenProvider;
-import com.yhs.blog.springboot.jpa.domain.token.jwt.service.TokenManagementService;
+import com.yhs.blog.springboot.jpa.domain.token.jwt.service.TokenCookieManager;
 import com.yhs.blog.springboot.jpa.domain.user.dto.request.SignUpUserRequest;
 import com.yhs.blog.springboot.jpa.domain.user.dto.request.UserSettingsRequest;
-import com.yhs.blog.springboot.jpa.domain.user.dto.response.DuplicateCheckResponse;
-import com.yhs.blog.springboot.jpa.domain.user.dto.response.RateLimitResponse;
-import com.yhs.blog.springboot.jpa.domain.user.dto.response.SignUpUserResponse;
-import com.yhs.blog.springboot.jpa.domain.user.dto.response.UserPrivateProfileResponse;
-import com.yhs.blog.springboot.jpa.domain.user.dto.response.UserPublicProfileResponse;
+import com.yhs.blog.springboot.jpa.domain.user.dto.response.*;
 import com.yhs.blog.springboot.jpa.domain.user.entity.User;
 import com.yhs.blog.springboot.jpa.domain.user.repository.UserRepository;
 import com.yhs.blog.springboot.jpa.domain.user.service.UserService;
@@ -46,7 +41,9 @@ public class UserServiceImpl implements UserService {
     private final RedisTemplate<String, UserPublicProfileResponse> userPublicProfileRedisTemplate;
     private final RedisTemplate<String, UserPrivateProfileResponse> userPrivateProfileRedisTemplate;
     private final S3Service s3Service;
-    private final GenerateAndReturnTokenService generateAndReturnTokenService;
+    // private final GenerateAndReturnTokenService generateAndReturnTokenService;
+//    private final TokenService tokenService;
+    private final TokenProvider tokenProvider;
 
     private static final long PROFILE_CACHE_HOURS = 24L; // 프론트는 12시간, redis 캐시를 활용해 DB 부하를 감소하기 위해 2배인 24시간으로 설정
 
@@ -95,10 +92,10 @@ public class UserServiceImpl implements UserService {
         // Redis에 저장된 rememberMe 정보 삭제
         redisTemplateString.delete("RM:" + email);
 
-        String refreshToken = generateAndReturnTokenService.OAuth2NewUserGenerateRefreshToken(email, user,
+        String refreshToken = oAuth2NewUserGenerateRefreshToken(email, user,
                 isRememberMe);
 
-        String accessToken = generateAndReturnTokenService.OAuth2NewUserGenerateAccessToken(user);
+        String accessToken = oAuth2NewUserGenerateAccessToken(user);
 
         SignUpUserResponse userInfo = new SignUpUserResponse(responseUser.getId(), responseUser.getBlogId(),
                 responseUser.getUsername(),
@@ -293,6 +290,35 @@ public class UserServiceImpl implements UserService {
         }
 
         return new DuplicateCheckResponse(false, notExistMessage, false);
+    }
+
+
+    private String oAuth2NewUserGenerateRefreshToken(String email, User user, boolean isRememberMe) {
+
+        // 아래는 OAuth2 신규 사용자 토큰 발급 로직
+        // 리프레시 토큰 발급 및 Redis에 저장
+        String refreshToken;
+        if (isRememberMe) {
+            refreshToken = tokenProvider.generateToken(user, TokenCookieManager.REMEMBER_ME_REFRESH_TOKEN_DURATION);
+            redisTemplateString.opsForValue().set(TokenCookieManager.RT_PREFIX + email, refreshToken,
+                    TokenCookieManager.REMEMBER_ME_REFRESH_TOKEN_TTL, TimeUnit.SECONDS);
+        } else {
+            refreshToken = tokenProvider.generateToken(user, TokenCookieManager.REFRESH_TOKEN_DURATION);
+            redisTemplateString.opsForValue().set(TokenCookieManager.RT_PREFIX + email, refreshToken,
+                    TokenCookieManager.REFRESH_TOKEN_TTL, TimeUnit.SECONDS);
+
+        }
+
+        return refreshToken;
+    }
+
+
+    private String oAuth2NewUserGenerateAccessToken(User user) {
+
+        // Access Token 생성
+        String accessToken = tokenProvider.generateToken(user, TokenCookieManager.ACCESS_TOKEN_DURATION);
+        return accessToken;
+
     }
 
 }
