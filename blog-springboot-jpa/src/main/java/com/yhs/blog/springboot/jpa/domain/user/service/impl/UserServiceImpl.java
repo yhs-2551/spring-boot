@@ -1,6 +1,8 @@
 package com.yhs.blog.springboot.jpa.domain.user.service.impl;
 
 import com.yhs.blog.springboot.jpa.aop.duplicatecheck.DuplicateCheck;
+import com.yhs.blog.springboot.jpa.aop.log.Loggable;
+import com.yhs.blog.springboot.jpa.common.constant.code.ErrorCode;
 import com.yhs.blog.springboot.jpa.common.constant.token.TokenConstants;
 import com.yhs.blog.springboot.jpa.domain.file.service.infrastructure.s3.S3Service;
 import com.yhs.blog.springboot.jpa.domain.oauth2.dto.request.AdditionalInfoRequest;
@@ -11,16 +13,16 @@ import com.yhs.blog.springboot.jpa.domain.user.dto.request.UserSettingsRequest;
 import com.yhs.blog.springboot.jpa.domain.user.dto.response.*;
 import com.yhs.blog.springboot.jpa.domain.user.entity.User;
 import com.yhs.blog.springboot.jpa.domain.user.repository.UserRepository;
-import com.yhs.blog.springboot.jpa.domain.user.service.AuthenticationService;
 import com.yhs.blog.springboot.jpa.domain.user.service.UserService;
-import com.yhs.blog.springboot.jpa.exception.custom.ResourceNotFoundException;
-import com.yhs.blog.springboot.jpa.exception.custom.UserCreationException;
-import com.yhs.blog.springboot.jpa.web.cookie.TokenCookieManager;
+import com.yhs.blog.springboot.jpa.exception.custom.BusinessException;
+import com.yhs.blog.springboot.jpa.exception.custom.SystemException;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
+import software.amazon.awssdk.services.s3.model.S3Exception;
+
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -45,7 +47,7 @@ public class UserServiceImpl implements UserService {
     private final RedisTemplate<String, UserPublicProfileResponse> userPublicProfileRedisTemplate;
     private final RedisTemplate<String, UserPrivateProfileResponse> userPrivateProfileRedisTemplate;
     private final S3Service s3Service;
-    private final TokenProvider tokenProvider; 
+    private final TokenProvider tokenProvider;
 
     private static final long PROFILE_CACHE_HOURS = 24L; // 프론트는 12시간, redis 캐시를 활용해 DB 부하를 감소하기 위해 2배인 24시간으로 설정
 
@@ -53,6 +55,7 @@ public class UserServiceImpl implements UserService {
 
     @Override
     @Transactional
+    @Loggable
     public SignUpUserResponse createUser(SignUpUserRequest signUpUserRequest) {
 
         try {
@@ -70,7 +73,12 @@ public class UserServiceImpl implements UserService {
                     responseUser.getEmail());
 
         } catch (Exception ex) {
-            throw new UserCreationException("사용자 생성 중 오류가 발생하였습니다. " + ex.getMessage());
+            throw new SystemException(
+                    ErrorCode.USER_CREATE_ERROR,
+                    "사용자 생성 중 오류가 발생하였습니다. ",
+                    "UserServiceImpl",
+                    "createUser",
+                    ex);
         }
     }
 
@@ -136,11 +144,15 @@ public class UserServiceImpl implements UserService {
 
     }
 
+    @Loggable
     @Override
     @Transactional(readOnly = true)
     public User findUserById(Long userId) {
-        return userRepository.findById(userId).orElseThrow(() -> new ResourceNotFoundException(userId +
-                "번 사용자를 찾지 못했습니다."));
+        return userRepository.findById(userId).orElseThrow(() -> new BusinessException(
+                ErrorCode.USER_NOT_FOUND,
+                userId + "를 가지고 있는 사용자를 찾지 못하였습니다.",
+                "UserServiceImpl",
+                "findUserById"));
     }
 
     @Override
@@ -149,6 +161,7 @@ public class UserServiceImpl implements UserService {
         return userRepository.findByEmail(email);
     }
 
+    @Loggable
     @Override
     @Transactional(readOnly = true)
     public UserPublicProfileResponse findUserByBlogId(String blogId) {
@@ -163,7 +176,11 @@ public class UserServiceImpl implements UserService {
         // If not in cache, get from database
         Optional<User> optionalUser = userRepository.findByBlogId(blogId);
         if (optionalUser.isEmpty()) {
-            throw new ResourceNotFoundException(blogId + "를 가지고 있는 사용자를 찾지 못하였습니다.");
+            throw new BusinessException(
+                    ErrorCode.USER_NOT_FOUND,
+                    blogId + "를 가지고 있는 사용자를 찾지 못하였습니다.",
+                    "UserServiceImpl",
+                    "findUserByBlogId");
         }
 
         User user = optionalUser.get();
@@ -181,6 +198,7 @@ public class UserServiceImpl implements UserService {
         return userPublicProfileResponseDTO;
     }
 
+    @Loggable
     @Transactional(readOnly = true)
     @Override
     public UserPrivateProfileResponse findUserByTokenAndByBlogId(String blogId) {
@@ -196,7 +214,11 @@ public class UserServiceImpl implements UserService {
         // If not in cache, get from database
         Optional<User> optionalUser = userRepository.findByBlogId(blogId);
         if (optionalUser.isEmpty()) {
-            throw new ResourceNotFoundException(blogId + "를 가지고 있는 사용자를 찾지 못하였습니다.");
+            throw new BusinessException(
+                    ErrorCode.USER_NOT_FOUND,
+                    blogId + "를 가지고 있는 사용자를 찾지 못하였습니다.",
+                    "UserServiceImpl",
+                    "findUserByTokenAndByBlogId");
         }
 
         User findUser = optionalUser.get();
@@ -211,41 +233,53 @@ public class UserServiceImpl implements UserService {
         return userPrivateProfileResponseDTO;
     }
 
+    @Loggable
     @Override
     @Transactional
     public void updateUserSettings(String blogId, UserSettingsRequest userSettingsRequest) throws IOException {
 
-        User user = userRepository.findByBlogId(blogId).orElseThrow(() -> new ResourceNotFoundException(blogId +
-                "를 가지고 있는 사용자를 찾지 못하였습니다."));
+        User user = userRepository.findByBlogId(blogId).orElseThrow(() -> new BusinessException(
+                ErrorCode.USER_NOT_FOUND,
+                blogId + "를 가지고 있는 사용자를 찾지 못하였습니다.",
+                "UserServiceImpl",
+                "updateUserSettings"));
 
         String oldUsername = user.getUsername();
 
-        if (userSettingsRequest.profileImage() != null && !userSettingsRequest.profileImage().isEmpty()) {
-            String awsS3FileUrl = s3Service.uploadProfileImage(userSettingsRequest.profileImage(), blogId);
+        try {
+            if (userSettingsRequest.profileImage() != null && !userSettingsRequest.profileImage().isEmpty()) {
+                String awsS3FileUrl = s3Service.uploadProfileImage(userSettingsRequest.profileImage(), blogId);
 
-            user.profileUpdate(userSettingsRequest.username(), userSettingsRequest.blogName(),
-                    awsS3FileUrl);
-        } else {
+                user.profileUpdate(userSettingsRequest.username(), userSettingsRequest.blogName(),
+                        awsS3FileUrl);
+            } else {
 
-            s3Service.deleteProfileImage(blogId);
+                s3Service.deleteProfileImage(blogId);
 
-            user.profileUpdate(userSettingsRequest.username(), userSettingsRequest.blogName(),
-                    "https://iceamericano-blog-storage.s3.ap-northeast-2.amazonaws.com/default/default-avatar-profile.webp");
+                user.profileUpdate(userSettingsRequest.username(), userSettingsRequest.blogName(),
+                        "https://iceamericano-blog-storage.s3.ap-northeast-2.amazonaws.com/default/default-avatar-profile.webp");
+            }
+
+            userRepository.save(user);
+
+            TransactionSynchronizationManager.registerSynchronization(
+                    new TransactionSynchronization() {
+                        @Override
+                        public void afterCommit() {
+                            // 사용자 정보 변경 시 캐시 무효화. 트랜잭션이 성공적으로 커밋되어야만 redis 캐시 무효화
+                            userPublicProfileRedisTemplate.delete("userPublicProfile:" + blogId);
+                            userPrivateProfileRedisTemplate.delete("userPrivateProfile:" + blogId);
+                            redisTemplateBoolean.delete("username:" + oldUsername);
+                        }
+
+                    });
+        } catch (S3Exception e) {
+            throw new SystemException(
+                    ErrorCode.USER_PROFILE_UPDATE_ERROR,
+                    "프로필 업데이트 중 오류가 발생하였습니다.",
+                    "UserServiceImpl",
+                    "updateUserSettings", e);
         }
-
-        userRepository.save(user);
-
-        TransactionSynchronizationManager.registerSynchronization(
-                new TransactionSynchronization() {
-                    @Override
-                    public void afterCommit() {
-                        // 사용자 정보 변경 시 캐시 무효화. 트랜잭션이 성공적으로 커밋되어야만 redis 캐시 무효화
-                        userPublicProfileRedisTemplate.delete("userPublicProfile:" + blogId);
-                        userPrivateProfileRedisTemplate.delete("userPrivateProfile:" + blogId);
-                        redisTemplateBoolean.delete("username:" + oldUsername);
-                    }
-
-                });
 
     }
 
@@ -272,6 +306,7 @@ public class UserServiceImpl implements UserService {
 
     // 아래는 회원가입 시 중복확인 관련
     @Override
+    @Loggable
     @DuplicateCheck(type = "BlogId")
     @Transactional(readOnly = true)
     public DuplicateCheckResponse isDuplicateBlogId(String blogId) {
@@ -282,6 +317,7 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    @Loggable
     @DuplicateCheck(type = "Email")
     @Transactional(readOnly = true)
     public DuplicateCheckResponse isDuplicateEmail(String email) {
@@ -292,6 +328,7 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    @Loggable
     @DuplicateCheck(type = "Username")
     @Transactional(readOnly = true)
     public DuplicateCheckResponse isDuplicateUsername(String username) {
@@ -306,7 +343,7 @@ public class UserServiceImpl implements UserService {
         Boolean exists = redisTemplateBoolean.opsForValue().get(cacheKey);
         if (exists != null) {
             // 캐시 조회 성공
-            return new DuplicateCheckResponse(true, existMessage, false);
+            return new DuplicateCheckResponse(true, existMessage);
         }
 
         boolean isExists = dbCheck.get();
@@ -314,10 +351,10 @@ public class UserServiceImpl implements UserService {
             // DB 조회 성공
             // 캐시에 저장. 일단 무한대. 사용자 계정 변경 및 계정 탈퇴 시 무효화 필요요
             redisTemplateBoolean.opsForValue().set(cacheKey, true, PROFILE_CACHE_HOURS, TimeUnit.HOURS);
-            return new DuplicateCheckResponse(true, existMessage, false);
+            return new DuplicateCheckResponse(true, existMessage);
         }
 
-        return new DuplicateCheckResponse(false, notExistMessage, false);
+        return new DuplicateCheckResponse(false, notExistMessage);
     }
 
     private String oAuth2NewUserGenerateRefreshToken(String email, User user, boolean isRememberMe) {

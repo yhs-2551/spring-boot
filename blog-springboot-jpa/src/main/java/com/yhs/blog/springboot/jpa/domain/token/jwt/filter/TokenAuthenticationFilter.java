@@ -3,6 +3,9 @@ package com.yhs.blog.springboot.jpa.domain.token.jwt.filter;
 import com.yhs.blog.springboot.jpa.domain.token.jwt.provider.AuthenticationProvider;
 import com.yhs.blog.springboot.jpa.domain.token.jwt.provider.TokenProvider;
 import com.yhs.blog.springboot.jpa.domain.token.jwt.validation.TokenValidator;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.yhs.blog.springboot.jpa.common.constant.code.StatusCode;
+import com.yhs.blog.springboot.jpa.common.response.ErrorResponse;
 
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -15,12 +18,12 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.filter.OncePerRequestFilter;
 
-import java.io.IOException;
+import java.io.IOException; 
 
 @RequiredArgsConstructor
 @Log4j2
 public class TokenAuthenticationFilter extends OncePerRequestFilter {
- 
+
     private final TokenValidator tokenValidator;
     private final AuthenticationProvider authenticationProvider;
 
@@ -68,8 +71,8 @@ public class TokenAuthenticationFilter extends OncePerRequestFilter {
                         requestURI.equals("/api/users/logout") ||
                         requestURI.equals("/api/users/verify-email") ||
                         requestURI.equals("/api/oauth2/users") ||
-                        requestURI.equals("/api/admin/batch/cleanup") // 배치 테스트용으로 추가 
-                        )) {
+                        requestURI.equals("/api/admin/batch/cleanup") // 배치 테스트용으로 추가
+                )) {
             filterChain.doFilter(request, response);
             return;
         }
@@ -78,12 +81,17 @@ public class TokenAuthenticationFilter extends OncePerRequestFilter {
 
         if (authorizationHeader == null || !authorizationHeader.startsWith("Bearer ")) {
 
+            ErrorResponse errorResponse = new ErrorResponse(
+                "액세스 토큰이 누락되었습니다.",
+                StatusCode.UNAUTHORIZED.getCode());
+
+
             log.debug("authorizationHeader오류 실행 내부");
 
             // 상태 코드 401 설정
             response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
             // 응답 메시지 작성
-            response.getWriter().write("Access token is missing");
+            response.getWriter().write(new ObjectMapper().writeValueAsString(errorResponse));
             return; // 요청 헤더에서 액세스 토큰을 찾을 수 없으면 필터 체인 종료, 다음 필터로 넘어가지 않음
         }
 
@@ -93,21 +101,23 @@ public class TokenAuthenticationFilter extends OncePerRequestFilter {
 
         if (!tokenValidator.validateAccessToken(accessToken)) {
 
+            ErrorResponse errorResponse = new ErrorResponse(
+                    "유효하지 않거나 만료된 토큰입니다.",
+                    StatusCode.UNAUTHORIZED.getCode());
+
             log.debug("실행 dofilterinternal 유효성검사 후 - 실패 ");
             // 상태 코드 401 설정
             response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
             // 응답 메시지 작성
-            response.getWriter().write("Invalid or expired access token");
+            response.getWriter().write(new ObjectMapper().writeValueAsString(errorResponse));
             return; // 유효하지 않은 토큰이면 필터 체인 종료, 다음 필터로 넘어가지 않음
 
         }
 
         Authentication authentication = authenticationProvider.getAuthentication(accessToken);
 
-        log.debug("Authentication principal: {}", 
-        authentication.getPrincipal());
-        
-
+        log.debug("Authentication principal: {}",
+                authentication.getPrincipal());
 
         SecurityContextHolder.getContext().setAuthentication(authentication);
 

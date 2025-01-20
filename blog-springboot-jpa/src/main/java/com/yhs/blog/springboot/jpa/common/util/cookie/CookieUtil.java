@@ -7,6 +7,10 @@ import jakarta.servlet.http.HttpServletResponse;
 import java.io.*;
 import java.util.Base64;
 
+import com.yhs.blog.springboot.jpa.aop.log.Loggable;
+import com.yhs.blog.springboot.jpa.common.constant.code.ErrorCode;
+import com.yhs.blog.springboot.jpa.exception.custom.SystemException;
+
 public class CookieUtil {
 
     // 아래 대신 WebUtils에서 제공하는 쿠키 유틸 메서드 사용하면 됨
@@ -56,6 +60,7 @@ public class CookieUtil {
         }
     }
 
+    @Loggable
     public static String serialize(Object obj) {
         try (ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
                 ObjectOutputStream objectOutputStream = new ObjectOutputStream(byteArrayOutputStream)) {
@@ -67,10 +72,12 @@ public class CookieUtil {
             // 저장되어 있음
             return Base64.getUrlEncoder().encodeToString(byteArrayOutputStream.toByteArray());
         } catch (IOException ex) {
-            throw new RuntimeException("Serialization Error", ex);
+            throw new SystemException(ErrorCode.SERIALIZATION_ERROR, "인증 처리 중 오류가 발생했습니다. 다시 시도해 주세요.",
+                    "CookieUtil", "serialize", ex);
         }
     }
 
+    @Loggable
     public static <T> T deserialize(Cookie cookie, Class<T> cls) {
 
         try {
@@ -85,7 +92,8 @@ public class CookieUtil {
             }
 
         } catch (IOException | ClassNotFoundException ex) {
-            throw new RuntimeException("Deserialization error", ex);
+            throw new SystemException(ErrorCode.DESERIALIZATION_ERROR, "인증 처리 중 오류가 발생했습니다. 다시 시도해 주세요.",
+                    "CookieUtil", "deserialize", ex);
         }
 
     }

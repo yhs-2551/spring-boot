@@ -6,9 +6,12 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.security.oauth2.client.userinfo.DefaultOAuth2UserService;
 import org.springframework.security.oauth2.client.userinfo.OAuth2UserRequest;
-import org.springframework.security.oauth2.core.OAuth2AuthenticationException;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Service;
+
+import com.yhs.blog.springboot.jpa.aop.log.Loggable;
+import com.yhs.blog.springboot.jpa.common.constant.code.ErrorCode; 
+import com.yhs.blog.springboot.jpa.exception.custom.SystemException;
 
 @RequiredArgsConstructor
 @Service
@@ -20,10 +23,16 @@ public class OAuth2UserLoadService extends DefaultOAuth2UserService {
     }
 
     @Override
+    @Loggable
     public OAuth2User loadUser(OAuth2UserRequest request) {
         OAuth2User oAuth2User = callSuperLoadUser(request);
         if (oAuth2User.getAttribute("email") == null) {
-            throw new OAuth2AuthenticationException("사용자를 불러오지 못했습니다.");
+            throw new SystemException(
+                    ErrorCode.OAUTH2_USER_LOAD_FAIL,
+                    "소셜 로그인 처리 중 오류가 발생했습니다. 다시 시도해주세요.",
+                    "OAuth2UserLoadService",
+                    "loadUser");
+            // throw new OAuth2AuthenticationException("사용자를 불러오지 못했습니다.");
         }
         return oAuth2User;
     }

@@ -43,7 +43,7 @@ public class PostEventHandler {
 
             return CompletableFuture.completedFuture(null);
         } catch (Exception e) {
-            throw new ElasticsearchCustomException("Posts 인덱스에 문서 생성 실패" + event.getPost().getId(), "E001", e);
+            throw new ElasticsearchCustomException("Posts 인덱스에 문서 생성 실패" + event.getPost().getId(), "ESS001", e);
 
         }
 
@@ -67,7 +67,7 @@ public class PostEventHandler {
             return CompletableFuture.completedFuture(null);
 
         } catch (Exception e) {
-            throw new ElasticsearchCustomException("Posts 인덱스 문서 수정 실패" + event.getPost().getId(), "E002", e);
+            throw new ElasticsearchCustomException("Posts 인덱스 문서 수정 실패" + event.getPost().getId(), "ESS002", e);
         }
 
     }
@@ -90,7 +90,7 @@ public class PostEventHandler {
             return CompletableFuture.completedFuture(null);
 
         } catch (Exception e) {
-            throw new ElasticsearchCustomException("Posts 인덱스 문서 삭제 실패" + event.getPost().getId(), "E003", e);
+            throw new ElasticsearchCustomException("Posts 인덱스 문서 삭제 실패" + event.getPost().getId(), "ESS003", e);
         }
 
     }

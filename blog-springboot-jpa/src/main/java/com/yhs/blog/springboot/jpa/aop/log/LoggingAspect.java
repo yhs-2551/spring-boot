@@ -1,19 +1,41 @@
 package com.yhs.blog.springboot.jpa.aop.log;
 
+import com.yhs.blog.springboot.jpa.exception.custom.BusinessException;
+import com.yhs.blog.springboot.jpa.exception.custom.SystemException;
 
-import com.yhs.blog.springboot.jpa.domain.post.dto.request.PostRequest;
 import lombok.extern.log4j.Log4j2;
+
+import org.aspectj.lang.ProceedingJoinPoint;
+import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
-import org.aspectj.lang.annotation.Before;
+import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 
 @Aspect
 @Component
 @Log4j2
+@Order(1)
 public class LoggingAspect {
 
-    @Before("execution(* com.yhs.blog.springboot.jpa.domain.post.service.PostService.createPost(..)) && args(postDTO)")
-    public void logBeforeCreatePost(PostRequest postRequest) {
-        log.info("Post Content >>>> " + postRequest.getContent());
+    @Around("@annotation(Loggable)")
+    public Object logExecutionTime(ProceedingJoinPoint joinPoint) throws Throwable {
+
+        // 이렇게 처리하면 @ReateLimitAspect에서 발생시킨 예외의 클래스명, 메서드명이 출력되지 않고 대상 메서드로 출력됨
+        // String className = joinPoint.getTarget().getClass().getSimpleName();
+        // String methodName = joinPoint.getSignature().getName();
+
+        try {
+            return joinPoint.proceed();
+        } catch (BusinessException ex) {
+            log.warn("[{}] Class: {}, Method: {}, Status: {}, Business Error Message: {}, Cause: {}",
+                    ex.getErrorCode().getCode(), ex.getClassName(), ex.getMethodName(), ex.getErrorCode().getStatus(),
+                    ex.getErrorCode().getMessage(), ex.getCause(), ex);
+            throw ex; // 예외를 다시 던져주어 GlobalExceptionHandler에서 처리
+        } catch (SystemException ex) {
+            log.warn("[{}] Class: {}, Method: {}, Status: {}, Business Error Message: {}, Cause: {}",
+                    ex.getErrorCode().getCode(), ex.getClassName(), ex.getMethodName(), ex.getErrorCode().getStatus(),
+                    ex.getErrorCode().getMessage(), ex.getCause(), ex);
+            throw ex;
+        }
     }
 }

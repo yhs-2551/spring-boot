@@ -1,7 +1,7 @@
 package com.yhs.blog.springboot.jpa.aop.ratelimit;
 
-import com.yhs.blog.springboot.jpa.exception.custom.RateLimitExceededException;
-import com.yhs.blog.springboot.jpa.exception.custom.UnauthorizedException;
+import com.yhs.blog.springboot.jpa.common.constant.code.ErrorCode;
+import com.yhs.blog.springboot.jpa.exception.custom.BusinessException;
 
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
@@ -9,6 +9,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
+import org.springframework.core.annotation.Order;
 import org.springframework.data.redis.core.RedisTemplate;
 
 import org.springframework.security.core.AuthenticationException;
@@ -19,12 +20,14 @@ import java.util.concurrent.TimeUnit;
 @Slf4j
 @Aspect
 @Component
+@Order(2)
 @RequiredArgsConstructor
 public class RateLimitAspect {
     private final RedisTemplate<String, String> redisTemplate;
     private final HttpServletRequest request; // IP 기반 키 생성용
 
     @Around("@annotation(RateLimit)")
+
     public Object checkRateLimit(ProceedingJoinPoint joinPoint, RateLimit rateLimit) throws Throwable {
 
         String clientIp = getClientIp();
@@ -45,17 +48,18 @@ public class RateLimitAspect {
                 redisTemplate.expire(rateLimitKey, rateLimit.windowMinutes(), TimeUnit.MINUTES);
             }
 
-            throw new RateLimitExceededException("너무 많은 시도입니다. 1분 후에 다시 시도해주세요.");
+            throw new BusinessException(ErrorCode.RATE_LIMIT_EXCEEDED, "너무 많은 시도입니다. 1분 후 다시 시도해주세요.",
+                    "RateLimitAspect", "checkRateLimit");
 
         }
 
         try {
-            // 2. 대상 메서드 실행
+            // 대상 메서드 실행
             // login 컨트롤러에 적용한 aop 적용시 AuthenticationManager에 의해 인증이 실패하면 아래 catch문이 실행될 수
             // 있도록 try-catch문으로 감싸줌
             Object result = joinPoint.proceed();
 
-            // 3. 실행 후 카운트 증가
+            // 실행 후 카운트 증가
 
             updateRateLimitAttempts(rateLimitKey, attempts, rateLimit.windowMinutes());
 
@@ -67,9 +71,8 @@ public class RateLimitAspect {
             // 증가시켜야함
 
             updateRateLimitAttempts(rateLimitKey, attempts, rateLimit.windowMinutes());
-
-            throw new UnauthorizedException("아이디 또는 비밀번호가 잘못 되었습니다.");
-
+            // 예외를 CustomAuthenticationFailureHandler에서 처리할 수 있도록 던짐
+            throw e;
         }
 
     }

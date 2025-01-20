@@ -2,6 +2,7 @@ package com.yhs.blog.springboot.jpa.domain.user.service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.yhs.blog.springboot.jpa.aop.log.Loggable;
 import com.yhs.blog.springboot.jpa.aop.ratelimit.RateLimit;
 import com.yhs.blog.springboot.jpa.common.constant.code.StatusCode;
 import com.yhs.blog.springboot.jpa.domain.user.dto.request.SignUpUserRequest;
@@ -30,6 +31,7 @@ public class EmailService {
     private static final String VERIFICATION_CODE_PREFIX = "verificationCode:";
     private static final String TEMP_USER_PREFIX = "tempUser:";
 
+    @Loggable
     @RateLimit(key = "IssueCode") // 총 3번의 시도 후 4번째 시도부터 1분 뒤 재요청 해야함
     public RateLimitResponse<SignUpUserRequest> processEmailVerification(SignUpUserRequest signUpUserRequest) {
 
@@ -79,6 +81,8 @@ public class EmailService {
 
     }
 
+ 
+    @Loggable
     @RateLimit(key = "VerifyCode") // 총 3번의 시도 후 4번째 시도부터 1분 뒤 재요청 해야함
     @Transactional // userService.createUser와 redis의 동시 작업을 안전하게 하기 위해 @Transactional 어노테이션 추가, DB
                    // 작업이 있어서 @Transactional 추가

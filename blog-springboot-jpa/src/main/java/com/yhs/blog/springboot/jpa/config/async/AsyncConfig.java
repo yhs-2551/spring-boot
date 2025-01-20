@@ -1,10 +1,8 @@
 package com.yhs.blog.springboot.jpa.config.async;
 
 import org.springframework.aop.interceptor.AsyncUncaughtExceptionHandler;
-import org.springframework.aop.interceptor.SimpleAsyncUncaughtExceptionHandler;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.retry.annotation.EnableRetry;
 import org.springframework.retry.backoff.FixedBackOffPolicy;
 import org.springframework.retry.policy.SimpleRetryPolicy;
 import org.springframework.retry.support.RetryTemplate;
@@ -14,8 +12,6 @@ import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 
 import com.yhs.blog.springboot.jpa.exception.custom.ElasticsearchCustomException;
 import com.yhs.blog.springboot.jpa.exception.custom.S3OperationException;
-
-import co.elastic.clients.elasticsearch._types.ElasticsearchException;
 import lombok.extern.log4j.Log4j2;
 
 import java.util.Arrays;

@@ -1,14 +1,14 @@
 package com.yhs.blog.springboot.jpa.domain.category.service.impl;
 
-import com.yhs.blog.springboot.jpa.domain.token.jwt.claims.ClaimsExtractor;
-import com.yhs.blog.springboot.jpa.domain.token.jwt.provider.TokenProvider;
+import com.yhs.blog.springboot.jpa.domain.token.jwt.claims.ClaimsExtractor; 
+import com.yhs.blog.springboot.jpa.aop.log.Loggable;
+import com.yhs.blog.springboot.jpa.common.constant.code.ErrorCode;
 import com.yhs.blog.springboot.jpa.domain.category.dto.request.CategoryRequest;
 import com.yhs.blog.springboot.jpa.domain.category.dto.request.CategoryRequestPayLoad;
 import com.yhs.blog.springboot.jpa.domain.category.dto.response.CategoryResponse;
 import com.yhs.blog.springboot.jpa.domain.category.entity.Category;
 import com.yhs.blog.springboot.jpa.domain.user.entity.User;
-import com.yhs.blog.springboot.jpa.exception.custom.CategoryDeletionException;
-import com.yhs.blog.springboot.jpa.exception.custom.ResourceNotFoundException;
+import com.yhs.blog.springboot.jpa.exception.custom.BusinessException; 
 import com.yhs.blog.springboot.jpa.domain.category.repository.CategoryRepository;
 import com.yhs.blog.springboot.jpa.domain.category.service.CategoryService;
 import com.yhs.blog.springboot.jpa.domain.user.service.UserService;
@@ -29,7 +29,7 @@ import java.util.stream.Collectors;
 public class CategoryServiceImpl implements CategoryService {
 
     private final CategoryRepository categoryRepository;
-    private final UserService userService; 
+    private final UserService userService;
     private final ClaimsExtractor claimsExtractor;
     private final HttpServletRequest request;
 
@@ -83,6 +83,7 @@ public class CategoryServiceImpl implements CategoryService {
 
     }
 
+    @Loggable
     private void deleteCategory(CategoryRequest categoryRequest) {
 
         log.info("실행>>>>>>>>>>>>>>>>>>>>>");
@@ -94,19 +95,35 @@ public class CategoryServiceImpl implements CategoryService {
             Category category = categoryOptional.get();
 
             if (categoryRequest.getChildren() != null && !categoryRequest.getChildren().isEmpty()) {
+                
+                throw new BusinessException(
+                        ErrorCode.CATEGORY_HAS_CHILDREN,
+                        "카테고리 UUID: " + categoryRequest.getCategoryUuid() + " 자식 카테고리가 존재하여 삭제할 수 없습니다.",
+                        "CategoryServiceImpl",
+                        "deleteCategory");
 
-                throw new CategoryDeletionException("카테고리 UUID: " + categoryRequest.getCategoryUuid()
-                        + " 자식 카테고리가 존재하여 삭제할 수 없습니다.");
             }
+
             if (category.getPosts() != null && !category.getPosts().isEmpty()) {
-                throw new CategoryDeletionException("카테고리 UUID: " + categoryRequest.getCategoryUuid()
-                        + " 게시글이 존재하여 삭제할 수 없습니다.");
+
+                throw new BusinessException(
+                        ErrorCode.CATEGORY_HAS_POSTS,
+                        "카테고리 UUID: " + categoryRequest.getCategoryUuid()
+                                + " 게시글이 존재하여 삭제할 수 없습니다.",
+                        "CategoryServiceImpl",
+                        "deleteCategory");
             }
+
             log.debug("삭제 진행 카테고리 UUID: {}", categoryRequest.getCategoryUuid());
             categoryRepository.delete(category);
 
         } else {
-            throw new ResourceNotFoundException("카테고리 UUID: " + categoryRequest.getCategoryUuid() + "를 찾을 수 없습니다.");
+
+            throw new BusinessException(
+                    ErrorCode.CATEGORY_NOT_FOUND,
+                    "카테고리 UUID: " + categoryRequest.getCategoryUuid() + "를 찾을 수 없습니다.",
+                    "CategoryServiceImpl",
+                    "deleteCategory");
         }
     }
 
@@ -201,12 +218,16 @@ public class CategoryServiceImpl implements CategoryService {
         return categoryRepository.save(category);
     }
 
+    @Loggable
     @Override
     public Category findCategoryByNameAndUserId(String categoryName, Long userId) {
 
         Category category = categoryRepository.findByNameAndUserId(categoryName, userId)
-                .orElseThrow(() -> new ResourceNotFoundException(
-                        categoryName + " 카테고리를 찾을 수 없습니다."));
+                .orElseThrow(() -> new BusinessException(
+                        ErrorCode.CATEGORY_NOT_FOUND,
+                        categoryName + " 카테고리를 찾을 수 없습니다.",
+                        "CategoryServiceImpl",
+                        "findCategoryByNameAndUserId"));
 
         return category;
 

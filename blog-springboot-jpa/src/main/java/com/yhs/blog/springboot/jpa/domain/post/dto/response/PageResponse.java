@@ -1,4 +1,4 @@
-package com.yhs.blog.springboot.jpa.dto.response;
+package com.yhs.blog.springboot.jpa.domain.post.dto.response;
 
 import java.util.List;
 

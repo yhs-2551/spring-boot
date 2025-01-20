@@ -10,9 +10,11 @@ import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.Jwts;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.log4j.Log4j2;
 
 @Component
 @RequiredArgsConstructor
+@Log4j2
 public class ClaimsExtractor {
 
     private final JwtConfig jwtConfig;
@@ -48,6 +50,7 @@ public class ClaimsExtractor {
             return Jwts.parser().verifyWith(jwtConfig.getJwtSecretKey()).build().parseSignedClaims(token)
                     .getPayload();
         } catch (ExpiredJwtException e) {
+            log.debug("만료된 토큰 {}", e);
             return e.getClaims(); // 만료된 토큰에서도 클레임 반환
 
         }

@@ -11,15 +11,16 @@ import org.springframework.util.StringUtils;
 
 import com.querydsl.core.BooleanBuilder;
 
-import com.querydsl.jpa.impl.JPAQueryFactory; 
+import com.querydsl.jpa.impl.JPAQueryFactory;
+import com.yhs.blog.springboot.jpa.aop.log.Loggable;
+import com.yhs.blog.springboot.jpa.common.constant.code.ErrorCode;
 import com.yhs.blog.springboot.jpa.domain.post.dto.response.PostResponse;
 import com.yhs.blog.springboot.jpa.domain.post.entity.Post;
 import com.yhs.blog.springboot.jpa.domain.post.entity.QPost;
 import com.yhs.blog.springboot.jpa.domain.post.repository.search.PostSearchRepository;
 import com.yhs.blog.springboot.jpa.domain.post.repository.search.SearchType;
 import com.yhs.blog.springboot.jpa.domain.post.repository.search.document.PostDocument;
-import com.yhs.blog.springboot.jpa.exception.custom.ElasticsearchCustomException;
-import com.yhs.blog.springboot.jpa.exception.custom.QueryDslCustomException;
+import com.yhs.blog.springboot.jpa.exception.custom.BusinessException; 
  
 
 import co.elastic.clients.elasticsearch._types.ElasticsearchException;
@@ -34,6 +35,7 @@ public class PostRepositoryImpl implements PostRepositoryCustom {
         private final JPAQueryFactory queryFactory;
         private final PostSearchRepository searchRepository; 
 
+        @Loggable
         @Override
         public Page<PostResponse> findPostsAllUser(String keyword, SearchType searchType, Pageable pageable) {
                 if (StringUtils.hasText(keyword)) {
@@ -51,9 +53,9 @@ public class PostRepositoryImpl implements PostRepositoryCustom {
 
                                 return searchResult.map(PostResponse::fromDocument);
                         } catch (ElasticsearchException e) {
-                                throw new ElasticsearchCustomException("검색 처리 중 오류가 발생했습니다.", "ES500", e);
-                        } catch (Exception e) {
-                                throw new ElasticsearchCustomException("검색을 처리할 수 없습니다.", "ES520", e);
+                                throw new BusinessException(ErrorCode.ELASTIC_SEARCH_SPECIFIC_ERROR, "검색 처리 중 오류가 발생 하였습니다.", "PostRepositoryImpl", "findPostsAllUser", e);
+                         } catch (Exception e) {
+                                throw new BusinessException(ErrorCode.ELASTIC_SEARCH_GENERAL_ERROR, "검색 처리 중 오류가 발생 하였습니다.", "PostRepositoryImpl", "findPostsAllUser", e);
                         }
 
                 }
@@ -64,10 +66,11 @@ public class PostRepositoryImpl implements PostRepositoryCustom {
 
                 } catch (Exception e) {
 
-                        throw new QueryDslCustomException("일반 QueryDSL query 오류가 발생했습니다.", "QD500", e);
+                        throw new BusinessException(ErrorCode.QUERY_DSL_ERROR, "검색 처리 중 오류가 발생 하였습니다.", "PostRepositoryImpl", "findPostsAllUser", e);
                 }
         }
 
+        @Loggable
         @Override
         public Page<PostResponse> findPostsByUserId(Long userId, String keyword, SearchType searchType,
                         Pageable pageable) {
@@ -90,9 +93,9 @@ public class PostRepositoryImpl implements PostRepositoryCustom {
 
                                 return searchResult.map(PostResponse::fromDocument);
                         } catch (ElasticsearchException e) {
-                                throw new ElasticsearchCustomException("검색 처리 중 오류가 발생했습니다.", "ES500", e);
+                                throw new BusinessException(ErrorCode.ELASTIC_SEARCH_SPECIFIC_ERROR, "검색 처리 중 오류가 발생 하였습니다.", "PostRepositoryImpl", "findPostsByUserId", e);
                         } catch (Exception e) {
-                                throw new ElasticsearchCustomException("검색을 처리할 수 없습니다.", "ES520", e);
+                                throw new BusinessException(ErrorCode.ELASTIC_SEARCH_GENERAL_ERROR, "검색 처리 중 오류가 발생 하였습니다.", "PostRepositoryImpl", "findPostsByUserId", e);
                         }
 
                 }
@@ -107,11 +110,12 @@ public class PostRepositoryImpl implements PostRepositoryCustom {
 
                 } catch (Exception e) {
 
-                        throw new QueryDslCustomException("일반 QueryDSL query 오류가 발생했습니다.", "QD500", e);
+                        throw new BusinessException(ErrorCode.QUERY_DSL_ERROR, "검색 처리 중 오류가 발생 하였습니다.", "PostRepositoryImpl", "findPostsByUserId", e);
                 }
 
         }
 
+        @Loggable
         @Override
         public Page<PostResponse> findPostsByUserIdAndCategoryId(Long userId, String categoryId, String keyword,
                         SearchType searchType, Pageable pageable) {
@@ -138,9 +142,9 @@ public class PostRepositoryImpl implements PostRepositoryCustom {
                                 return searchResult.map(PostResponse::fromDocument);
 
                         } catch (ElasticsearchException e) {
-                                throw new ElasticsearchCustomException("검색 처리 중 오류가 발생했습니다.", "ES500", e);
+                                throw new BusinessException(ErrorCode.ELASTIC_SEARCH_SPECIFIC_ERROR, "검색 처리 중 오류가 발생 하였습니다.", "PostRepositoryImpl", "findPostsByUserIdAndCategoryId", e);
                         } catch (Exception e) {
-                                throw new ElasticsearchCustomException("검색을 처리할 수 없습니다.", "ES520", e);
+                                throw new BusinessException(ErrorCode.ELASTIC_SEARCH_GENERAL_ERROR, "검색 처리 중 오류가 발생 하였습니다.", "PostRepositoryImpl", "findPostsByUserIdAndCategoryId", e);
                         }
                 }
 
@@ -152,7 +156,7 @@ public class PostRepositoryImpl implements PostRepositoryCustom {
                                         .and(post.category.id.eq(categoryId));
                         return executeQueryDSLQuery(builder, pageable);
                 } catch (Exception e) {
-                        throw new QueryDslCustomException("카테고리 QueryDSL query 오류가 발생했습니다.", "QD500", e);
+                        throw new BusinessException(ErrorCode.QUERY_DSL_ERROR, "검색 처리 중 오류가 발생 하였습니다.", "PostRepositoryImpl", "findPostsByUserIdAndCategoryId", e);
                 }
 
         }

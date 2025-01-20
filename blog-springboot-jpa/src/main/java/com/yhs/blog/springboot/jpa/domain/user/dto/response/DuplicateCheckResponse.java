@@ -8,5 +8,4 @@ import lombok.Getter;
 public class DuplicateCheckResponse {
     private boolean isExist;
     private String message;
-    private boolean isLimited;
 }

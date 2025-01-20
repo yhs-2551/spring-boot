@@ -1,8 +1,5 @@
 package com.yhs.blog.springboot.jpa.domain.category.controller;
 
-import com.yhs.blog.springboot.jpa.domain.user.entity.User;
-import com.yhs.blog.springboot.jpa.domain.user.repository.UserRepository;
-import com.yhs.blog.springboot.jpa.exception.custom.ResourceNotFoundException;
 import com.yhs.blog.springboot.jpa.domain.category.dto.request.CategoryRequestPayLoad;
 import com.yhs.blog.springboot.jpa.domain.category.dto.response.CategoryResponse;
 import com.yhs.blog.springboot.jpa.common.response.ApiResponse;

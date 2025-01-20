@@ -1,6 +1,7 @@
 package com.yhs.blog.springboot.jpa.domain.user.controller;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.yhs.blog.springboot.jpa.aop.log.Loggable;
 import com.yhs.blog.springboot.jpa.aop.ratelimit.RateLimit;
 import com.yhs.blog.springboot.jpa.common.response.ApiResponse;
 import com.yhs.blog.springboot.jpa.common.response.ErrorResponse;
@@ -85,6 +86,7 @@ public class UserController extends SimpleUrlAuthenticationSuccessHandler {
                                 .body(new ErrorResponse(result.getMessage(), result.getStatusCode()));
         }
 
+        @Loggable
         @RateLimit(key = "Login")
         @PostMapping("/api/users/login")
         @Transactional // saveRefreshToken DB작업 있어서 트랜잭션 추가해야함
@@ -254,13 +256,6 @@ public class UserController extends SimpleUrlAuthenticationSuccessHandler {
         }
 
         private ResponseEntity<ApiResponse> checkDuplicate(DuplicateCheckResponse response) {
-
-                // 3회 초과 요청이 오면 429 Too Many Requests 응답
-                if (response.isLimited()) {
-                        return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS) // 429
-                                        .body(new ErrorResponse(response.getMessage(),
-                                                        HttpStatus.TOO_MANY_REQUESTS.value()));
-                }
 
                 if (response.isExist()) {
                         // 이미 존재하는 경우

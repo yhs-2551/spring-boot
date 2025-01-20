@@ -1,11 +1,14 @@
 package com.yhs.blog.springboot.jpa.domain.file.service.infrastructure.s3.impl;
 
+import com.yhs.blog.springboot.jpa.aop.log.Loggable;
+import com.yhs.blog.springboot.jpa.common.constant.code.ErrorCode;
 import com.yhs.blog.springboot.jpa.domain.file.dto.request.FileRequest;
 import com.yhs.blog.springboot.jpa.domain.file.service.infrastructure.s3.S3Service;
 import com.yhs.blog.springboot.jpa.domain.post.dto.request.PostRequest;
 import com.yhs.blog.springboot.jpa.domain.post.dto.request.PostUpdateRequest;
 import com.yhs.blog.springboot.jpa.exception.custom.S3OperationException;
 
+import com.yhs.blog.springboot.jpa.exception.custom.SystemException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Value;
@@ -39,6 +42,7 @@ public class S3ServiceImpl implements S3Service {
     private String bucketName;
 
     @Override
+    @Loggable
     public String tempUploadFile(MultipartFile file, String folder, String blogId) throws IOException {
 
         // 대표 이미지 구분하기 위함
@@ -60,7 +64,11 @@ public class S3ServiceImpl implements S3Service {
             s3Client.putObject(putObjectRequest, RequestBody.fromInputStream(file.getInputStream(), file.getSize()));
             return s3Client.utilities().getUrl(builder -> builder.bucket(bucketName).key(fileName)).toExternalForm();
         } catch (S3Exception e) {
-            throw new IOException("tempUploadFile: AWS S3에 파일 업로드에 실패하였습니다.", e);
+            throw new SystemException(
+                    ErrorCode.S3_UPLOAD_ERROR,
+                    "파일 업로드에 실패하였습니다.",
+                    "S3ServiceImpl",
+                    "tempUploadFile", e);
         }
 
     }
@@ -93,18 +101,15 @@ public class S3ServiceImpl implements S3Service {
 
         String fileName = folder + UUID.randomUUID() + "-" + file.getOriginalFilename();
 
-        try {
-            PutObjectRequest putObjectRequest = PutObjectRequest.builder()
-                    .bucket(bucketName)
-                    .key(fileName)
-                    .contentType(file.getContentType())
-                    .build();
+        PutObjectRequest putObjectRequest = PutObjectRequest.builder()
+                .bucket(bucketName)
+                .key(fileName)
+                .contentType(file.getContentType())
+                .build();
 
-            s3Client.putObject(putObjectRequest, RequestBody.fromInputStream(file.getInputStream(), file.getSize()));
-            return s3Client.utilities().getUrl(builder -> builder.bucket(bucketName).key(fileName)).toExternalForm();
-        } catch (S3Exception e) {
-            throw new IOException("uploadProfileImage: AWS S3에 파일 업로드에 실패하였습니다.", e);
-        }
+        s3Client.putObject(putObjectRequest, RequestBody.fromInputStream(file.getInputStream(), file.getSize()));
+        return s3Client.utilities().getUrl(builder -> builder.bucket(bucketName).key(fileName)).toExternalForm();
+
     }
 
     // 실패 원인이 일시적이지 않기 때문에 재시도 불필요 하다고 판단
@@ -113,8 +118,6 @@ public class S3ServiceImpl implements S3Service {
     public CompletableFuture<Void> processCreatePostS3TempOperation(PostRequest postRequest, String blogId) {
 
         try {
-            log.info("sAWS TEMP- Thread: {}", Thread.currentThread().getName());
-
             // String userFolder = getUserFolder();
 
             // AWS S3 final 폴더에 최종 업로드 및 temp 폴더에 저장되어 있는 불필요한 이미지 및 파일 삭제 처리 로직
@@ -133,6 +136,8 @@ public class S3ServiceImpl implements S3Service {
 
             return CompletableFuture.completedFuture(null);
         } catch (Exception ex) {
+            log.error("processCreatePostS3TempOperation 에러 발생", ex);
+             // 언체크드 예외로 변경했기 때문에 throws를 던지지 안아도 됨. 비동기 설정에서 예외 처리 
             throw new S3OperationException("processCreatePostS3TempOperation 에러 발생", ex);
 
         }
@@ -172,6 +177,7 @@ public class S3ServiceImpl implements S3Service {
             return CompletableFuture.completedFuture(null);
 
         } catch (Exception ex) {
+            log.error("processUpdatePostS3TempOperation 에러 발생", ex);
             throw new S3OperationException("processUpdatePostS3TempOperation 에러 발생", ex);
 
         }

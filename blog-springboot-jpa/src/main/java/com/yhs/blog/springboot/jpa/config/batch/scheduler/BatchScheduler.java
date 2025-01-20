@@ -24,17 +24,17 @@ public class BatchScheduler {
     private final JobLauncher jobLauncher;
     private final Job cleanupTempFilesJob;
 
-    @Scheduled(cron = "0 0 3 * * ?") // 매일 새벽 3시, 초(0) 분(0) 시(1) 일(*) 월(*) 요일(?)
-    public void runCleanupJob() {
-        executeJob();
-    }
+    // @Scheduled(cron = "0 0 3 * * ?") // 매일 새벽 3시, 초(0) 분(0) 시(1) 일(*) 월(*) 요일(?)
+    // public void runCleanupJob() {
+    //     executeJob();
+    // }
 
-    @PostConstruct
-    public void initializeCleanup() {
-        log.debug("앱 시작 시 최초 1회 배치 작업 실행");
-        executeJob();
+    // @PostConstruct
+    // public void initializeCleanup() {
+    //     log.debug("앱 시작 시 최초 1회 배치 작업 실행");
+    //     executeJob();
 
-    }
+    // }
 
     // 테스트용 수동 실행
     @PostMapping("/api/admin/batch/cleanup")

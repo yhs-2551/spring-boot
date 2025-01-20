@@ -10,6 +10,8 @@ import com.yhs.blog.springboot.jpa.domain.post.dto.request.PostRequest;
 import com.yhs.blog.springboot.jpa.domain.post.dto.request.PostUpdateRequest;
 import com.yhs.blog.springboot.jpa.domain.post.dto.response.PostResponse;
 import com.yhs.blog.springboot.jpa.domain.post.dto.response.PostUpdateResponse;
+import com.yhs.blog.springboot.jpa.aop.log.Loggable;
+import com.yhs.blog.springboot.jpa.common.constant.code.ErrorCode;
 import com.yhs.blog.springboot.jpa.domain.category.entity.Category;
 import com.yhs.blog.springboot.jpa.domain.post.entity.FeaturedImage;
 import com.yhs.blog.springboot.jpa.domain.file.entity.File;
@@ -21,7 +23,7 @@ import com.yhs.blog.springboot.jpa.domain.post.entity.enums.PostStatus;
 import com.yhs.blog.springboot.jpa.domain.post.event.elasticsearch.PostCreatedEvent;
 import com.yhs.blog.springboot.jpa.domain.post.event.elasticsearch.PostDeletedEvent;
 import com.yhs.blog.springboot.jpa.domain.post.event.elasticsearch.PostUpdatedEvent;
-import com.yhs.blog.springboot.jpa.domain.user.entity.User; 
+import com.yhs.blog.springboot.jpa.domain.user.entity.User;
 import com.yhs.blog.springboot.jpa.domain.category.service.CategoryService;
 import com.yhs.blog.springboot.jpa.domain.post.repository.FeaturedImageRepository;
 import com.yhs.blog.springboot.jpa.domain.post.repository.PostRepository;
@@ -30,7 +32,8 @@ import com.yhs.blog.springboot.jpa.domain.post.repository.TagRepository;
 import com.yhs.blog.springboot.jpa.domain.post.repository.search.SearchType;
 import com.yhs.blog.springboot.jpa.domain.post.service.PostService;
 import com.yhs.blog.springboot.jpa.domain.user.service.UserService;
-import com.yhs.blog.springboot.jpa.exception.custom.ResourceNotFoundException;
+import com.yhs.blog.springboot.jpa.exception.custom.BusinessException;
+import com.yhs.blog.springboot.jpa.exception.custom.SystemException;
 import com.yhs.blog.springboot.jpa.domain.post.mapper.PostMapper;
 import com.yhs.blog.springboot.jpa.domain.token.jwt.util.TokenUtil;
 import jakarta.servlet.http.HttpServletRequest;
@@ -55,7 +58,7 @@ public class PostServiceImpl implements PostService {
 
     private final UserService userService;
     private final CategoryService categoryService;
-    private final PostRepository postRepository; 
+    private final PostRepository postRepository;
     private final ClaimsExtractor claimsExtractor;
     private final FeaturedImageRepository featuredImageRepository;
     private final TagRepository tagRepository;
@@ -95,20 +98,30 @@ public class PostServiceImpl implements PostService {
         return postRepository.findPostsAllUser(keyword, searchType, pageable);
     }
 
+    @Loggable
     @Override
     @Transactional(readOnly = true)
     public PostResponse getPostByPostId(Long postId) {
         Post post = postRepository.findById(postId)
-                .orElseThrow(() -> new ResourceNotFoundException(postId + "번 게시글을 찾을 수 없습니다."));
+                .orElseThrow(() -> new BusinessException(
+                        ErrorCode.POST_NOT_FOUND,
+                        postId + "번 게시글을 찾을 수 없습니다.",
+                        "PostServiceImpl",
+                        "getPostByPostId"));
 
         return PostResponse.from(post);
     }
 
+    @Loggable
     @Transactional
     @Override
     public void deletePostByPostId(Long postId) {
+ 
+
         Post post = postRepository.findById(postId)
-                .orElseThrow(() -> new ResourceNotFoundException(postId + "번 게시글을 찾을 수 없습니다."));
+                .orElseThrow(() -> new BusinessException(ErrorCode.POST_NOT_FOUND, postId + "번 게시글을 찾을 수 없습니다.",
+                        "PostServiceImpl", "deletePostByPostId"));
+
         Long userId = post.getUser().getId();
 
         // 삭제될 포스트의 태그 정보 미리 저장
@@ -140,6 +153,7 @@ public class PostServiceImpl implements PostService {
         // 따라서 최종적으로 위쪽 방식으로 사용한다.
     }
 
+    @Loggable
     @Transactional
     @Override
     public PostResponse createNewPost(PostRequest postRequest, HttpServletRequest request) {
@@ -186,10 +200,12 @@ public class PostServiceImpl implements PostService {
             return PostResponse.from(post);
 
         } catch (DataAccessException ex) {
-            throw new RuntimeException("A server error occurred while creating the post.", ex);
+            throw new SystemException(ErrorCode.POST_CREATE_ERROR, "게시글 생성 중 서버 에러가 발생했습니다.",
+                    "PostServiceImpl", "createNewPost", ex);
         }
     }
 
+    @Loggable
     @Transactional
     @Override
     public PostUpdateResponse updatePostByPostId(Long postId, String blogId,
@@ -200,7 +216,8 @@ public class PostServiceImpl implements PostService {
         User user = userService.findUserById(userId);
 
         Post post = postRepository.findById(postId)
-                .orElseThrow(() -> new RuntimeException("Post not found with id " + postId));
+                .orElseThrow(() -> new BusinessException(ErrorCode.POST_NOT_FOUND, postId + "번 게시글을 찾을 수 없습니다.",
+                        "PostServiceImpl", "updatePostByPostId"));
 
         Category category;
         if (postUpdateRequest.getCategoryName() != null) {
