@@ -50,6 +50,7 @@ public class UserServiceImpl implements UserService {
     private final TokenProvider tokenProvider;
 
     private static final long PROFILE_CACHE_HOURS = 24L; // 프론트는 12시간, redis 캐시를 활용해 DB 부하를 감소하기 위해 2배인 24시간으로 설정
+    private static final long DUPLICATE_CHECK_CACHE_HOURS = 6L; // 중복확인의 경우 메모리 낭비가 될 수 있기 때문에 6시간으로 설정
 
     // private static final long CACHE_TTL = 24 * 60 * 60; // 1일
 
@@ -201,17 +202,8 @@ public class UserServiceImpl implements UserService {
     @Loggable
     @Transactional(readOnly = true)
     @Override
-    public UserPrivateProfileResponse findUserByTokenAndByBlogId(String blogId) {
+    public UserPrivateProfileResponse findUserByTokenAndByBlogId(String blogId) { // email 민감한 정보는 개인정보 보호를 위해 캐시 삭제 
 
-        String cacheKey = "userPrivateProfile:" + blogId;
-
-        // Try to get user from cache first
-        UserPrivateProfileResponse cachedUser = userPrivateProfileRedisTemplate.opsForValue().get(cacheKey);
-        if (cachedUser != null) {
-            return cachedUser;
-        }
-
-        // If not in cache, get from database
         Optional<User> optionalUser = userRepository.findByBlogId(blogId);
         if (optionalUser.isEmpty()) {
             throw new BusinessException(
@@ -226,9 +218,6 @@ public class UserServiceImpl implements UserService {
         UserPrivateProfileResponse userPrivateProfileResponseDTO = new UserPrivateProfileResponse(findUser.getEmail(),
                 findUser.getBlogId(), findUser.getBlogName(),
                 findUser.getUsername(), findUser.getProfileImageUrl());
-
-        userPrivateProfileRedisTemplate.opsForValue().set(cacheKey, userPrivateProfileResponseDTO, PROFILE_CACHE_HOURS,
-                TimeUnit.HOURS);
 
         return userPrivateProfileResponseDTO;
     }
@@ -350,7 +339,7 @@ public class UserServiceImpl implements UserService {
         if (isExists) {
             // DB 조회 성공
             // 캐시에 저장. 일단 무한대. 사용자 계정 변경 및 계정 탈퇴 시 무효화 필요요
-            redisTemplateBoolean.opsForValue().set(cacheKey, true, PROFILE_CACHE_HOURS, TimeUnit.HOURS);
+            redisTemplateBoolean.opsForValue().set(cacheKey, true, DUPLICATE_CHECK_CACHE_HOURS, TimeUnit.HOURS);
             return new DuplicateCheckResponse(true, existMessage);
         }
 

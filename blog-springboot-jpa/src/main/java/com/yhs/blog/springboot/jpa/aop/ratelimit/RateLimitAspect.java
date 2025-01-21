@@ -1,7 +1,7 @@
 package com.yhs.blog.springboot.jpa.aop.ratelimit;
 
 import com.yhs.blog.springboot.jpa.common.constant.code.ErrorCode;
-import com.yhs.blog.springboot.jpa.exception.custom.BusinessException;
+import com.yhs.blog.springboot.jpa.exception.custom.BusinessException; 
 
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
@@ -29,6 +29,7 @@ public class RateLimitAspect {
     @Around("@annotation(RateLimit)")
 
     public Object checkRateLimit(ProceedingJoinPoint joinPoint, RateLimit rateLimit) throws Throwable {
+ 
 
         String clientIp = getClientIp();
         String rateLimitKey = "rateLimit" + rateLimit.key() + ":" + clientIp; // rateLimitVerifyCode:127.0.0.1
@@ -48,31 +49,32 @@ public class RateLimitAspect {
                 redisTemplate.expire(rateLimitKey, rateLimit.windowMinutes(), TimeUnit.MINUTES);
             }
 
-            throw new BusinessException(ErrorCode.RATE_LIMIT_EXCEEDED, "너무 많은 시도입니다. 1분 후 다시 시도해주세요.",
-                    "RateLimitAspect", "checkRateLimit");
+            throw new BusinessException(ErrorCode.RATE_LIMIT_EXCEEDED, "너무 많은 시도입니다. 1분 후 다시 시도해주세요.", "RateLimitAspect", "checkRateLimit");
 
         }
 
         try {
-            // 대상 메서드 실행
+            // 2. 대상 메서드 실행
             // login 컨트롤러에 적용한 aop 적용시 AuthenticationManager에 의해 인증이 실패하면 아래 catch문이 실행될 수
             // 있도록 try-catch문으로 감싸줌
             Object result = joinPoint.proceed();
 
-            // 실행 후 카운트 증가
+            // 3. 실행 후 카운트 증가
 
             updateRateLimitAttempts(rateLimitKey, attempts, rateLimit.windowMinutes());
 
             return result;
 
-        } catch (AuthenticationException e) { // 로그인의 경우 컨트롤러에서 AOP를 적용했는데, 인증이 실패하면 AuthenticationException 발생
+        } 
+        catch (AuthenticationException e) { // 로그인의 경우 컨트롤러에서 AOP를 적용했는데, 인증이 실패하면 AuthenticationException 발생
             // AuthenticationException이 발생하면 @Around의 joinPoint.proceed() 이후의 로직을 실행하지 않기
             // 때문에 여기서 catch로 바로 잡아줘서 횟수를
             // 증가시켜야함
 
             updateRateLimitAttempts(rateLimitKey, attempts, rateLimit.windowMinutes());
-            // 예외를 CustomAuthenticationFailureHandler에서 처리할 수 있도록 던짐
-            throw e;
+            // 로그인 실패 예외 처리 
+            throw new BusinessException(ErrorCode.AUTHENTICATION_FAILED, "아이디 및 패스워드가 틀렸습니다.", "RateLimitAspect", "checkRateLimit");
+
         }
 
     }

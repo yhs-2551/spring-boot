@@ -2,6 +2,9 @@ package com.yhs.blog.springboot.jpa.common.constant.code;
 
 public enum ErrorCode {
     // ================== 비즈니스 예외 (4xx)
+
+      
+
     // 포스트 관련
     POST_NOT_FOUND(404, "BP001", "게시글을 찾을 수 없음"),
 
@@ -13,9 +16,10 @@ public enum ErrorCode {
     // 사용자 관련
     USER_NOT_FOUND(404, "BU001", "사용자를 찾을 수 없음"),
 
-    // 토큰 관련
-    ACCESS_TOKEN_EMPTY(401, "BA001", "토큰 헤더가 비어있거나 Bearer 로 시작하지 않음"),
-    REFRESH_TOKEN_EXPIRED(401, "BA002", "리프레시 토큰 만료"),
+    // 인증 및 토큰 관련
+    AUTHENTICATION_FAILED(401, "BA001", "로그인 인증 실패"),
+    ACCESS_TOKEN_EMPTY(401, "BA002", "토큰 헤더가 비어있거나 Bearer 로 시작하지 않음"),
+    REFRESH_TOKEN_EXPIRED(401, "BA003", "리프레시 토큰 만료"),
 
     // 횟수 제한 초과
     RATE_LIMIT_EXCEEDED(429, "BR001", "1분 3회 초과 요청"),

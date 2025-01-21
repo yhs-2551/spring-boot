@@ -8,8 +8,7 @@ import com.yhs.blog.springboot.jpa.domain.token.jwt.filter.TokenAuthenticationFi
 import com.yhs.blog.springboot.jpa.domain.token.jwt.provider.AuthenticationProvider;
 import com.yhs.blog.springboot.jpa.domain.token.jwt.provider.TokenProvider;
 import com.yhs.blog.springboot.jpa.domain.token.jwt.validation.TokenValidator;
-import com.yhs.blog.springboot.jpa.domain.user.service.UserService;
-import com.yhs.blog.springboot.jpa.security.handler.CustomAuthenticationFailureHandler;
+import com.yhs.blog.springboot.jpa.domain.user.service.UserService; 
 import com.yhs.blog.springboot.jpa.security.service.CustomUserDetailsService;
 import com.yhs.blog.springboot.jpa.web.cookie.TokenCookieManager;
 
@@ -126,11 +125,7 @@ public class SecurityConfig {
                 return new OAuth2SuccessHandler(tokenProvider, TokenCookieManager,
                                 oAuth2AuthorizationRequestBasedOnCookieRepository(), userService, redisTemplate);
         }
-
-        @Bean
-        public CustomAuthenticationFailureHandler failureHandler() {
-                return new CustomAuthenticationFailureHandler();
-        }
+ 
 
         @Bean
         public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
@@ -142,9 +137,6 @@ public class SecurityConfig {
                                 .sessionManagement((session) -> session
                                                 .sessionCreationPolicy(SessionCreationPolicy.STATELESS)) // 세션 사용하지 않음
                                 .httpBasic(httpBasic -> httpBasic.disable()) // jwt방식에서 http basic 방식 비활성화. 기본적으로 켜져 있음
-                                // 로그인 실패 핸들러. CustomAuthenticationFailureHandler 작동 시키기 위해 필요함
-                                .formLogin(formLogin -> formLogin.loginProcessingUrl("/api/users/login")
-                                                .failureHandler(failureHandler())) 
                                 .addFilterBefore(tokenAuthenticationFilter(),
                                                 UsernamePasswordAuthenticationFilter.class)
                                 // /resource/**

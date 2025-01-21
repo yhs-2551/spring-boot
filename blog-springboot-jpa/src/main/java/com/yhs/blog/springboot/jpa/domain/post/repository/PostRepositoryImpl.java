@@ -20,8 +20,7 @@ import com.yhs.blog.springboot.jpa.domain.post.entity.QPost;
 import com.yhs.blog.springboot.jpa.domain.post.repository.search.PostSearchRepository;
 import com.yhs.blog.springboot.jpa.domain.post.repository.search.SearchType;
 import com.yhs.blog.springboot.jpa.domain.post.repository.search.document.PostDocument;
-import com.yhs.blog.springboot.jpa.exception.custom.BusinessException; 
- 
+import com.yhs.blog.springboot.jpa.exception.custom.SystemException;
 
 import co.elastic.clients.elasticsearch._types.ElasticsearchException;
 import lombok.RequiredArgsConstructor;
@@ -53,9 +52,9 @@ public class PostRepositoryImpl implements PostRepositoryCustom {
 
                                 return searchResult.map(PostResponse::fromDocument);
                         } catch (ElasticsearchException e) {
-                                throw new BusinessException(ErrorCode.ELASTIC_SEARCH_SPECIFIC_ERROR, "검색 처리 중 오류가 발생 하였습니다.", "PostRepositoryImpl", "findPostsAllUser", e);
+                                throw new SystemException(ErrorCode.ELASTIC_SEARCH_SPECIFIC_ERROR, "검색 처리 중 오류가 발생 하였습니다.", "PostRepositoryImpl", "findPostsAllUser", e);
                          } catch (Exception e) {
-                                throw new BusinessException(ErrorCode.ELASTIC_SEARCH_GENERAL_ERROR, "검색 처리 중 오류가 발생 하였습니다.", "PostRepositoryImpl", "findPostsAllUser", e);
+                                throw new SystemException(ErrorCode.ELASTIC_SEARCH_GENERAL_ERROR, "검색 처리 중 오류가 발생 하였습니다.", "PostRepositoryImpl", "findPostsAllUser", e);
                         }
 
                 }
@@ -66,7 +65,7 @@ public class PostRepositoryImpl implements PostRepositoryCustom {
 
                 } catch (Exception e) {
 
-                        throw new BusinessException(ErrorCode.QUERY_DSL_ERROR, "검색 처리 중 오류가 발생 하였습니다.", "PostRepositoryImpl", "findPostsAllUser", e);
+                        throw new SystemException(ErrorCode.QUERY_DSL_ERROR, "검색 처리 중 오류가 발생 하였습니다.", "PostRepositoryImpl", "findPostsAllUser", e);
                 }
         }
 
@@ -93,9 +92,9 @@ public class PostRepositoryImpl implements PostRepositoryCustom {
 
                                 return searchResult.map(PostResponse::fromDocument);
                         } catch (ElasticsearchException e) {
-                                throw new BusinessException(ErrorCode.ELASTIC_SEARCH_SPECIFIC_ERROR, "검색 처리 중 오류가 발생 하였습니다.", "PostRepositoryImpl", "findPostsByUserId", e);
+                                throw new SystemException(ErrorCode.ELASTIC_SEARCH_SPECIFIC_ERROR, "검색 처리 중 오류가 발생 하였습니다.", "PostRepositoryImpl", "findPostsByUserId", e);
                         } catch (Exception e) {
-                                throw new BusinessException(ErrorCode.ELASTIC_SEARCH_GENERAL_ERROR, "검색 처리 중 오류가 발생 하였습니다.", "PostRepositoryImpl", "findPostsByUserId", e);
+                                throw new SystemException(ErrorCode.ELASTIC_SEARCH_GENERAL_ERROR, "검색 처리 중 오류가 발생 하였습니다.", "PostRepositoryImpl", "findPostsByUserId", e);
                         }
 
                 }
@@ -110,7 +109,7 @@ public class PostRepositoryImpl implements PostRepositoryCustom {
 
                 } catch (Exception e) {
 
-                        throw new BusinessException(ErrorCode.QUERY_DSL_ERROR, "검색 처리 중 오류가 발생 하였습니다.", "PostRepositoryImpl", "findPostsByUserId", e);
+                        throw new SystemException(ErrorCode.QUERY_DSL_ERROR, "검색 처리 중 오류가 발생 하였습니다.", "PostRepositoryImpl", "findPostsByUserId", e);
                 }
 
         }
@@ -142,9 +141,9 @@ public class PostRepositoryImpl implements PostRepositoryCustom {
                                 return searchResult.map(PostResponse::fromDocument);
 
                         } catch (ElasticsearchException e) {
-                                throw new BusinessException(ErrorCode.ELASTIC_SEARCH_SPECIFIC_ERROR, "검색 처리 중 오류가 발생 하였습니다.", "PostRepositoryImpl", "findPostsByUserIdAndCategoryId", e);
+                                throw new SystemException(ErrorCode.ELASTIC_SEARCH_SPECIFIC_ERROR, "검색 처리 중 오류가 발생 하였습니다.", "PostRepositoryImpl", "findPostsByUserIdAndCategoryId", e);
                         } catch (Exception e) {
-                                throw new BusinessException(ErrorCode.ELASTIC_SEARCH_GENERAL_ERROR, "검색 처리 중 오류가 발생 하였습니다.", "PostRepositoryImpl", "findPostsByUserIdAndCategoryId", e);
+                                throw new SystemException(ErrorCode.ELASTIC_SEARCH_GENERAL_ERROR, "검색 처리 중 오류가 발생 하였습니다.", "PostRepositoryImpl", "findPostsByUserIdAndCategoryId", e);
                         }
                 }
 
@@ -156,7 +155,7 @@ public class PostRepositoryImpl implements PostRepositoryCustom {
                                         .and(post.category.id.eq(categoryId));
                         return executeQueryDSLQuery(builder, pageable);
                 } catch (Exception e) {
-                        throw new BusinessException(ErrorCode.QUERY_DSL_ERROR, "검색 처리 중 오류가 발생 하였습니다.", "PostRepositoryImpl", "findPostsByUserIdAndCategoryId", e);
+                        throw new SystemException(ErrorCode.QUERY_DSL_ERROR, "검색 처리 중 오류가 발생 하였습니다.", "PostRepositoryImpl", "findPostsByUserIdAndCategoryId", e);
                 }
 
         }
