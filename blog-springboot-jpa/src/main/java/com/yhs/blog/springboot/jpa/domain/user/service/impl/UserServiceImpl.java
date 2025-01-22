@@ -16,9 +16,6 @@ import com.yhs.blog.springboot.jpa.domain.user.repository.UserRepository;
 import com.yhs.blog.springboot.jpa.domain.user.service.UserService;
 import com.yhs.blog.springboot.jpa.exception.custom.BusinessException;
 import com.yhs.blog.springboot.jpa.exception.custom.SystemException;
-
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import software.amazon.awssdk.services.s3.model.S3Exception;
@@ -44,7 +41,7 @@ public class UserServiceImpl implements UserService {
     private final UserRepository userRepository;
     private final RedisTemplate<String, Boolean> redisTemplateBoolean;
     private final RedisTemplate<String, String> redisTemplateString;
- 
+
     private final RedisTemplate<String, UserPublicProfileResponse> userPublicProfileRedisTemplate;
     private final RedisTemplate<String, UserPrivateProfileResponse> userPrivateProfileRedisTemplate;
     private final S3Service s3Service;
@@ -52,13 +49,13 @@ public class UserServiceImpl implements UserService {
 
     private static final long PROFILE_CACHE_HOURS = 24L; // 프론트는 12시간, redis 캐시를 활용해 DB 부하를 감소하기 위해 2배인 24시간으로 설정
     private static final long DUPLICATE_CHECK_CACHE_HOURS = 6L; // 중복확인의 경우 메모리 낭비가 될 수 있기 때문에 6시간으로 설정
- 
+
     // private static final long CACHE_TTL = 24 * 60 * 60; // 1일
 
     @Override
     @Transactional
     @Loggable
-    public SignUpUserResponse createUser(SignUpUserRequest signUpUserRequest) {
+    public void createUser(SignUpUserRequest signUpUserRequest) {
 
         try {
             BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
@@ -70,9 +67,7 @@ public class UserServiceImpl implements UserService {
                     // .role(User.UserRole.ADMIN) 일단 기본값인 user로 사용
                     .build();
 
-            User responseUser = userRepository.save(user);
-            return new SignUpUserResponse(responseUser.getId(), responseUser.getBlogId(), responseUser.getUsername(),
-                    responseUser.getEmail());
+            userRepository.save(user);
 
         } catch (Exception ex) {
             throw new SystemException(
@@ -95,7 +90,7 @@ public class UserServiceImpl implements UserService {
                 .email(email)
                 .build();
 
-        User responseUser = userRepository.save(user); // 영속성 컨텍스트에 등록됨에 따라 user의 pk인 id값이 결정됨
+        userRepository.save(user); // 영속성 컨텍스트에 등록됨에 따라 user의 pk인 id값이 결정됨
 
         String rememberMe = redisTemplateString.opsForValue().get("RM:" + email);
         boolean isRememberMe = Boolean.parseBoolean(rememberMe);
@@ -108,11 +103,7 @@ public class UserServiceImpl implements UserService {
 
         String accessToken = oAuth2NewUserGenerateAccessToken(user);
 
-        SignUpUserResponse userInfo = new SignUpUserResponse(responseUser.getId(), responseUser.getBlogId(),
-                responseUser.getUsername(),
-                responseUser.getEmail());
-
-        OAuth2SignUpResponse oAuth2SignUpResponse = new OAuth2SignUpResponse(userInfo, refreshToken, accessToken,
+        OAuth2SignUpResponse oAuth2SignUpResponse = new OAuth2SignUpResponse(refreshToken, accessToken,
                 isRememberMe);
 
         return new RateLimitResponse<OAuth2SignUpResponse>(true, oAuth2SignUpResponse);
@@ -162,7 +153,8 @@ public class UserServiceImpl implements UserService {
         return userRepository.findByEmail(email);
     }
 
-    // 글생성시 필요, redis를 사용할까 했지만 redis에 json 변환시 여러 문제, redis에 저장되면 영속성 detached 상태로 변경되는 문제 등 때문에 사용x
+    // 글생성시 필요, redis를 사용할까 했지만 redis에 json 변환시 여러 문제, redis에 저장되면 영속성 detached 상태로
+    // 변경되는 문제 등 때문에 사용x
     @Override
     @Transactional(readOnly = true)
     public User findUserByBlogId(String blogId) {
@@ -268,7 +260,8 @@ public class UserServiceImpl implements UserService {
                         "https://iceamericano-blog-storage.s3.ap-northeast-2.amazonaws.com/default/default-avatar-profile.webp");
             }
 
-            userRepository.save(user);
+            // 더티체킹으로 인한 업데이트. 따라서 save 메서드 불필요
+            // userRepository.save(user);
 
             TransactionSynchronizationManager.registerSynchronization(
                     new TransactionSynchronization() {

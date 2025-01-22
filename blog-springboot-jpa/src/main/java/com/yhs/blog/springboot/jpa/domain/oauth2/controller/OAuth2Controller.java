@@ -31,6 +31,7 @@ public class OAuth2Controller {
         private final OAuth2SignUpService oAuth2SignUpService;
         private final TokenCookieManager TokenCookieManager;
 
+        // 불필요한 응답DTO 삭제 후 성능 향상
         @PostMapping("/oauth2/users")
         public ResponseEntity<ApiResponse> oAuth2UserSignup(
                         @Valid @RequestBody AdditionalInfoRequest request,
@@ -72,7 +73,6 @@ public class OAuth2Controller {
                 return ResponseEntity.status(HttpStatus.CREATED)
                                 .headers(headers)
                                 .body(new SuccessResponse<>(
-                                        oAuth2SignUpResponse.userInfo(),
                                                 "OAuth2 신규 사용자 등록에 성공하였습니다."));
         }
 

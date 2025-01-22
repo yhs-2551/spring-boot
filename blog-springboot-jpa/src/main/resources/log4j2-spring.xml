@@ -5,27 +5,13 @@
         <!-- 공통 패턴 정의 -->
         <Property name="LOG_PATTERN">%d{yyyy-MM-dd HH:mm:ss.SSS} [%t] %-5level %logger{36} - %msg%n</Property>
     </Properties>
+
     <Appenders>
-        <!-- ConsoleAppender: 로그를 콘솔에 출력 -->
-        <!-- Encoder 파일 인코딩 추가. vscode에서 git bash를 기본값으로 사용하면 콘솔에서 한글이 깨져서
-            추가해봤지만 결론은 소용 없음. command prompt 사용해야함 -->
-        <!-- <Console name="Console" target="SYSTEM_OUT">
-            <PatternLayout pattern="%d{yyyy-MM-dd HH:mm:ss.SSS} [%t] %-5level %logger{36} - %msg%n" />
-            <Encoder charset="UTF-8" />  
-        </Console> -->
-
-        <!-- append="false"를 통해 앱 재시작마다 로그 파일 내용 덮어쓰기  -->
-        <!-- 파일 인코딩 추가 필수. 안하면 로그파일에서 글자 깨짐-->
-        <!-- <File name="FileAppender" fileName="logs/application.log" append="false">
-            <PatternLayout pattern="%d{yyyy-MM-dd HH:mm:ss.SSS} [%t] %-5level %logger{36} - %msg%n" />
-            <Encoder charset="UTF-8" />
-        </File> -->
-
         <!-- 콘솔 출력 설정 -->
         <Console name="Console" target="SYSTEM_OUT">
             <PatternLayout pattern="${LOG_PATTERN}" charset="UTF-8" />
         </Console>
-        
+
         <RollingFile name="RollingFile"
             fileName="logs/application.log"
             filePattern="logs/backup-application-%d{yyyy-MM-dd}-%i.log">

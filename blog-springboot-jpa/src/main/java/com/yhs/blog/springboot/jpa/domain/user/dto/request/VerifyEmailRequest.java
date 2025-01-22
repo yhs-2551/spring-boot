@@ -12,13 +12,13 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class VerifyEmailRequest {
-    @Pattern(
-            regexp = "\\S+@\\S+\\.\\S+", // 자바에서 공백은 \s인데 공백을 올바르게 표현하기 위해서 \\S로 표현 -> 이스케이프 사용해야함.
-            message = "올바른 이메일 형식이 아닙니다."
-    )
-    private String email;
+
+    @NotBlank(message = "블로그의 고유 ID를 입력해주세요")
+    @Pattern(regexp = "^[a-z0-9-_]{3,20}$", message = "영문 소문자, 숫자, 하이픈, 언더스코어만 사용 가능합니다 (3-20자)")
+    private String blogId;
 
     @NotBlank(message = "인증코드를 입력해주세요.")
     @Size(min = 6, max = 6, message = "인증코드는 6자리여야 합니다.")
     private String code;
+    
 }

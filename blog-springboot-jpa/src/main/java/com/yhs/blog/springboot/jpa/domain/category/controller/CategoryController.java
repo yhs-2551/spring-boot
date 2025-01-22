@@ -2,6 +2,7 @@ package com.yhs.blog.springboot.jpa.domain.category.controller;
 
 import com.yhs.blog.springboot.jpa.domain.category.dto.request.CategoryRequestPayLoad;
 import com.yhs.blog.springboot.jpa.domain.category.dto.response.CategoryResponse;
+import com.yhs.blog.springboot.jpa.aop.performance.MeasurePerformance;
 import com.yhs.blog.springboot.jpa.common.response.ApiResponse;
 import com.yhs.blog.springboot.jpa.common.response.SuccessResponse;
 import com.yhs.blog.springboot.jpa.domain.category.service.CategoryService;
@@ -23,15 +24,16 @@ public class CategoryController {
 
         private final CategoryService categoryService;
 
+        @MeasurePerformance
         @PostMapping
         @PreAuthorize("#userBlogId == authentication.name")
         public ResponseEntity<ApiResponse> createCategory(@RequestBody CategoryRequestPayLoad categoryRequestPayLoad,
                         @P("userBlogId") @PathVariable("blogId") String blogId) {
 
-                List<CategoryResponse> categoryResponse = categoryService.createCategory(categoryRequestPayLoad);
+                categoryService.createCategory(categoryRequestPayLoad, blogId);
 
                 return ResponseEntity.status(HttpStatus.CREATED)
-                                .body(new SuccessResponse<List<CategoryResponse>>(categoryResponse,
+                                .body(new SuccessResponse<>(
                                                 "카테고리 생성에 성공하였습니다."));
         }
 

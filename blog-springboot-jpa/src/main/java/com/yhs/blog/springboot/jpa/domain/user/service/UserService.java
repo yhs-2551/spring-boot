@@ -6,8 +6,7 @@ import com.yhs.blog.springboot.jpa.domain.user.dto.request.SignUpUserRequest;
 import com.yhs.blog.springboot.jpa.domain.user.dto.request.UserSettingsRequest;
 import com.yhs.blog.springboot.jpa.domain.user.dto.response.DuplicateCheckResponse;
 import com.yhs.blog.springboot.jpa.domain.user.dto.response.LoginResultToken;
-import com.yhs.blog.springboot.jpa.domain.user.dto.response.RateLimitResponse;
-import com.yhs.blog.springboot.jpa.domain.user.dto.response.SignUpUserResponse;
+import com.yhs.blog.springboot.jpa.domain.user.dto.response.RateLimitResponse; 
 import com.yhs.blog.springboot.jpa.domain.user.dto.response.UserPrivateProfileResponse;
 import com.yhs.blog.springboot.jpa.domain.user.dto.response.UserPublicProfileResponse;
 import com.yhs.blog.springboot.jpa.domain.user.entity.User;
@@ -18,7 +17,7 @@ import java.io.IOException;
 import java.util.Optional;
 
 public interface UserService {
-    SignUpUserResponse createUser(SignUpUserRequest signUpUserRequest);
+    void createUser(SignUpUserRequest signUpUserRequest);
 
     RateLimitResponse<OAuth2SignUpResponse> createOAuth2User(String email, AdditionalInfoRequest additionalInfoRequest);
 

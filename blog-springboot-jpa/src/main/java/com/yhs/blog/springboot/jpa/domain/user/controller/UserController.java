@@ -56,30 +56,32 @@ public class UserController extends SimpleUrlAuthenticationSuccessHandler {
         private final AuthenticationService authenticationService;
 
         // 회원가입시 이메일 인증코드 전송, 인증코드 재전송 부분 공통 처리
+        // 불필요한 응답DTO 삭제 후 성능 향상
         @PostMapping("/api/users/signup")
         public ResponseEntity<ApiResponse> signup(@RequestBody @Valid SignUpUserRequest signUpUserRequest)
                         throws JsonProcessingException {
 
                 // 수정 필요 인증코드 전송 응답 SignUpUserRequest안에 너무 불필요하고 민감한 정보가 들어가 있음
-                RateLimitResponse<SignUpUserRequest> result = emailService.processEmailVerification(signUpUserRequest);
+                RateLimitResponse<Void> result = emailService.processEmailVerification(signUpUserRequest);
                 if (result.isSuccess()) {
                         return ResponseEntity.status(result.getStatusCode())
-                                        .body(new SuccessResponse<>(result.getData(), result.getMessage()));
+                                        .body(new SuccessResponse<>(result.getMessage()));
                 }
 
                 return ResponseEntity.status(result.getStatusCode())
                                 .body(new ErrorResponse(result.getMessage(), result.getStatusCode()));
 
         }
-
+        
+        // 불필요한 응답DTO 삭제 후 성능 향상
         @PostMapping("/api/users/verify-email")
         public ResponseEntity<ApiResponse> verifyEmail(@RequestBody @Valid VerifyEmailRequest verifyEmailRequest) {
 
-                RateLimitResponse<SignUpUserResponse> result = emailService.completeVerification(verifyEmailRequest);
+                RateLimitResponse<Void> result = emailService.completeVerification(verifyEmailRequest);
 
                 if (result.isSuccess()) {
                         return ResponseEntity.status(result.getStatusCode())
-                                        .body(new SuccessResponse<>(result.getData(), result.getMessage()));
+                                        .body(new SuccessResponse<>(result.getMessage()));
                 }
 
                 return ResponseEntity.status(result.getStatusCode())

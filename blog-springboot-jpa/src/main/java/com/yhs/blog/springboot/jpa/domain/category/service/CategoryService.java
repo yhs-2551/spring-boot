@@ -7,7 +7,7 @@ import com.yhs.blog.springboot.jpa.domain.category.entity.Category;
 import java.util.List;
 
 public interface CategoryService {
-    List<CategoryResponse> createCategory(CategoryRequestPayLoad categoryRequestPayLoad);
+    void createCategory(CategoryRequestPayLoad categoryRequestPayLoad, String blogId);
 
     List<CategoryResponse> getAllCategoriesWithChildrenByUserId(String blogId);
 

@@ -10,7 +10,7 @@ public sealed abstract class BaseException extends RuntimeException permits Syst
     private final String className;
     private final String methodName;
 
-    public BaseException(ErrorCode errorCode, String message,
+    protected BaseException(ErrorCode errorCode, String message,
             String className, String methodName) {
         super(message);
         this.errorCode = errorCode;
@@ -18,7 +18,7 @@ public sealed abstract class BaseException extends RuntimeException permits Syst
         this.methodName = methodName;
     }
 
-    public BaseException(ErrorCode errorCode, String message,
+    protected BaseException(ErrorCode errorCode, String message,
             String className, String methodName, Throwable cause) {
         super(message, cause);
         this.errorCode = errorCode;
