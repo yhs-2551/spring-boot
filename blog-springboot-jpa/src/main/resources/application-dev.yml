@@ -40,7 +40,7 @@ spring:
 
                 # Enables detailed logging for Hibernate parameter values
                 type: trace
-    
+
     batch:
         job:
             enabled: false # true면 앱 시작 시 스케줄러에 의해 관리되는 job을 제외하고 모든 Job이 자동 실행. 나의 경우 직접 제어하므로 false로 설정
@@ -89,12 +89,6 @@ spring:
                     auth: true
                     starttls:
                         enable: true
-
-logging:
-    level:
-        org.springframework.transaction: debug # 트랜잭션 로그
-        org.springframework.orm.jpa: debug # JPA 로그
-        com.yhs.blog.springboot.jpa: debug # 애플리케이션 로그
 
 # jwt issuer settings, secret key is located in JwtProperties file
 jwt:

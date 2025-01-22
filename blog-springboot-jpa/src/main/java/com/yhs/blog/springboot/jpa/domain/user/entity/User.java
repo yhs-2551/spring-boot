@@ -1,5 +1,7 @@
 package com.yhs.blog.springboot.jpa.domain.user.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.yhs.blog.springboot.jpa.common.entity.BaseEntity;
 import com.yhs.blog.springboot.jpa.domain.category.entity.Category;
 import com.yhs.blog.springboot.jpa.domain.file.entity.File;
@@ -53,9 +55,11 @@ public class User extends BaseEntity implements UserDetails {
 
     // OAUTH2 사용자의 경우 비밀번호를 저장할 필요가 없기 때문에 nullable true 설정
     @Column(nullable = true, length = 255)
+    @JsonIgnore // redis에 json형식으로 저장할때 보안상 redis에 저장되면 안되는 정보이기 때문에 제외. 현재 USER entity를 redis를 사용해서 저장하진 않지만 일단 보류
     private String password;
 
     @Column(nullable = false, length = 100, unique = true)
+    @JsonIgnore
     private String email;
 
     @Column(name = "profile_image_url", nullable = true, length = 255)
@@ -65,27 +69,33 @@ public class User extends BaseEntity implements UserDetails {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
+    // OnetoMany JSON으로 직렬화 시 양방향 순환 참조 막기 위해서 @JsonIgnore 사용
     @OneToMany(mappedBy = "user", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnore
     private Set<Post> posts;
 
     @OneToMany(mappedBy = "user", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnore
     private Set<Category> categories;
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnore
     private Set<File> files;
 
-    @OneToMany(mappedBy = "user", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval =
-            true)
+    @OneToMany(mappedBy = "user", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnore
     private Set<PostTag> postTags;
 
-
     @OneToMany(mappedBy = "user", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnore
     private Set<Comment> comments;
 
     @OneToMany(mappedBy = "user", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnore
     private Set<Like> likes;
 
-    //필드의 기본값 (UserRole.USER)은 객체가 기본 생성자를 통해 생성될 때 적용된다. 반면, 빌더 패턴을 사용하거나 파라미터화된 생성자를 사용하는
+    // 필드의 기본값 (UserRole.USER)은 객체가 기본 생성자를 통해 생성될 때 적용된다. 반면, 빌더 패턴을 사용하거나 파라미터화된
+    // 생성자를 사용하는
     // 경우, 해당 기본값은 적용되지 않는다.
     @Enumerated(EnumType.STRING)
     @Column(length = 10, nullable = false)
@@ -97,7 +107,7 @@ public class User extends BaseEntity implements UserDetails {
         return List.of(new SimpleGrantedAuthority(role.name()));
     }
 
-    //계정 만료 여부. true는 만료 되지 않음
+    // 계정 만료 여부. true는 만료 되지 않음
     @Override
     public boolean isAccountNonExpired() {
         return true;
@@ -115,7 +125,7 @@ public class User extends BaseEntity implements UserDetails {
         return true;
     }
 
-    // 계정 사용 가능 여부 반환 true -> 사용 가능 
+    // 계정 사용 가능 여부 반환 true -> 사용 가능
     @Override
     public boolean isEnabled() {
         return true;
@@ -151,6 +161,5 @@ public class User extends BaseEntity implements UserDetails {
         this.username = username;
         return this;
     }
-
 
 }

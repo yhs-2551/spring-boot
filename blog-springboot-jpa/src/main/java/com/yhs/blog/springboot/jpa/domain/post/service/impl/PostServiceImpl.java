@@ -1,20 +1,18 @@
 package com.yhs.blog.springboot.jpa.domain.post.service.impl;
 
-import com.yhs.blog.springboot.jpa.domain.file.mapper.FileMapper;
-import com.yhs.blog.springboot.jpa.domain.file.service.infrastructure.s3.S3Service;
-import com.yhs.blog.springboot.jpa.domain.token.jwt.claims.ClaimsExtractor;
-import com.yhs.blog.springboot.jpa.domain.token.jwt.provider.TokenProvider;
-import com.yhs.blog.springboot.jpa.domain.post.dto.request.FeaturedImageRequest;
-import com.yhs.blog.springboot.jpa.domain.file.dto.request.FileRequest;
-import com.yhs.blog.springboot.jpa.domain.post.dto.request.PostRequest;
-import com.yhs.blog.springboot.jpa.domain.post.dto.request.PostUpdateRequest;
-import com.yhs.blog.springboot.jpa.domain.post.dto.response.PostResponse;
-import com.yhs.blog.springboot.jpa.domain.post.dto.response.PostUpdateResponse;
 import com.yhs.blog.springboot.jpa.aop.log.Loggable;
 import com.yhs.blog.springboot.jpa.common.constant.code.ErrorCode;
 import com.yhs.blog.springboot.jpa.domain.category.entity.Category;
-import com.yhs.blog.springboot.jpa.domain.post.entity.FeaturedImage;
+import com.yhs.blog.springboot.jpa.domain.category.service.CategoryService;
+import com.yhs.blog.springboot.jpa.domain.file.dto.request.FileRequest;
 import com.yhs.blog.springboot.jpa.domain.file.entity.File;
+import com.yhs.blog.springboot.jpa.domain.file.mapper.FileMapper;
+import com.yhs.blog.springboot.jpa.domain.file.service.infrastructure.s3.S3Service;
+import com.yhs.blog.springboot.jpa.domain.post.dto.request.FeaturedImageRequest;
+import com.yhs.blog.springboot.jpa.domain.post.dto.request.PostRequest;
+import com.yhs.blog.springboot.jpa.domain.post.dto.request.PostUpdateRequest;
+import com.yhs.blog.springboot.jpa.domain.post.dto.response.PostResponse;
+import com.yhs.blog.springboot.jpa.domain.post.entity.FeaturedImage;
 import com.yhs.blog.springboot.jpa.domain.post.entity.Post;
 import com.yhs.blog.springboot.jpa.domain.post.entity.PostTag;
 import com.yhs.blog.springboot.jpa.domain.post.entity.Tag;
@@ -23,23 +21,20 @@ import com.yhs.blog.springboot.jpa.domain.post.entity.enums.PostStatus;
 import com.yhs.blog.springboot.jpa.domain.post.event.elasticsearch.PostCreatedEvent;
 import com.yhs.blog.springboot.jpa.domain.post.event.elasticsearch.PostDeletedEvent;
 import com.yhs.blog.springboot.jpa.domain.post.event.elasticsearch.PostUpdatedEvent;
-import com.yhs.blog.springboot.jpa.domain.user.entity.User;
-import com.yhs.blog.springboot.jpa.domain.category.service.CategoryService;
+import com.yhs.blog.springboot.jpa.domain.post.mapper.PostMapper;
 import com.yhs.blog.springboot.jpa.domain.post.repository.FeaturedImageRepository;
 import com.yhs.blog.springboot.jpa.domain.post.repository.PostRepository;
 import com.yhs.blog.springboot.jpa.domain.post.repository.PostTagRepository;
 import com.yhs.blog.springboot.jpa.domain.post.repository.TagRepository;
 import com.yhs.blog.springboot.jpa.domain.post.repository.search.SearchType;
 import com.yhs.blog.springboot.jpa.domain.post.service.PostService;
+import com.yhs.blog.springboot.jpa.domain.user.entity.User;
 import com.yhs.blog.springboot.jpa.domain.user.service.UserService;
 import com.yhs.blog.springboot.jpa.exception.custom.BusinessException;
 import com.yhs.blog.springboot.jpa.exception.custom.SystemException;
-import com.yhs.blog.springboot.jpa.domain.post.mapper.PostMapper;
-import com.yhs.blog.springboot.jpa.domain.token.jwt.util.TokenUtil;
-import jakarta.servlet.http.HttpServletRequest;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
-
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.dao.DataAccessException;
 import org.springframework.data.domain.Page;
@@ -49,7 +44,11 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 
 @Service
 @RequiredArgsConstructor
@@ -59,13 +58,11 @@ public class PostServiceImpl implements PostService {
     private final UserService userService;
     private final CategoryService categoryService;
     private final PostRepository postRepository;
-    private final ClaimsExtractor claimsExtractor;
     private final FeaturedImageRepository featuredImageRepository;
     private final TagRepository tagRepository;
     private final PostTagRepository postTagRepository;
     private final S3Service s3Service;
     private final ApplicationEventPublisher eventPublisher;
-
     // @Override
     // @Transactional(readOnly = true)
     // public List<PostResponse> getPostListByUserId(Long userId) {
@@ -79,7 +76,7 @@ public class PostServiceImpl implements PostService {
             String categoryName,
             Pageable pageable) {
 
-        Long userId = userService.findUserByBlogId(blogId).id();
+        Long userId = userService.findUserByBlogIdAndConvertDTO(blogId).id();
 
         if (categoryName != null) {
 
@@ -116,7 +113,6 @@ public class PostServiceImpl implements PostService {
     @Transactional
     @Override
     public void deletePostByPostId(Long postId) {
- 
 
         Post post = postRepository.findById(postId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.POST_NOT_FOUND, postId + "번 게시글을 찾을 수 없습니다.",
@@ -156,15 +152,16 @@ public class PostServiceImpl implements PostService {
     @Loggable
     @Transactional
     @Override
-    public PostResponse createNewPost(PostRequest postRequest, HttpServletRequest request) {
+    public void createNewPost(PostRequest postRequest, String blogId) {
+
         try {
 
-            Long userId = TokenUtil.extractUserIdFromRequestToken(request, claimsExtractor);
-            User user = userService.findUserById(userId);
+            User user = userService.findUserByBlogId(blogId);
 
             Category category;
             if (postRequest.getCategoryName() != null) {
-                category = categoryService.findCategoryByNameAndUserId(postRequest.getCategoryName(), userId);
+
+                category = categoryService.findCategoryByNameAndUserId(postRequest.getCategoryName(), user.getId());
             } else {
                 category = null;
             }
@@ -172,8 +169,8 @@ public class PostServiceImpl implements PostService {
             FeaturedImage featuredImage = processFeaturedImage(postRequest.getFeaturedImage());
 
             // temp -> final로 변환
-            String convertedContent = postRequest.getContent().replace(user.getBlogId() + "/temp/",
-                    user.getBlogId() + "/final/");
+            String convertedContent = postRequest.getContent().replace(blogId + "/temp/",
+                    blogId + "/final/");
 
             // 포스트 생성 시 user를 넘겨주면 외래키 연관관계 설정으로 인해 posts테이블에 user_id 값이 자동으로 들어간다.
             // category, featuredImage또한 마찬가지.
@@ -182,6 +179,8 @@ public class PostServiceImpl implements PostService {
             post.setFiles(processFiles(post, postRequest.getFiles(), user));
             post.setPostTags(processTags(post, postRequest.getTags(), user));
             postRepository.save(post);
+
+            log.info("메인 스레드 시작: {}", Thread.currentThread().getName());
 
             TransactionSynchronizationManager.registerSynchronization(
                     new TransactionSynchronization() {
@@ -195,9 +194,17 @@ public class PostServiceImpl implements PostService {
                     });
 
             // s3 Temp 파일 관련 작업은 비동기로 처리. 사용자에게 빠르게 응답하기 위함
-            s3Service.processCreatePostS3TempOperation(postRequest, user.getBlogId());
+            CompletableFuture<Void> s3Future = s3Service.processCreatePostS3TempOperation(postRequest,
+                    user.getBlogId());
 
-            return PostResponse.from(post);
+            s3Future.thenAcceptAsync(result -> {
+                log.info("S3 작업 완료");
+            }).exceptionally(throwable -> {
+                log.error("S3 작업 실패: {}", throwable.getMessage());
+                return null;
+            });
+
+            log.info("메인 스레드 종료: {}", Thread.currentThread().getName());
 
         } catch (DataAccessException ex) {
             throw new SystemException(ErrorCode.POST_CREATE_ERROR, "게시글 생성 중 서버 에러가 발생했습니다.",
@@ -205,23 +212,25 @@ public class PostServiceImpl implements PostService {
         }
     }
 
+    // 업데이트의 경우 가져온 엔티티를 스냅샷으로 저장하여 더티체킹을 통해 업데이트를 진행한다.
+    // 쉽게 React 가상 DOM과 비슷한 개념으로 이해하면 된다.
     @Loggable
     @Transactional
     @Override
-    public PostUpdateResponse updatePostByPostId(Long postId, String blogId,
+    public void updatePostByPostId(Long postId, String blogId,
             PostUpdateRequest postUpdateRequest) {
 
-        Long userId = userService.findUserByBlogId(blogId).id();
-
-        User user = userService.findUserById(userId);
-
-        Post post = postRepository.findById(postId)
-                .orElseThrow(() -> new BusinessException(ErrorCode.POST_NOT_FOUND, postId + "번 게시글을 찾을 수 없습니다.",
+        // fetch join으로 user까지 함께 가져와 영속성 컨텍스트에 저장. 이후 getUser()로 가져올때 추가 select 쿼리 없음
+        Post post = postRepository.findByIdWithUser(postId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.POST_NOT_FOUND, postId +
+                        "번 게시글을 찾을 수 없습니다.",
                         "PostServiceImpl", "updatePostByPostId"));
+
+        User user = post.getUser();
 
         Category category;
         if (postUpdateRequest.getCategoryName() != null) {
-            category = categoryService.findCategoryByNameAndUserId(postUpdateRequest.getCategoryName(), userId);
+            category = categoryService.findCategoryByNameAndUserId(postUpdateRequest.getCategoryName(), user.getId());
 
         } else {
             category = null;
@@ -234,7 +243,7 @@ public class PostServiceImpl implements PostService {
                 && !postUpdateRequest.getEditPageDeletedTags().isEmpty()) {
 
             List<Tag> unusedTags = tagRepository.findUnusedTagsNotUsedByOtherPostsAndOtherUsers(
-                    postUpdateRequest.getEditPageDeletedTags(), postId, userId);
+                    postUpdateRequest.getEditPageDeletedTags(), postId, user.getId());
 
             tagRepository.deleteAll(unusedTags);
         }
@@ -245,11 +254,12 @@ public class PostServiceImpl implements PostService {
         String convertedContent = postUpdateRequest.getContent().replace(user.getBlogId() + "/temp/",
                 user.getBlogId() + "/final/");
 
+        // 더티 체킹 대상으로써 save 메서드 불필요
         post.update(category, postUpdateRequest.getTitle(), convertedContent, newFiles, newPostTags,
                 PostStatus.valueOf(postUpdateRequest.getPostStatus().toUpperCase()),
                 CommentsEnabled.valueOf(postUpdateRequest.getCommentsEnabled().toUpperCase()), featuredImage);
+
         s3Service.processUpdatePostS3TempOperation(postUpdateRequest, user.getBlogId());
-        Post updatedPost = postRepository.save(post);
 
         TransactionSynchronizationManager.registerSynchronization(
                 new TransactionSynchronization() {
@@ -257,17 +267,14 @@ public class PostServiceImpl implements PostService {
                     @Override
                     public void afterCommit() {
                         // elasticsearch에 인덱스 업데이트
-                        eventPublisher.publishEvent(new PostUpdatedEvent(updatedPost));
+                        eventPublisher.publishEvent(new PostUpdatedEvent(post));
                     }
 
                 });
 
-        return new PostUpdateResponse(updatedPost);
-
     }
 
     // 아래쪽은 헬퍼 메서드
-
     private Set<File> processFiles(Post post, List<FileRequest> fileRequests, User user) {
         Set<File> files = new HashSet<>();
         if (fileRequests != null && !fileRequests.isEmpty()) {

@@ -1,17 +1,42 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Configuration status="WARN">
+
+    <Properties>
+        <!-- 공통 패턴 정의 -->
+        <Property name="LOG_PATTERN">%d{yyyy-MM-dd HH:mm:ss.SSS} [%t] %-5level %logger{36} - %msg%n</Property>
+    </Properties>
     <Appenders>
         <!-- ConsoleAppender: 로그를 콘솔에 출력 -->
-        <Console name="Console" target="SYSTEM_OUT">
-            <PatternLayout pattern="%d{yyyy-MM-dd HH:mm:ss.SSS} [%t] %-5level %logger{36} - %msg%n"/>
-            <Encoder charset="UTF-8" />  <!-- 파일 인코딩 추가. vscode에서 git bash를 기본값으로 사용하면 콘솔에서 한글이 깨져서 추가해봤지만 결론은 소용 없음. command prompt 사용해야함 -->
-        </Console>
+        <!-- Encoder 파일 인코딩 추가. vscode에서 git bash를 기본값으로 사용하면 콘솔에서 한글이 깨져서
+            추가해봤지만 결론은 소용 없음. command prompt 사용해야함 -->
+        <!-- <Console name="Console" target="SYSTEM_OUT">
+            <PatternLayout pattern="%d{yyyy-MM-dd HH:mm:ss.SSS} [%t] %-5level %logger{36} - %msg%n" />
+            <Encoder charset="UTF-8" />  
+        </Console> -->
 
         <!-- append="false"를 통해 앱 재시작마다 로그 파일 내용 덮어쓰기  -->
-        <File name="FileAppender" fileName="logs/application.log" append="false"> 
+        <!-- 파일 인코딩 추가 필수. 안하면 로그파일에서 글자 깨짐-->
+        <!-- <File name="FileAppender" fileName="logs/application.log" append="false">
             <PatternLayout pattern="%d{yyyy-MM-dd HH:mm:ss.SSS} [%t] %-5level %logger{36} - %msg%n" />
-            <Encoder charset="UTF-8" />  <!-- 파일 인코딩 추가 필수. 안하면 로그파일에서 글자 깨짐-->
-        </File>
+            <Encoder charset="UTF-8" />
+        </File> -->
+
+        <!-- 콘솔 출력 설정 -->
+        <Console name="Console" target="SYSTEM_OUT">
+            <PatternLayout pattern="${LOG_PATTERN}" charset="UTF-8" />
+        </Console>
+        
+        <RollingFile name="RollingFile"
+            fileName="logs/application.log"
+            filePattern="logs/backup-application-%d{yyyy-MM-dd}-%i.log">
+            <PatternLayout pattern="${LOG_PATTERN}" charset="UTF-8" />
+            <Policies>
+                <OnStartupTriggeringPolicy />
+                <!-- 파일 크기가 10MB 넘어가면 새 파일 생성 -->
+                <SizeBasedTriggeringPolicy size="10 MB" />
+            </Policies>
+            <DefaultRolloverStrategy max="5" />
+        </RollingFile>
     </Appenders>
 
 
@@ -19,21 +44,61 @@
         <!-- Root logger: 기본 로그 레벨 설정 -->
         <Root level="debug">
             <AppenderRef ref="Console" />
-            <AppenderRef ref="FileAppender" />
+            <AppenderRef ref="RollingFile" />
         </Root>
 
         <!-- Hibernate SQL 로그 레벨 설정 -->
         <Logger name="org.hibernate.SQL" level="debug" additivity="false">
             <AppenderRef ref="Console" />
+            <AppenderRef ref="RollingFile" />
         </Logger>
 
         <!-- 바인딩된 파라미터 값 로그 레벨 설정 -->
         <Logger name="org.hibernate.type.descriptor.sql" level="trace" additivity="false">
             <AppenderRef ref="Console" />
+            <AppenderRef ref="RollingFile" />
+
         </Logger>
 
-        <Logger name="org.hibernate.type" level="trace" additivity="false">
+        <!-- ResultSet 로깅. 불필요하게 ResultSet 찍힐때 이걸로 조정정-->
+        <Logger name="org.hibernate.type.descriptor.sql.BasicBinder" level="trace"
+            additivity="false">
             <AppenderRef ref="Console" />
+            <AppenderRef ref="RollingFile" />
+
+        </Logger>
+
+        <!-- 트랜잭션 관련 로그 -->
+        <Logger name="org.springframework.transaction" level="debug" additivity="false">
+            <AppenderRef ref="Console" />
+            <AppenderRef ref="RollingFile" />
+
+        </Logger>
+
+        <!-- JPA 관련 로그 -->
+        <Logger name="org.springframework.orm.jpa" level="debug" additivity="false">
+            <AppenderRef ref="Console" />
+            <AppenderRef ref="RollingFile" />
+
+        </Logger>
+
+        <!-- 애플리케이션 비즈니스 로직 로그 -->
+        <Logger name="com.yhs.blog.springboot.jpa" level="debug" additivity="false">
+            <AppenderRef ref="Console" />
+            <AppenderRef ref="RollingFile" />
+
+        </Logger>
+
+        <!-- 톰캣 로깅. info로 안해놓으면 불필요한 로그가 많이 찍힘 -->
+        <Logger name="org.apache.tomcat" level="info" additivity="false">
+            <AppenderRef ref="Console" />
+            <AppenderRef ref="RollingFile" />
+
+        </Logger>
+
+        <Logger name="org.apache.catalina" level="info" additivity="false">
+            <AppenderRef ref="Console" />
+            <AppenderRef ref="RollingFile" />
         </Logger>
     </Loggers>
 </Configuration>

@@ -18,7 +18,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.filter.OncePerRequestFilter;
 
-import java.io.IOException; 
+import java.io.IOException;
 
 @RequiredArgsConstructor
 @Log4j2
@@ -82,14 +82,16 @@ public class TokenAuthenticationFilter extends OncePerRequestFilter {
         if (authorizationHeader == null || !authorizationHeader.startsWith("Bearer ")) {
 
             ErrorResponse errorResponse = new ErrorResponse(
-                "액세스 토큰이 누락되었습니다.",
-                StatusCode.UNAUTHORIZED.getCode());
-
+                    "액세스 토큰이 누락되었습니다.",
+                    StatusCode.UNAUTHORIZED.getCode());
 
             log.debug("authorizationHeader오류 실행 내부");
 
-            // 상태 코드 401 설정
+            // Content-Type 설정
+            response.setContentType("application/json;charset=UTF-8");
+            response.setCharacterEncoding("UTF-8");
             response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+
             // 응답 메시지 작성
             response.getWriter().write(new ObjectMapper().writeValueAsString(errorResponse));
             return; // 요청 헤더에서 액세스 토큰을 찾을 수 없으면 필터 체인 종료, 다음 필터로 넘어가지 않음
@@ -106,7 +108,9 @@ public class TokenAuthenticationFilter extends OncePerRequestFilter {
                     StatusCode.UNAUTHORIZED.getCode());
 
             log.debug("실행 dofilterinternal 유효성검사 후 - 실패 ");
-            // 상태 코드 401 설정
+            // Content-Type 설정
+            response.setContentType("application/json;charset=UTF-8");
+            response.setCharacterEncoding("UTF-8");
             response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
             // 응답 메시지 작성
             response.getWriter().write(new ObjectMapper().writeValueAsString(errorResponse));

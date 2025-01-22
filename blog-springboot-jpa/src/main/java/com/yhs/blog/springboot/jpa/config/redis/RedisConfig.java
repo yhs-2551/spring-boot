@@ -10,11 +10,13 @@ import org.springframework.data.redis.serializer.GenericJackson2JsonRedisSeriali
 import org.springframework.data.redis.serializer.Jackson2JsonRedisSerializer;
 import org.springframework.data.redis.serializer.StringRedisSerializer;
 
-import com.fasterxml.jackson.databind.ObjectMapper; 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.databind.introspect.JacksonAnnotationIntrospector;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import com.yhs.blog.springboot.jpa.domain.user.dto.response.UserPrivateProfileResponse; 
+import com.yhs.blog.springboot.jpa.domain.user.dto.response.UserPrivateProfileResponse;
 import com.yhs.blog.springboot.jpa.domain.user.dto.response.UserPublicProfileResponse;
- 
+import com.yhs.blog.springboot.jpa.domain.user.entity.User;
 
 @Configuration
 public class RedisConfig {
@@ -42,15 +44,17 @@ public class RedisConfig {
     }
 
     @Bean
-    public RedisTemplate<String, UserPublicProfileResponse> userPublicProfileRedisTemplate(RedisConnectionFactory connectionFactory) {
+    public RedisTemplate<String, UserPublicProfileResponse> userPublicProfileRedisTemplate(
+            RedisConnectionFactory connectionFactory) {
         RedisTemplate<String, UserPublicProfileResponse> redisTemplate = new RedisTemplate<>();
         redisTemplate.setConnectionFactory(connectionFactory);
 
         ObjectMapper objectMapper = new ObjectMapper();
         objectMapper.registerModule(new JavaTimeModule());
 
-        Jackson2JsonRedisSerializer<UserPublicProfileResponse> serializer = new Jackson2JsonRedisSerializer<>(objectMapper,
-        UserPublicProfileResponse.class);
+        Jackson2JsonRedisSerializer<UserPublicProfileResponse> serializer = new Jackson2JsonRedisSerializer<>(
+                objectMapper,
+                UserPublicProfileResponse.class);
 
         redisTemplate.setKeySerializer(new StringRedisSerializer());
         redisTemplate.setValueSerializer(serializer);
@@ -59,17 +63,18 @@ public class RedisConfig {
         return redisTemplate;
     }
 
-    
     @Bean
-    public RedisTemplate<String, UserPrivateProfileResponse> userPrivateProfileRedisTemplate(RedisConnectionFactory connectionFactory) {
+    public RedisTemplate<String, UserPrivateProfileResponse> userPrivateProfileRedisTemplate(
+            RedisConnectionFactory connectionFactory) {
         RedisTemplate<String, UserPrivateProfileResponse> redisTemplate = new RedisTemplate<>();
         redisTemplate.setConnectionFactory(connectionFactory);
 
         ObjectMapper objectMapper = new ObjectMapper();
         objectMapper.registerModule(new JavaTimeModule());
 
-        Jackson2JsonRedisSerializer<UserPrivateProfileResponse> serializer = new Jackson2JsonRedisSerializer<>(objectMapper,
-        UserPrivateProfileResponse.class);
+        Jackson2JsonRedisSerializer<UserPrivateProfileResponse> serializer = new Jackson2JsonRedisSerializer<>(
+                objectMapper,
+                UserPrivateProfileResponse.class);
 
         redisTemplate.setKeySerializer(new StringRedisSerializer());
         redisTemplate.setValueSerializer(serializer);
@@ -100,36 +105,38 @@ public class RedisConfig {
 
     // 3. String, User 전용 RedisTemplate
     // @Bean
-    // public RedisTemplate<String, User> userRedisTemplate(RedisConnectionFactory
-    // connectionFactory) {
-    // RedisTemplate<String, User> redisTemplate = new RedisTemplate<>();
-    // redisTemplate.setConnectionFactory(connectionFactory);
+    // public RedisTemplate<String, User> userRedisTemplate(RedisConnectionFactory connectionFactory) {
+    //     RedisTemplate<String, User> redisTemplate = new RedisTemplate<>();
+    //     redisTemplate.setConnectionFactory(connectionFactory);
 
-    // ObjectMapper objectMapper = new ObjectMapper();
-    // objectMapper.registerModule(new JavaTimeModule());
-    // //1711031400000같은 밀리초 단위 비활성화, ISO8601 형식의 문자열(2024-03-21T14:30:00)로 변환
-    // objectMapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+    //     ObjectMapper objectMapper = new ObjectMapper();
+    //     objectMapper.registerModule(new JavaTimeModule());
+    //     // 1711031400000같은 밀리초 단위 비활성화, ISO8601 형식의 문자열(2024-03-21T14:30:00)로 변환
+    //     // json 내부에서 ISO 형식 사용
+    //     objectMapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
 
-    // // setObjectMapper는 deprecated되어서 이렇게 생성자 방식을 사용해야함.
-    // Jackson2JsonRedisSerializer<User> serializer = new
-    // Jackson2JsonRedisSerializer<>(objectMapper, User.class);
+    //     // @JsonIgnore 적용
+    //     objectMapper.setAnnotationIntrospector(new JacksonAnnotationIntrospector());
 
-    // // key: String 형식으로 직렬화
-    // redisTemplate.setKeySerializer(new StringRedisSerializer());
+    //     // setObjectMapper는 deprecated되어서 이렇게 생성자 방식을 사용해야함.
+    //     Jackson2JsonRedisSerializer<User> serializer = new Jackson2JsonRedisSerializer<>(objectMapper, User.class);
 
-    // // value: User 객체 전용 JSON 직렬화
-    // redisTemplate.setValueSerializer(serializer);
+    //     // key: String 형식으로 직렬화
+    //     redisTemplate.setKeySerializer(new StringRedisSerializer());
 
-    // // Hash 작업을 위한 직렬화 설정, opsForHash() 사용 시 두번째 및 세번째 파라미터 직렬화. 첫번째 파라미터는 위에서
-    // 설정한
-    // // String 형식 직렬화 사용
-    // redisTemplate.setHashKeySerializer(new StringRedisSerializer());
-    // redisTemplate.setHashValueSerializer(serializer);
+    //     // value: User 객체 전용 JSON 직렬화
+    //     redisTemplate.setValueSerializer(serializer);
 
-    // // 모든 설정이 완료된 후 초기화
-    // // 설정 유효성 검사
-    // // 필수 속성 확인
-    // redisTemplate.afterPropertiesSet();
-    // return redisTemplate;
+    //     // Hash 작업을 위한 직렬화 설정, opsForHash() 사용 시 두번째 및 세번째 파라미터 직렬화. 첫번째 파라미터는 위에서
+    //     // 설정한
+    //     // String 형식 직렬화 사용
+    //     redisTemplate.setHashKeySerializer(new StringRedisSerializer());
+    //     redisTemplate.setHashValueSerializer(serializer);
+
+    //     // 모든 설정이 완료된 후 초기화
+    //     // 설정 유효성 검사
+    //     // 필수 속성 확인
+    //     redisTemplate.afterPropertiesSet();
+    //     return redisTemplate;
     // }
 }

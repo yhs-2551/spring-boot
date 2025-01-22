@@ -181,7 +181,7 @@ public class UserController extends SimpleUrlAuthenticationSuccessHandler {
          */
         @GetMapping("/api/users/{blogId}/profile")
         public ResponseEntity<ApiResponse> getUserProfilePublic(@PathVariable("blogId") String blogId) {
-                UserPublicProfileResponse publicUserProfile = userService.findUserByBlogId(blogId);
+                UserPublicProfileResponse publicUserProfile = userService.findUserByBlogIdAndConvertDTO(blogId);
                 return ResponseEntity.ok().body(new SuccessResponse<>(publicUserProfile, "공개 사용자 정보 조회를 성공하였습니다."));
         }
 
@@ -201,12 +201,12 @@ public class UserController extends SimpleUrlAuthenticationSuccessHandler {
 
                 if (userService.isExistsBlogId(blogId)) {
                         return ResponseEntity.ok()
-                                        .body(new SuccessResponse<>("User exists"));
+                                        .body(new SuccessResponse<>(blogId + " 사용자가 존재 합니다."));
                 }
 
                 return ResponseEntity
                                 .status(HttpStatus.NOT_FOUND)
-                                .body(new ErrorResponse("User not found.", 404));
+                                .body(new ErrorResponse(blogId + " 사용자를 조회할 수 없습니다.", 404));
         }
 
         @Operation(summary = "블로그 ID 중복 확인")

@@ -12,8 +12,7 @@ import com.yhs.blog.springboot.jpa.domain.user.dto.response.UserPrivateProfileRe
 import com.yhs.blog.springboot.jpa.domain.user.dto.response.UserPublicProfileResponse;
 import com.yhs.blog.springboot.jpa.domain.user.entity.User;
 import com.yhs.blog.springboot.jpa.domain.user.dto.request.LoginRequest;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
+ 
 
 import java.io.IOException;
 import java.util.Optional;
@@ -21,8 +20,7 @@ import java.util.Optional;
 public interface UserService {
     SignUpUserResponse createUser(SignUpUserRequest signUpUserRequest);
 
-    RateLimitResponse<OAuth2SignUpResponse> createOAuth2User(String email, AdditionalInfoRequest additionalInfoRequest,
-            HttpServletRequest request, HttpServletResponse response);
+    RateLimitResponse<OAuth2SignUpResponse> createOAuth2User(String email, AdditionalInfoRequest additionalInfoRequest);
 
     LoginResultToken getTokenForLoginUser(User user, LoginRequest loginRequest);
 
@@ -32,7 +30,9 @@ public interface UserService {
 
     // void invalidateUserCache(String userIdentifier);
 
-    UserPublicProfileResponse findUserByBlogId(String blogId);
+    UserPublicProfileResponse findUserByBlogIdAndConvertDTO(String blogId);
+
+    User findUserByBlogId(String blogId);
 
     UserPrivateProfileResponse findUserByTokenAndByBlogId(String blogId);
 

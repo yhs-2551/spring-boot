@@ -19,8 +19,6 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.yhs.blog.springboot.jpa.domain.file.service.FileService;
-
-import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 
@@ -41,8 +39,7 @@ public class FileController {
     public ResponseEntity<String> uploadFile(
             @RequestParam("file") MultipartFile file,
             @RequestParam(value = "featured", required = false) String featured,
-            @P("userBlogId") @PathVariable("blogId") String blogId,
-            HttpServletRequest request) {
+            @P("userBlogId") @PathVariable("blogId") String blogId) {
 
         try {
 

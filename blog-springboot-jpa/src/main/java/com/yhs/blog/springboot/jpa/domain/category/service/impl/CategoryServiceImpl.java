@@ -71,7 +71,7 @@ public class CategoryServiceImpl implements CategoryService {
     @Transactional(readOnly = true)
     public List<CategoryResponse> getAllCategoriesWithChildrenByUserId(String blogId) {
 
-        Long userId = userService.findUserByBlogId(blogId).id();
+        Long userId = userService.findUserByBlogIdAndConvertDTO(blogId).id();
 
         List<Category> categories = categoryRepository.findAllWithChildrenByUserId(userId);
 

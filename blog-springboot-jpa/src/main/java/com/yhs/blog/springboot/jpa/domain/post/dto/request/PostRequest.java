@@ -1,8 +1,6 @@
 package com.yhs.blog.springboot.jpa.domain.post.dto.request;
 
 import com.yhs.blog.springboot.jpa.domain.file.dto.request.FileRequest;
-import jakarta.validation.constraints.NotEmpty;
-import jakarta.validation.constraints.Size;
 import lombok.*;
 
 import java.util.List;
@@ -13,19 +11,16 @@ import java.util.List;
 @ToString
 // 유효성 검사 프론트랑 맞추기 위해 추가 및 수정 필요
 public class PostRequest {
-    private Long id;             // 게시글 ID
+    // private Long id;             // 게시글 ID
 
-    private Long userId;          // 작성자 ID
+    // private Long userId;          // 작성자 ID
 
-    private String username;        // 작성자명
+    // private String username;        // 작성자명
 
     private String categoryName;      // 카테고리 이름
-
-    @NotEmpty(message = "제목을 입력하세요.")
-    @Size(max = 255, message = "제목은 총 255글자 까지 허용 됩니다.")
+ 
     private String title;         // 게시글 제목
 
-    @NotEmpty(message = "내용을 입력하세요.")
     private String content;       // 게시글 내용
 
     private List<String> tags;   // 태그
@@ -42,20 +37,18 @@ public class PostRequest {
 
     private FeaturedImageRequest featuredImage; // 대표 이미지
 
-    private int views;            // 조회수
+    // private int views;            // 조회수
 
-    private int commentCount;     // 댓글 수
+    // private int commentCount;     // 댓글 수
 
-    private int replyCount;       // 대댓글 수
+    // private int replyCount;       // 대댓글 수
 
     @Builder
-    public PostRequest(Long id, Long userId, String username, String categoryName, String title,
+    public PostRequest(String categoryName, String title,
                        String content, List<String> tags, List<FileRequest> files,
                        List<String> deleteTempImageUrls, String postStatus,
                        String commentsEnabled, FeaturedImageRequest featuredImageRequest
                        ) {
-        this.userId = userId;
-        this.username = username;
         this.categoryName = categoryName;
         this.title = title;
         this.content = content;

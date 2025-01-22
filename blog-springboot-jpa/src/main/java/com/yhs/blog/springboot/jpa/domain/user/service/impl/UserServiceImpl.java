@@ -44,6 +44,7 @@ public class UserServiceImpl implements UserService {
     private final UserRepository userRepository;
     private final RedisTemplate<String, Boolean> redisTemplateBoolean;
     private final RedisTemplate<String, String> redisTemplateString;
+ 
     private final RedisTemplate<String, UserPublicProfileResponse> userPublicProfileRedisTemplate;
     private final RedisTemplate<String, UserPrivateProfileResponse> userPrivateProfileRedisTemplate;
     private final S3Service s3Service;
@@ -51,7 +52,7 @@ public class UserServiceImpl implements UserService {
 
     private static final long PROFILE_CACHE_HOURS = 24L; // 프론트는 12시간, redis 캐시를 활용해 DB 부하를 감소하기 위해 2배인 24시간으로 설정
     private static final long DUPLICATE_CHECK_CACHE_HOURS = 6L; // 중복확인의 경우 메모리 낭비가 될 수 있기 때문에 6시간으로 설정
-
+ 
     // private static final long CACHE_TTL = 24 * 60 * 60; // 1일
 
     @Override
@@ -86,8 +87,7 @@ public class UserServiceImpl implements UserService {
     @Override
     @Transactional
     public RateLimitResponse<OAuth2SignUpResponse> createOAuth2User(String email,
-            AdditionalInfoRequest additionalInfoRequest,
-            HttpServletRequest request, HttpServletResponse response) {
+            AdditionalInfoRequest additionalInfoRequest) {
 
         User user = User.builder()
                 .blogId(additionalInfoRequest.getBlogId())
@@ -162,10 +162,29 @@ public class UserServiceImpl implements UserService {
         return userRepository.findByEmail(email);
     }
 
+    // 글생성시 필요, redis를 사용할까 했지만 redis에 json 변환시 여러 문제, redis에 저장되면 영속성 detached 상태로 변경되는 문제 등 때문에 사용x
+    @Override
+    @Transactional(readOnly = true)
+    public User findUserByBlogId(String blogId) {
+
+        // If not in cache, get from database
+        Optional<User> optionalUser = userRepository.findByBlogId(blogId);
+        if (optionalUser.isEmpty()) {
+            throw new BusinessException(
+                    ErrorCode.USER_NOT_FOUND,
+                    blogId + "를 가지고 있는 사용자를 찾지 못하였습니다.",
+                    "UserServiceImpl",
+                    "findUserByBlogId");
+        }
+
+        return optionalUser.get();
+
+    }
+
     @Loggable
     @Override
     @Transactional(readOnly = true)
-    public UserPublicProfileResponse findUserByBlogId(String blogId) {
+    public UserPublicProfileResponse findUserByBlogIdAndConvertDTO(String blogId) {
         String cacheKey = "userPublicProfile:" + blogId;
 
         // Try to get user from cache first
@@ -181,7 +200,7 @@ public class UserServiceImpl implements UserService {
                     ErrorCode.USER_NOT_FOUND,
                     blogId + "를 가지고 있는 사용자를 찾지 못하였습니다.",
                     "UserServiceImpl",
-                    "findUserByBlogId");
+                    "findUserByBlogIdAndConvertDTO");
         }
 
         User user = optionalUser.get();
@@ -202,7 +221,7 @@ public class UserServiceImpl implements UserService {
     @Loggable
     @Transactional(readOnly = true)
     @Override
-    public UserPrivateProfileResponse findUserByTokenAndByBlogId(String blogId) { // email 민감한 정보는 개인정보 보호를 위해 캐시 삭제 
+    public UserPrivateProfileResponse findUserByTokenAndByBlogId(String blogId) { // email 민감한 정보는 개인정보 보호를 위해 캐시 삭제
 
         Optional<User> optionalUser = userRepository.findByBlogId(blogId);
         if (optionalUser.isEmpty()) {
@@ -258,7 +277,7 @@ public class UserServiceImpl implements UserService {
                             // 사용자 정보 변경 시 캐시 무효화. 트랜잭션이 성공적으로 커밋되어야만 redis 캐시 무효화
                             userPublicProfileRedisTemplate.delete("userPublicProfile:" + blogId);
                             userPrivateProfileRedisTemplate.delete("userPrivateProfile:" + blogId);
-                            redisTemplateBoolean.delete("username:" + oldUsername);
+                            redisTemplateBoolean.delete("isDuplicateUsername:" + oldUsername);
                         }
 
                     });
@@ -276,7 +295,7 @@ public class UserServiceImpl implements UserService {
     @Transactional(readOnly = true)
     public boolean isExistsBlogId(String blogId) {
 
-        String cacheKey = "user:" + blogId;
+        String cacheKey = "isExists:" + blogId;
 
         Boolean exists = redisTemplateBoolean.opsForValue().get(cacheKey);
         if (exists != null) {
@@ -300,7 +319,7 @@ public class UserServiceImpl implements UserService {
     @Transactional(readOnly = true)
     public DuplicateCheckResponse isDuplicateBlogId(String blogId) {
 
-        String cacheKey = "userBlogId:" + blogId;
+        String cacheKey = "isDuplicateBlogId:" + blogId;
         return checkDuplicate(cacheKey, () -> userRepository.existsByBlogId(blogId), "이미 존재하는 " +
                 "BlogId 입니다. 다른 BlogId를 사용해 주세요.", "사용 가능한 BlogId 입니다.");
     }
@@ -310,7 +329,7 @@ public class UserServiceImpl implements UserService {
     @DuplicateCheck(type = "Email")
     @Transactional(readOnly = true)
     public DuplicateCheckResponse isDuplicateEmail(String email) {
-        String cacheKey = "userEmail:" + email;
+        String cacheKey = "isDuplicateEmail:" + email;
         return checkDuplicate(cacheKey, () -> userRepository.existsByEmail(email), "이미 존재하는 이메일 " +
                 "입니다. 다른 이메일을 사용해 주세요.", "사용 가능한 이메일 입니다.");
 
@@ -321,7 +340,7 @@ public class UserServiceImpl implements UserService {
     @DuplicateCheck(type = "Username")
     @Transactional(readOnly = true)
     public DuplicateCheckResponse isDuplicateUsername(String username) {
-        String cacheKey = "username:" + username;
+        String cacheKey = "isDuplicateUsername:" + username;
         return checkDuplicate(cacheKey, () -> userRepository.existsByUsername(username), "이미 존재하는" +
                 " 사용자명 입니다. 다른 사용자명을 사용해 주세요.", "사용 가능한 사용자명 입니다.");
     }
