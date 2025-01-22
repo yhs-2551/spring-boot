@@ -24,10 +24,19 @@ public class RememberMeAuthenticationFilter extends OncePerRequestFilter {
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
 
+        
+        log.info("[RememberMeAuthenticationFilter] doFilterInternal() 메서드 시작");
+
         if (request.getRequestURI().startsWith("/oauth2/authorization/")) {
+
+            log.info("[RememberMeAuthenticationFilter] doFilterInternal() 메서드 /oauth2/authorization/ URI 요청 분기 진행");
+
             String rememberMe = request.getParameter("remember_me");
 
             if (rememberMe != null) {
+                
+                log.info("[RememberMeAuthenticationFilter] doFilterInternal() 메서드 rememberMe != null 분기 진행");
+
                 String uniqueId = UUID.randomUUID().toString();
                 // 쿠키는 사용자의 브라우저마다 개별적으로 저장되지만, 더욱 명확한 사용자 구분을 위해 Redis 사용
                 CookieUtil.addCookie(response, "oauth2_remember_me_unique_id", uniqueId, 180);

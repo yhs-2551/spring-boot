@@ -26,10 +26,6 @@ public class QPost extends EntityPathBase<Post> {
 
     public final com.yhs.blog.springboot.jpa.domain.category.entity.QCategory category;
 
-    public final NumberPath<Integer> commentCount = createNumber("commentCount", Integer.class);
-
-    public final SetPath<Comment, QComment> comments = this.<Comment, QComment>createSet("comments", Comment.class, QComment.class, PathInits.DIRECT2);
-
     public final EnumPath<com.yhs.blog.springboot.jpa.domain.post.entity.enums.CommentsEnabled> commentsEnabled = createEnum("commentsEnabled", com.yhs.blog.springboot.jpa.domain.post.entity.enums.CommentsEnabled.class);
 
     public final StringPath content = createString("content");
@@ -43,21 +39,15 @@ public class QPost extends EntityPathBase<Post> {
 
     public final NumberPath<Long> id = createNumber("id", Long.class);
 
-    public final SetPath<Like, QLike> likes = this.<Like, QLike>createSet("likes", Like.class, QLike.class, PathInits.DIRECT2);
-
     public final EnumPath<com.yhs.blog.springboot.jpa.domain.post.entity.enums.PostStatus> postStatus = createEnum("postStatus", com.yhs.blog.springboot.jpa.domain.post.entity.enums.PostStatus.class);
 
     public final ListPath<PostTag, QPostTag> postTags = this.<PostTag, QPostTag>createList("postTags", PostTag.class, QPostTag.class, PathInits.DIRECT2);
-
-    public final NumberPath<Integer> replyCount = createNumber("replyCount", Integer.class);
 
     public final StringPath title = createString("title");
 
     public final DateTimePath<java.time.LocalDateTime> updatedAt = createDateTime("updatedAt", java.time.LocalDateTime.class);
 
     public final com.yhs.blog.springboot.jpa.domain.user.entity.QUser user;
-
-    public final NumberPath<Integer> views = createNumber("views", Integer.class);
 
     public QPost(String variable) {
         this(Post.class, forVariable(variable), INITS);

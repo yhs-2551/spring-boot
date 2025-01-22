@@ -1,4 +1,5 @@
 package com.yhs.blog.springboot.jpa.domain.category.service.impl;
+
 import com.yhs.blog.springboot.jpa.aop.log.Loggable;
 import com.yhs.blog.springboot.jpa.common.constant.code.ErrorCode;
 import com.yhs.blog.springboot.jpa.domain.category.dto.request.CategoryRequest;
@@ -34,11 +35,14 @@ public class CategoryServiceImpl implements CategoryService {
     @Transactional
     public void createCategory(CategoryRequestPayLoad categoryRequestPayLoad, String blogId) {
 
-        log.info("categoryRequestPayLoad >>>>>>> " + categoryRequestPayLoad);
+        log.info("[CategoryServiceImpl] createCategory 메서드 시작");
 
         // 카테고리 삭제 작업
         if (categoryRequestPayLoad.getCategoryToDelete() != null
                 && !categoryRequestPayLoad.getCategoryToDelete().isEmpty()) {
+
+            log.info("[CategoryServiceImpl] createCategory 메서드 - 삭제할 카테고리가 있을 경우 삭제할 카테고리 분기 진행");
+
             categoryRequestPayLoad.getCategoryToDelete().forEach(this::deleteCategory);
             // 삭제된 엔티티들 즉 영속성 컨텍스트 변경 사항을 즉시 DB에 반영. 이게 없으면, 프론트에서 부모에서 자식 카테고리를 없애고 해당 부모
             // 카테고리를 제거할 때 duplicate key 에러 발생
@@ -66,14 +70,21 @@ public class CategoryServiceImpl implements CategoryService {
     @Transactional(readOnly = true)
     public List<CategoryResponse> getAllCategoriesWithChildrenByUserId(String blogId) {
 
+        log.info("[CategoryServiceImpl] getAllCategoriesWithChildrenByUserId 메서드 시작");
+
         Long userId = userService.findUserByBlogIdAndConvertDTO(blogId).id();
 
         List<Category> categories = categoryRepository.findAllWithChildrenByUserId(userId);
 
         if (categories.isEmpty()) {
-            log.info("No categories found for user ID: {}", userId);
+
+            log.info("[CategoryServiceImpl] getAllCategoriesWithChildrenByUserId 메서드 카테고리가 존재하지 않는 경우 분기 진행");
+
             return Collections.emptyList(); // 불변 빈 배열 반환
         }
+
+        log.info("[CategoryServiceImpl] getAllCategoriesWithChildrenByUserId 메서드 카테고리가 존재하는 경우 분기 진행");
+
         return categories.stream().map(CategoryMapper::of).collect(Collectors.toList());
 
     }
@@ -81,11 +92,13 @@ public class CategoryServiceImpl implements CategoryService {
     @Loggable
     private void deleteCategory(CategoryRequest categoryRequest) {
 
-        log.info("실행>>>>>>>>>>>>>>>>>>>>>");
+        log.info("[CategoryServiceImpl] deleteCategory 메서드 시작");
 
         Optional<Category> categoryOptional = categoryRepository.findById(categoryRequest.getCategoryUuid());
 
         if (categoryOptional.isPresent()) {
+
+            log.info("[CategoryServiceImpl] deleteCategory 메서드 - 삭제할 카테고리가 존재하는 경우 분기 진행");
 
             Category category = categoryOptional.get();
 
@@ -109,7 +122,8 @@ public class CategoryServiceImpl implements CategoryService {
                         "deleteCategory");
             }
 
-            log.debug("삭제 진행 카테고리 UUID: {}", categoryRequest.getCategoryUuid());
+            log.info("[CategoryServiceImpl] deleteCategory 메서드 - 유효성 검사 통과 후 카테고리 삭제 진행");
+
             categoryRepository.delete(category);
 
         } else {
@@ -123,6 +137,9 @@ public class CategoryServiceImpl implements CategoryService {
     }
 
     private List<Category> saveChildrenCategories(List<CategoryRequest> childrenRequests) {
+
+        log.info("[CategoryServiceImpl] saveChildrenCategories 메서드 시작");
+
         long childOrderIndex = 0;
         List<Category> childCategories = new ArrayList<>();
         for (CategoryRequest childRequest : childrenRequests) {
@@ -138,15 +155,25 @@ public class CategoryServiceImpl implements CategoryService {
     private Category createSingleCategory(CategoryRequest categoryRequest,
             long orderIndex, boolean isParentCategoryAlreadyExistInDB) {
 
+        log.info("[CategoryServiceImpl] createSingleCategory 메서드 시작");
+
         Category parentCategory;
 
         if (isParentCategoryAlreadyExistInDB) {
+
+            log.info(
+                    "[CategoryServiceImpl] createSingleCategory 메서드 DB에 부모 카테고리가 이미 존재하는 경우 및 자식 카테고리가 DB에 존재하지 않는 경우우 분기 진행");
+
             // 새로운 카테고리를 생성하고 이미 존재하는 부모에게 자식으로 추가할 때 처리 로직
             parentCategory = categoryRepository.findById(categoryRequest.getCategoryUuidParent())
                     .orElseThrow(() -> new BusinessException(ErrorCode.CATEGORY_NOT_FOUND,
                             categoryRequest.getCategoryUuidParent() + " 카테고리를 찾을 수 없습니다.", "CategoryServiceImpl",
                             "createSingleCategory"));
         } else {
+
+            log.info(
+                    "[CategoryServiceImpl] createSingleCategory 메서드 DB에 부모 카테고리가 존재하지 않는 경우 분기 진행");
+
             parentCategory = null;
         }
 
@@ -161,6 +188,10 @@ public class CategoryServiceImpl implements CategoryService {
 
         // 자식 카테고리 생성 및 저장
         if (categoryRequest.getChildren() != null && !categoryRequest.getChildren().isEmpty()) {
+
+            log.info(
+                    "[CategoryServiceImpl] createSingleCategory 메서드 자식 카테고리가 존재하는 경우 분기 진행");
+
             long childOrderIndex = 0;
             List<Category> childCategories = new ArrayList<>();
             for (CategoryRequest childRequest : categoryRequest.getChildren()) {
@@ -179,12 +210,15 @@ public class CategoryServiceImpl implements CategoryService {
 
     private Category saveCategoryHierarchy(CategoryRequest categoryRequest,
             long orderIndex) {
+        log.info("[CategoryServiceImpl] saveCategoryHierarchy 메서드 시작");
 
         // 부모까지 한번에 조회. 아래 category.getParent()에서 N+1 문제 발생을 방지하기 위함
         Optional<Category> existingCategory = categoryRepository.findByIdWithParent(categoryRequest.getCategoryUuid());
         Category category;
 
         if (existingCategory.isPresent()) { // 부모 카테고리가 이미 DB에 있는 경우
+
+            log.info("[CategoryServiceImpl] saveCategoryHierarchy 메서드 DB에 카테고리가 존재하는 경우 분기 진행");
             category = existingCategory.get();
             category.setName(categoryRequest.getName());
 
@@ -205,13 +239,21 @@ public class CategoryServiceImpl implements CategoryService {
 
         } else {
 
+            log.info("[CategoryServiceImpl] saveCategoryHierarchy 메서드 DB에 카테고리가 존재하지 않는 경우 분기 진행");
+
             if (categoryRequest.getCategoryUuidParent() != null) {
 
-                category = createSingleCategory(categoryRequest, orderIndex, true);
-            }
+                log.info("[CategoryServiceImpl] saveCategoryHierarchy 메서드 DB에 카테고리가 존재하지 않는 경우 및 자식 카테고리인 경우 분기 진행");
 
-            // 새로운 부모 및 자식 카테고리 생성
-            category = createSingleCategory(categoryRequest, orderIndex, false);
+                category = createSingleCategory(categoryRequest, orderIndex, true);
+            } else {
+
+                log.info(
+                        "[CategoryServiceImpl] saveCategoryHierarchy 메서드 DB에 카테고리가 존재하지 않는 경우 및 최상위(부모) 카테고리인 경우 분기 진행");
+
+                // 새로운 부모 카테고리 생성
+                category = createSingleCategory(categoryRequest, orderIndex, false);
+            }
 
         }
 
@@ -223,6 +265,8 @@ public class CategoryServiceImpl implements CategoryService {
     @Loggable
     @Override
     public Category findCategoryByNameAndUserId(String categoryName, Long userId) {
+
+        log.info("[CategoryServiceImpl] findCategoryByNameAndUserId 메서드 시작");
 
         Category category = categoryRepository.findByNameAndUserId(categoryName, userId)
                 .orElseThrow(() -> new BusinessException(

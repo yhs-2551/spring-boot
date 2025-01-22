@@ -25,6 +25,9 @@ public class OAuth2UserLoadService extends DefaultOAuth2UserService {
     @Override
     @Loggable
     public OAuth2User loadUser(OAuth2UserRequest request) {
+
+        log.info("[OAuth2UserLoadService] loadUser 메서드 시작");
+
         OAuth2User oAuth2User = callSuperLoadUser(request);
         if (oAuth2User.getAttribute("email") == null) {
             throw new SystemException(

@@ -6,14 +6,22 @@ import com.yhs.blog.springboot.jpa.domain.token.jwt.claims.ClaimsExtractor;
 import com.yhs.blog.springboot.jpa.exception.custom.BusinessException;
 
 import jakarta.servlet.http.HttpServletRequest;
+import lombok.extern.log4j.Log4j2;
 
+@Log4j2
 public class TokenUtil {
 
     @Loggable
     public static Long extractUserIdFromRequestToken(HttpServletRequest request, ClaimsExtractor claimsExtractor) {
+
+        log.info("[TokenUtil] extractUserIdFromRequestToken 메서드 시작");
+
         String authorizationHeader = request.getHeader("Authorization");
 
         if (authorizationHeader != null && authorizationHeader.startsWith("Bearer ")) {
+
+            log.info("[TokenUtil] extractUserIdFromRequestToken Authorization 헤더 존재 분기 진행");
+
             String accessToken = authorizationHeader.substring(7);
             return claimsExtractor.getUserId(accessToken);
         }

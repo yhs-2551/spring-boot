@@ -13,8 +13,8 @@ import java.util.List;
 import java.util.Set;
 
 @Entity
-@Table(name = "Categories", uniqueConstraints = {@UniqueConstraint(columnNames = {"name", "user_id"}),
-}, indexes = {@Index(name = "idx_user_id_name", columnList = "name, user_id")})
+@Table(name = "Categories", uniqueConstraints = { @UniqueConstraint(columnNames = { "name", "user_id" }),
+}, indexes = { @Index(name = "idx_user_id_name", columnList = "name, user_id") })
 @EntityListeners(AuditingEntityListener.class)
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
@@ -50,7 +50,6 @@ public class Category extends BaseEntity {
     @LastModifiedDate
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
-
 
     @Column(name = "order_index", nullable = false)
     private Long orderIndex;

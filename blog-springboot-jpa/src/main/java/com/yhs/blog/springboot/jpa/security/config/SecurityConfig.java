@@ -13,6 +13,8 @@ import com.yhs.blog.springboot.jpa.security.service.CustomUserDetailsService;
 import com.yhs.blog.springboot.jpa.web.cookie.TokenCookieManager;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.log4j.Log4j2;
+
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.redis.core.RedisTemplate;
@@ -30,7 +32,6 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.oauth2.client.web.OAuth2AuthorizationRequestRedirectFilter;
 import org.springframework.security.web.SecurityFilterChain;
-import org.springframework.security.web.authentication.AuthenticationFailureHandler;
 import org.springframework.security.web.authentication.HttpStatusEntryPoint;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
@@ -44,6 +45,7 @@ import java.util.List;
 @EnableWebSecurity
 @EnableMethodSecurity(prePostEnabled = true)
 @RequiredArgsConstructor
+@Log4j2
 public class SecurityConfig {
 
         private final OAuth2UserLoadService oAuth2UserCustomService;
@@ -58,6 +60,10 @@ public class SecurityConfig {
         // 스프링 시큐리티 기능 비활성화. 일반적으로 정적 리소스(이미지, html 파일)
         @Bean
         public WebSecurityCustomizer configure() {
+
+                log.info("[SecurityConfig] configure() 메서드 시작");
+
+
                 return (web) -> web.ignoring().requestMatchers("/static/**");
         }
 

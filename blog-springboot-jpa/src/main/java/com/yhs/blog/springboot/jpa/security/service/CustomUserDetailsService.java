@@ -17,7 +17,7 @@ public class CustomUserDetailsService implements UserDetailsService {
 
     @Override
     public UserDetails loadUserByUsername(String email) {
-        log.info("실행입니다.");
+        log.info("[CustomUserDetailsService] loadUserByUsername() 메서드 시작");
         //
         // User user =
         // userRepository.findByEmail(email).orElseThrow(() -> new

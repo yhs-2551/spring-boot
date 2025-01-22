@@ -45,7 +45,10 @@ public class PostController {
                         @Valid @RequestBody PostRequest postRequest,
                         HttpServletRequest request) {
 
+                log.info("[PostController] createNewPost() 요청");
+
                 postService.createNewPost(postRequest, blogId);
+
                 // 아래 응답에서 일단 responseDTO를 사용하고 있지만, 나중에는 그냥 문자열로만 응답하도록 수정할수도 있음.
                 return ResponseEntity.status(HttpStatus.CREATED)
                                 .body(new SuccessResponse<PostResponse>("게시글 생성에 성공 하였습니다."));
@@ -64,6 +67,8 @@ public class PostController {
                         @RequestParam(name = "category", required = false) String category, // 검색할때는 카테고리를 쿼리 파라미터에 포함
                         @PageableDefault(page = 0, size = 10, sort = { "createdAt",
                                         "id" }, direction = Sort.Direction.DESC) Pageable pageable) {
+
+                log.info("[PostController] findAllPosts() 요청");
 
                 Page<PostResponse> postResponses;
 
@@ -103,6 +108,8 @@ public class PostController {
                         @PageableDefault(page = 0, size = 10, sort = { "createdAt",
                                         "id" }, direction = Sort.Direction.DESC) Pageable pageable) {
 
+                log.info("[PostController] getPostsByPage() 요청");
+
                 int pageNumber = page - 1;
 
                 PageRequest pageRequest = PageRequest.of(
@@ -127,6 +134,8 @@ public class PostController {
                         @PageableDefault(page = 0, size = 10, sort = { "createdAt",
                                         "id" }, direction = Sort.Direction.DESC) Pageable pageable) {
 
+                log.info("[PostController] getPostsByCategoryAndUser() 요청");
+
                 Page<PostResponse> postResponses = postService.getAllPostsSpecificUser(blogId, null, null, category,
                                 pageable);
 
@@ -142,6 +151,8 @@ public class PostController {
                         @PathVariable("page") Integer page,
                         @PageableDefault(page = 0, size = 10, sort = { "createdAt",
                                         "id" }, direction = Sort.Direction.DESC) Pageable pageable) {
+
+                log.info("[PostController] getPostsByCategoryAndPage() 요청");
 
                 int pageNumber = page - 1;
 
@@ -163,7 +174,10 @@ public class PostController {
         @GetMapping("/{blogId}/posts/{postId}")
         public ResponseEntity<PostResponse> findPostByPostId(@PathVariable("postId") Long postId) {
 
+                log.info("[PostController] findPostByPostId() 요청");
+
                 PostResponse postResponse = postService.getPostByPostId(postId);
+
                 return ResponseEntity.ok().body(postResponse);
         }
 
@@ -173,11 +187,14 @@ public class PostController {
                         @AuthenticationPrincipal org.springframework.security.core.userdetails.User user,
                         @PathVariable("blogId") String blogId) {
 
+                log.info("[PostController] verifyAuthor() 요청");
+
                 // 로그인한 사용자와 실제 게시글 작성자가 같은지 최종적으로 확인
                 boolean isAuthor = blogId.equals(user.getUsername());
 
                 Map<String, Boolean> response = new HashMap<>();
                 response.put("isAuthor", isAuthor);
+
                 return ResponseEntity.ok(response);
         }
 
@@ -186,7 +203,10 @@ public class PostController {
         public ResponseEntity<ApiResponse> deletePostById(@PathVariable("postId") Long postId,
                         @P("userBlogId") @PathVariable("blogId") String blogId) {
 
+                log.info("[PostController] deletePostById() 요청");
+
                 postService.deletePostByPostId(postId);
+
                 return ResponseEntity.ok(new SuccessResponse<>("게시글이 성공적으로 삭제되었습니다."));
         }
 
@@ -196,6 +216,8 @@ public class PostController {
         public ResponseEntity<ApiResponse> updatePostByPostId(@PathVariable("postId") Long postId,
                         @P("userBlogId") @PathVariable("blogId") String blogId,
                         @RequestBody PostUpdateRequest postUpdateRequest) {
+
+                log.info("[PostController] updatePostByPostId() 요청");
 
                 postService.updatePostByPostId(postId, blogId,
                                 postUpdateRequest);

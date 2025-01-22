@@ -18,6 +18,9 @@ public class EmailSender {
     private final JavaMailSender mailSender;
 
     public boolean sendEmail(String to, String subject, String text) {
+
+        log.info("[EmailSender] sendEmail() 메서드 시작");
+
         try {
             SimpleMailMessage message = new SimpleMailMessage();
             message.setTo(to);
@@ -26,7 +29,6 @@ public class EmailSender {
             message.setText(text);
 
             mailSender.send(message);
-            log.info("이메일 발송 완료: {}", to);
             return true;
 
         } catch (MailException e) {

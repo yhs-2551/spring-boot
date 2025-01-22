@@ -57,6 +57,8 @@ public class UserServiceImpl implements UserService {
     @Loggable
     public void createUser(SignUpUserRequest signUpUserRequest) {
 
+        log.info("[UserServiceImpl] createUser 메서드 시작");
+
         try {
             BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
             User user = User.builder()
@@ -83,6 +85,8 @@ public class UserServiceImpl implements UserService {
     @Transactional
     public RateLimitResponse<OAuth2SignUpResponse> createOAuth2User(String email,
             AdditionalInfoRequest additionalInfoRequest) {
+
+        log.info("[UserServiceImpl] createOAuth2User 메서드 시작");
 
         User user = User.builder()
                 .blogId(additionalInfoRequest.getBlogId())
@@ -112,10 +116,15 @@ public class UserServiceImpl implements UserService {
 
     public LoginResultToken getTokenForLoginUser(User user, LoginRequest loginRequest) {
 
+        log.info("[UserServiceImpl] getTokenForLoginUser 메서드 시작");
+
         // 리프레시 토큰 생성
         String refreshToken;
 
         if (loginRequest.getRememberMe()) {
+
+            log.info("[UserServiceImpl] getTokenForLoginUser 메서드 - RememberMe 체크한 경우 로그인 분기 시작");
+
             refreshToken = tokenProvider.generateToken(user,
                     TokenConstants.REMEMBER_ME_REFRESH_TOKEN_DURATION);
             redisTemplateString.opsForValue().set(TokenConstants.RT_PREFIX + user.getId(),
@@ -123,6 +132,9 @@ public class UserServiceImpl implements UserService {
                     TokenConstants.REMEMBER_ME_REFRESH_TOKEN_TTL, TimeUnit.SECONDS);
 
         } else {
+
+            log.info("[UserServiceImpl] getTokenForLoginUser 메서드 - RememberMe 체크하지 않은 경우 로그인 분기 시작");
+
             refreshToken = tokenProvider.generateToken(user, TokenConstants.REFRESH_TOKEN_DURATION);
 
             redisTemplateString.opsForValue().set(TokenConstants.RT_PREFIX + user.getId(),
@@ -140,6 +152,9 @@ public class UserServiceImpl implements UserService {
     @Override
     @Transactional(readOnly = true)
     public User findUserById(Long userId) {
+
+        log.info("[UserServiceImpl] findUserById 메서드 시작");
+
         return userRepository.findById(userId).orElseThrow(() -> new BusinessException(
                 ErrorCode.USER_NOT_FOUND,
                 userId + "를 가지고 있는 사용자를 찾지 못하였습니다.",
@@ -150,6 +165,9 @@ public class UserServiceImpl implements UserService {
     @Override
     @Transactional(readOnly = true)
     public Optional<User> findUserByEmail(String email) {
+
+        log.info("[UserServiceImpl] findUserByEmail 메서드 시작");
+
         return userRepository.findByEmail(email);
     }
 
@@ -158,6 +176,8 @@ public class UserServiceImpl implements UserService {
     @Override
     @Transactional(readOnly = true)
     public User findUserByBlogId(String blogId) {
+
+        log.info("[UserServiceImpl] findUserByBlogId 메서드 시작");
 
         // If not in cache, get from database
         Optional<User> optionalUser = userRepository.findByBlogId(blogId);
@@ -177,13 +197,20 @@ public class UserServiceImpl implements UserService {
     @Override
     @Transactional(readOnly = true)
     public UserPublicProfileResponse findUserByBlogIdAndConvertDTO(String blogId) {
+
+        log.info("[UserServiceImpl] findUserByBlogIdAndConvertDTO 메서드 시작");
+
         String cacheKey = "userPublicProfile:" + blogId;
 
         // Try to get user from cache first
         UserPublicProfileResponse cachedUser = userPublicProfileRedisTemplate.opsForValue().get(cacheKey);
         if (cachedUser != null) {
+            log.info("[UserServiceImpl] findUserByBlogIdAndConvertDTO 메서드 Redis 캐시에 존재하는 경우 분기 시작");
+
             return cachedUser;
         }
+
+        log.info("[UserServiceImpl] findUserByBlogIdAndConvertDTO 메서드 Redis 캐시에 존재하지 않는 경우 분기 시작");
 
         // If not in cache, get from database
         Optional<User> optionalUser = userRepository.findByBlogId(blogId);
@@ -215,6 +242,8 @@ public class UserServiceImpl implements UserService {
     @Override
     public UserPrivateProfileResponse findUserByTokenAndByBlogId(String blogId) { // email 민감한 정보는 개인정보 보호를 위해 캐시 삭제
 
+        log.info("[UserServiceImpl] findUserByTokenAndByBlogId 메서드 시작");
+
         Optional<User> optionalUser = userRepository.findByBlogId(blogId);
         if (optionalUser.isEmpty()) {
             throw new BusinessException(
@@ -238,6 +267,8 @@ public class UserServiceImpl implements UserService {
     @Transactional
     public void updateUserSettings(String blogId, UserSettingsRequest userSettingsRequest) throws IOException {
 
+        log.info("[UserServiceImpl] updateUserSettings 메서드 시작");
+
         User user = userRepository.findByBlogId(blogId).orElseThrow(() -> new BusinessException(
                 ErrorCode.USER_NOT_FOUND,
                 blogId + "를 가지고 있는 사용자를 찾지 못하였습니다.",
@@ -248,11 +279,16 @@ public class UserServiceImpl implements UserService {
 
         try {
             if (userSettingsRequest.profileImage() != null && !userSettingsRequest.profileImage().isEmpty()) {
+
+                log.info("[UserServiceImpl] updateUserSettings 메서드 - 프로필 이미지가 null이 아닌 경우 분기 시작");
+
                 String awsS3FileUrl = s3Service.uploadProfileImage(userSettingsRequest.profileImage(), blogId);
 
                 user.profileUpdate(userSettingsRequest.username(), userSettingsRequest.blogName(),
                         awsS3FileUrl);
             } else {
+
+                log.info("[UserServiceImpl] updateUserSettings 메서드 - 프로필 이미지가 null인 경우 분기 시작");
 
                 s3Service.deleteProfileImage(blogId);
 
@@ -288,19 +324,31 @@ public class UserServiceImpl implements UserService {
     @Transactional(readOnly = true)
     public boolean isExistsBlogId(String blogId) {
 
+        log.info("[UserServiceImpl] isExistsBlogId 메서드 시작");
+
         String cacheKey = "isExists:" + blogId;
 
         Boolean exists = redisTemplateBoolean.opsForValue().get(cacheKey);
         if (exists != null) {
+
+            log.info("[UserServiceImpl] isExistsBlogId 메서드 - 캐시에 존재하는 경우 분기 시작");
+
             return exists;
         }
+
+        log.info("[UserServiceImpl] isExistsBlogId 메서드 - 캐시에 존재하지 않는 경우 분기 시작");
 
         boolean userExists = userRepository.existsByBlogId(blogId);
 
         if (userExists) {
+
+            log.info("[UserServiceImpl] isExistsBlogId 메서드 - DB에 사용자가 존재하는 경우 분기 시작");
+
             // 캐시에 저장.
             redisTemplateBoolean.opsForValue().set(cacheKey, true, PROFILE_CACHE_HOURS, TimeUnit.HOURS);
         }
+
+        log.info("[UserServiceImpl] isExistsBlogId 메서드 - DB에 사용자가 존재하지 않는 경우 분기 시작");
 
         return false;
     }
@@ -312,6 +360,8 @@ public class UserServiceImpl implements UserService {
     @Transactional(readOnly = true)
     public DuplicateCheckResponse isDuplicateBlogId(String blogId) {
 
+        log.info("[UserServiceImpl] isDuplicateBlogId 메서드 시작");
+
         String cacheKey = "isDuplicateBlogId:" + blogId;
         return checkDuplicate(cacheKey, () -> userRepository.existsByBlogId(blogId), "이미 존재하는 " +
                 "BlogId 입니다. 다른 BlogId를 사용해 주세요.", "사용 가능한 BlogId 입니다.");
@@ -322,6 +372,9 @@ public class UserServiceImpl implements UserService {
     @DuplicateCheck(type = "Email")
     @Transactional(readOnly = true)
     public DuplicateCheckResponse isDuplicateEmail(String email) {
+
+        log.info("[UserServiceImpl] isDuplicateEmail 메서드 시작");
+
         String cacheKey = "isDuplicateEmail:" + email;
         return checkDuplicate(cacheKey, () -> userRepository.existsByEmail(email), "이미 존재하는 이메일 " +
                 "입니다. 다른 이메일을 사용해 주세요.", "사용 가능한 이메일 입니다.");
@@ -333,6 +386,9 @@ public class UserServiceImpl implements UserService {
     @DuplicateCheck(type = "Username")
     @Transactional(readOnly = true)
     public DuplicateCheckResponse isDuplicateUsername(String username) {
+
+        log.info("[UserServiceImpl] isDuplicateUsername 메서드 시작");
+
         String cacheKey = "isDuplicateUsername:" + username;
         return checkDuplicate(cacheKey, () -> userRepository.existsByUsername(username), "이미 존재하는" +
                 " 사용자명 입니다. 다른 사용자명을 사용해 주세요.", "사용 가능한 사용자명 입니다.");
@@ -340,25 +396,40 @@ public class UserServiceImpl implements UserService {
 
     private DuplicateCheckResponse checkDuplicate(String cacheKey, Supplier<Boolean> dbCheck, String existMessage,
             String notExistMessage) {
+
+        log.info("[UserServiceImpl] checkDuplicate 메서드 시작");
+
         // boolean 기본 타입은 null값을 가질 수 없기 때문에 null 비교 하려면 래퍼 클래스 사용필요.
         Boolean exists = redisTemplateBoolean.opsForValue().get(cacheKey);
         if (exists != null) {
+
+            log.info("[UserServiceImpl] checkDuplicate 메서드 - 캐시에 존재하는 경우 분기 시작");
+
             // 캐시 조회 성공
             return new DuplicateCheckResponse(true, existMessage);
         }
 
+        log.info("[UserServiceImpl] checkDuplicate 메서드 - 캐시에 존재하지 않는 경우 분기 시작");
+
         boolean isExists = dbCheck.get();
         if (isExists) {
+
+            log.info("[UserServiceImpl] checkDuplicate 메서드 - DB에 존재하는 경우 분기 시작");
+
             // DB 조회 성공
             // 캐시에 저장. 일단 무한대. 사용자 계정 변경 및 계정 탈퇴 시 무효화 필요요
             redisTemplateBoolean.opsForValue().set(cacheKey, true, DUPLICATE_CHECK_CACHE_HOURS, TimeUnit.HOURS);
             return new DuplicateCheckResponse(true, existMessage);
         }
 
+        log.info("[UserServiceImpl] checkDuplicate 메서드 - DB에 존재하지 않는 경우 분기 시작");
+
         return new DuplicateCheckResponse(false, notExistMessage);
     }
 
     private String oAuth2NewUserGenerateRefreshToken(String email, User user, boolean isRememberMe) {
+
+        log.info("[UserServiceImpl] oAuth2NewUserGenerateRefreshToken 메서드 시작");
 
         // 아래는 OAuth2 신규 사용자 토큰 발급 로직
         // 리프레시 토큰 발급 및 Redis에 저장
@@ -378,6 +449,8 @@ public class UserServiceImpl implements UserService {
     }
 
     private String oAuth2NewUserGenerateAccessToken(User user) {
+
+        log.info("[UserServiceImpl] oAuth2NewUserGenerateAccessToken 메서드 시작");
 
         // Access Token 생성
         String accessToken = tokenProvider.generateToken(user, TokenConstants.ACCESS_TOKEN_DURATION);

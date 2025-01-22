@@ -1,7 +1,7 @@
 package com.yhs.blog.springboot.jpa.domain.token.jwt.provider;
 
 import com.yhs.blog.springboot.jpa.domain.token.jwt.config.JwtConfig;
-import com.yhs.blog.springboot.jpa.domain.user.entity.User; 
+import com.yhs.blog.springboot.jpa.domain.user.entity.User;
 
 import io.jsonwebtoken.Jwts;
 import lombok.RequiredArgsConstructor;
@@ -21,12 +21,18 @@ public class TokenProvider {
     private final JwtConfig jwtConfig;
 
     public String generateToken(User user, Duration expiredAt) {
+
+        log.info("[TokenProvider] generateToken() 메서드 시작");
+
         Date now = new Date();
         return makeToken(new Date(now.getTime() + expiredAt.toMillis()), user);
     }
 
     // jwt 토큰 생성 메서드
     private String makeToken(Date expiry, User user) {
+
+        log.info("[TokenProvider] makeToken() 메서드 시작");
+
         Date now = new Date();
 
         List<String> roles = user.getAuthorities().stream().map(authority -> authority.getAuthority()).toList();

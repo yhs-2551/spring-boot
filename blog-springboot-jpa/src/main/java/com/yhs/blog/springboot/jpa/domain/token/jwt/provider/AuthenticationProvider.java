@@ -14,9 +14,11 @@ import org.springframework.security.core.userdetails.UserDetails;
 import com.yhs.blog.springboot.jpa.domain.token.jwt.claims.ClaimsExtractor;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.log4j.Log4j2;
 
 @Component
 @RequiredArgsConstructor
+@Log4j2
 public class AuthenticationProvider {
 
     private final ClaimsExtractor claimsExtractor;
@@ -25,6 +27,8 @@ public class AuthenticationProvider {
     // 토큰을 처리하고, JWT 토큰에서 사용자 정보를 복원하는 로직.
     // 최종적으로 검증된 사용자 정보와 사용자 권한을 SecurityContext 보안 컨텍스트에 저장하기 위해 사용되는 객체
     public Authentication getAuthentication(String token) {
+
+        log.info("[AuthenticationProvider] getAuthentication() 메서드 시작");
 
         String blogId = claimsExtractor.getBlogId(token);
 

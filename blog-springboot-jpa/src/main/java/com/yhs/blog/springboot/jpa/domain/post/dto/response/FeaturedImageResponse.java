@@ -5,9 +5,11 @@ import com.yhs.blog.springboot.jpa.domain.post.repository.search.document.Featur
 
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.extern.log4j.Log4j2;
 
 @Getter
 @NoArgsConstructor
+@Log4j2
 public class FeaturedImageResponse {
     private String fileName;
     private String fileType;
@@ -15,6 +17,7 @@ public class FeaturedImageResponse {
     private Long fileSize;
 
     public static FeaturedImageResponse from(FeaturedImage featuredImage) {
+
         FeaturedImageResponse response = new FeaturedImageResponse();
         response.fileName = featuredImage.getFileName();
         response.fileType = featuredImage.getFileType();
@@ -24,6 +27,7 @@ public class FeaturedImageResponse {
     }
 
     public static FeaturedImageResponse from(FeaturedImageDocument featuredImageDocument) {
+
         FeaturedImageResponse response = new FeaturedImageResponse();
         response.fileName = featuredImageDocument.getFileName();
         response.fileType = featuredImageDocument.getFileType();

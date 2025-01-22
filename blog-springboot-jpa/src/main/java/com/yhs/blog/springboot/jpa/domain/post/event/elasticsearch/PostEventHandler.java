@@ -11,8 +11,7 @@ import org.springframework.transaction.event.TransactionalEventListener;
 import com.yhs.blog.springboot.jpa.domain.post.repository.search.PostSearchRepository;
 import com.yhs.blog.springboot.jpa.domain.post.repository.search.document.PostDocument;
 import com.yhs.blog.springboot.jpa.exception.custom.ElasticsearchCustomException;
-
-import co.elastic.clients.elasticsearch._types.ElasticsearchException;
+ 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 
@@ -30,12 +29,10 @@ public class PostEventHandler {
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public CompletableFuture<Void> handlePostCreated(PostCreatedEvent event) {
 
+        log.info("[PostEventHandler] handlePostCreated 메서드 시작");
+
         try {
             retryTemplate.execute(context -> {
-
-                log.info("PostCreatedEvent 발생 - Post ID: {}, Thread: {}",
-                        event.getPost().getId(),
-                        Thread.currentThread().getName());
 
                 postSearchRepository.save(PostDocument.from(event.getPost()));
                 return null;
@@ -53,12 +50,10 @@ public class PostEventHandler {
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public CompletableFuture<Void> handlePostUpdated(PostUpdatedEvent event) {
 
+        log.info("[PostEventHandler] handlePostUpdated 메서드 시작");
+
         try {
             retryTemplate.execute(context -> {
-
-                log.info("PostUpdatedEvent 발생 - Post ID: {}, Thread: {}",
-                        event.getPost().getId(),
-                        Thread.currentThread().getName());
 
                 postSearchRepository.save(PostDocument.from(event.getPost()));
                 return null;
@@ -76,12 +71,10 @@ public class PostEventHandler {
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public CompletableFuture<Void> handlePostDeleted(PostDeletedEvent event) {
 
+        log.info("[PostEventHandler] handlePostDeleted 메서드 시작");
+
         try {
             retryTemplate.execute(context -> {
-
-                log.info("PostDeletedEvent 발생 - Post ID: {}, Thread: {}",
-                        event.getPost().getId(),
-                        Thread.currentThread().getName());
 
                 postSearchRepository.deleteById(String.valueOf(event.getPost().getId()));
                 return null;

@@ -14,7 +14,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.data.redis.core.RedisTemplate;
-import org.springframework.security.core.Authentication; 
+import org.springframework.security.core.Authentication;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.security.web.authentication.SimpleUrlAuthenticationSuccessHandler;
 import org.springframework.stereotype.Component;
@@ -31,6 +31,7 @@ import java.util.concurrent.TimeUnit;
 @Log4j2
 // OAUTH2의 경우 로그인 유지 기간을 어떻게 할지 고민 임시로 리멤버미와 똑같은 기간으로 구현 했음
 public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler {
+
     private static final String REDIRECT_PATH = "http://localhost:3000/";
 
     private final TokenProvider tokenProvider;
@@ -45,6 +46,8 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
     @Override
     public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response,
             Authentication authentication) throws IOException, ServletException {
+
+        log.info("[OAuth2SuccessHandler] onAuthenticationSuccess() 메서드 시작");
 
         // OAuth2UserCustomService에서 리턴한 oAuth2User는 세션 스코프로 저장되어 있는데, 해당 OAuth2 사용자를
         // 가져옴
@@ -65,6 +68,8 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
 
         if (user.isEmpty()) { // OAuth2 신규사용자의 경우
 
+            log.info("[OAuth2SuccessHandler] onAuthenticationSuccess() OAuth2 신규 사용자 분기 시작");
+
             String newOAuth2UserEmail = (String) oAuth2User.getAttributes().get("email");
             String tempOAuth2UserUniqueId = UUID.randomUUID().toString(); // 추가 정보를 입력하고 POST 요청했을 때 특정 사용자를 식별하기 위함.
             targetUrl = UriComponentsBuilder.fromUriString(REDIRECT_PATH + "/oauth2/redirect")
@@ -78,6 +83,9 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
                     REGISTRATION_TIMEOUT_HOURS_TTL, TimeUnit.HOURS);
 
         } else {
+
+            log.info("[OAuth2SuccessHandler] onAuthenticationSuccess() OAuth2 기존 사용자 분기 시작");
+
             // OAuth2 기존 사용자의 경우
             targetUrl = UriComponentsBuilder.fromUriString(REDIRECT_PATH + "/oauth2/redirect")
                     .queryParam("direct", true).build().toUriString();
@@ -85,16 +93,22 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
             // 리프레시 토큰 생성
             String refreshToken;
             if (isRememberMe) {
+
+                log.info("[OAuth2SuccessHandler] onAuthenticationSuccess() OAuth2 기존 사용자 리멤버미 체크 했을 경우 분기 시작");
+
                 // 리프레시 토큰에 관한 redis key 이메일이 아닌 id를 사용한 이유는 로그아웃할 때 jwt에서 이메일을 추출할 수 없기 때문
                 refreshToken = tokenProvider.generateToken(user.get(),
                         TokenConstants.REMEMBER_ME_REFRESH_TOKEN_DURATION);
                 redisTemplate.opsForValue().set(TokenConstants.RT_PREFIX + user.get().getId(), refreshToken,
-                TokenConstants.REMEMBER_ME_REFRESH_TOKEN_TTL, TimeUnit.SECONDS);
+                        TokenConstants.REMEMBER_ME_REFRESH_TOKEN_TTL, TimeUnit.SECONDS);
 
             } else {
+
+                log.info("[OAuth2SuccessHandler] onAuthenticationSuccess() OAuth2 기존 사용자 리멤버미 체크 안했을 경우 분기 시작");
+
                 refreshToken = tokenProvider.generateToken(user.get(), TokenConstants.REFRESH_TOKEN_DURATION);
                 redisTemplate.opsForValue().set(TokenConstants.RT_PREFIX + user.get().getId(), refreshToken,
-                TokenConstants.REFRESH_TOKEN_TTL, TimeUnit.SECONDS);
+                        TokenConstants.REFRESH_TOKEN_TTL, TimeUnit.SECONDS);
 
             }
 
@@ -118,6 +132,8 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
     // OAuth2 인증을 위해 임시로 세션에 저장된 정보나 쿠키의 정보를 제거하여 남아있는 데이터를 정리.
     // 세션이나 쿠키에 불필요한 데이터가 남아 있지 않도록 하여 보안을 강화함.
     private void clearAuthenticationAttributes(HttpServletRequest request, HttpServletResponse response) {
+        
+        log.info("[OAuth2SuccessHandler] clearAuthenticationAttributes() 메서드 시작");
 
         // 인증 실패와 관련된 정보를 세션에서 제거. 즉 다음에 재로그인할때 만약 이전 인증 실패 정보가 남아있다면 이전 인증 실패 정보가 남아있지
         // 않도록 함.

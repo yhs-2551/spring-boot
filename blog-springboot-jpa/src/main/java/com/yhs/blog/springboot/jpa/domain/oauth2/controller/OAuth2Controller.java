@@ -38,12 +38,20 @@ public class OAuth2Controller {
                         HttpServletRequest httpRequest,
                         HttpServletResponse httpResponse) {
 
+                log.info("[OAuth2Controller] oAuth2UserSignup() 요청");
+
                 try {
-                        RateLimitResponse<OAuth2SignUpResponse> rateLimitResponse = oAuth2SignUpService.processOAuth2SignUp(request);
+                        RateLimitResponse<OAuth2SignUpResponse> rateLimitResponse = oAuth2SignUpService
+                                        .processOAuth2SignUp(request);
 
                         if (!rateLimitResponse.isSuccess()) {
+
+                                log.info("[OAuth2Controller] oAuth2UserSignup() 요청 RateLimitResponse 실패 분기 시작");
+
                                 return createRateLimitErrorResponse();
                         }
+
+                        log.info("[OAuth2Controller] oAuth2UserSignup() 요청 RateLimitResponse 성공 분기 시작");
 
                         return createSuccessResponse(
                                         (OAuth2SignUpResponse) rateLimitResponse.getData(),

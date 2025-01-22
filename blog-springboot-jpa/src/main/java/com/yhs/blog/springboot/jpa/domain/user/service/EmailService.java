@@ -36,6 +36,9 @@ public class EmailService {
     @RateLimit(key = "IssueCode") // 총 3번의 시도 후 4번째 시도부터 1분 뒤 재요청 해야함
     public RateLimitResponse<Void> processEmailVerification(SignUpUserRequest signUpUserRequest) {
 
+        log.info("[EmailService] processEmailVerification() 메서드 시작");
+
+
         // 기존 인증 코드가 남아있다면 삭제. 인증코드 재발급까지 한번에 처리하기 위함
         // redisTemplate.delete(VERIFICATION_CODE_PREFIX +
         // signUpUserRequest.getEmail());
@@ -59,6 +62,8 @@ public class EmailService {
         try {
             if (emailResult) {
 
+                log.info("[EmailService] processEmailVerification() 이메일 발송 성공 분기 진행");
+
                 redisTemplate.opsForValue().set(VERIFICATION_CODE_PREFIX + signUpUserRequest.getBlogId(),
                         verificationCode,
                         Duration.ofMinutes(3)); // 3분안에 인증 코드를 입력해야함.
@@ -72,11 +77,15 @@ public class EmailService {
                         StatusCode.OK.getCode(), null);
 
             } else {
+
+                log.info("[EmailService] processEmailVerification() 이메일 발송 실패 분기 진행");
+
                 return new RateLimitResponse<>(false, "이메일 발송에 실패했습니다.",
                         StatusCode.INTERNAL_ERROR.getCode(), null);
             }
 
         } catch (JsonProcessingException e) {
+            log.error("[EmailService] processEmailVerification() 메서드 jsonProcessingException 에러 발생", e);
             // objectMapper.writeValueAsString() 메서드 호출 시 발생하는 예외 처리. 객체를 json 문자열로 변환하는
             // 과정에서 예외가 발생할 수 있음
             return new RateLimitResponse<>(false, "인증 처리 중 오류가 발생하였습니다.", StatusCode.INTERNAL_ERROR.getCode(), null);
@@ -91,18 +100,28 @@ public class EmailService {
                    // 작업이 있어서 @Transactional 추가
     public RateLimitResponse<Void> completeVerification(VerifyEmailRequest verifyEmailRequest) {
 
+        log.info("[EmailService] completeVerification() 메서드 시작");
+
         // json 관련 objectMapper 메서드 사용 시 try-catch 문으로 예외 처리 필요
         try {
 
             String saveCode = redisTemplate.opsForValue()
                     .get(VERIFICATION_CODE_PREFIX + verifyEmailRequest.getBlogId());
             if (saveCode == null) {
+
+                log.info("[EmailService] completeVerification() 만료된 인증코드(Redis에 캐시된 데이터가 없음) 분기 진행");
+
                 return new RateLimitResponse<>(false, "만료된 인증코드입니다. 인증코드를 재발급 받아주세요.", StatusCode.GONE.getCode(), null);
             }
 
             if (!saveCode.equals(verifyEmailRequest.getCode())) {
+                
+                log.info("[EmailService] completeVerification() 요청된 인증코드 불일치 분기 진행");
+
                 return new RateLimitResponse<>(false, "인증코드가 유효하지 않습니다.", StatusCode.BAD_REQUEST.getCode(), null);
             } else {
+
+                log.info("[EmailService] completeVerification() 인증코드 일치 분기 진행");
 
                 String userJson = redisTemplate.opsForValue().get(TEMP_USER_PREFIX + verifyEmailRequest.getBlogId());
 
@@ -117,12 +136,16 @@ public class EmailService {
             }
 
         } catch (JsonProcessingException e) {
+            log.error("[EmailService] completeVerification() 메서드 jsonProcessingException 에러 발생", e);
             return new RateLimitResponse<>(false, "인증 처리 중 오류가 발생하였습니다.", StatusCode.INTERNAL_ERROR.getCode(), null);
         }
 
     }
 
     private String generateVerificationCode() {
+
+        log.info("[EmailService] generateVerificationCode() 메서드 시작");
+
         SecureRandom secureRandom = new SecureRandom();
         StringBuilder code = new StringBuilder();
         for (int i = 0; i < 6; i++) {

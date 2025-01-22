@@ -1,6 +1,8 @@
 package com.yhs.blog.springboot.jpa.domain.oauth2.repository;
 
 import com.yhs.blog.springboot.jpa.common.util.cookie.CookieUtil;
+import com.yhs.blog.springboot.jpa.common.util.serialization.SerializationUtils;
+
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -13,7 +15,8 @@ import org.springframework.web.util.WebUtils;
 
 // 사용자 인증 정보 과정을 처리하는 클래스
 @Log4j2
-public class OAuth2AuthorizationRequestBasedOnCookieRepository implements AuthorizationRequestRepository<OAuth2AuthorizationRequest> {
+public class OAuth2AuthorizationRequestBasedOnCookieRepository
+        implements AuthorizationRequestRepository<OAuth2AuthorizationRequest> {
 
     public final static String OAUTH2_AUTHORIZATION_REQUEST_COOKIE_NAME = "oauth2_auth_request";
     // private final static int COOKIE_EXPIRE_SECONDS = 18000; // 300분 = 5시간
@@ -21,45 +24,70 @@ public class OAuth2AuthorizationRequestBasedOnCookieRepository implements Author
     private final static int COOKIE_EXPIRE_SECONDS = 300;
 
     public void removeAuthorizationRequestCookies(HttpServletRequest request,
-                                                  HttpServletResponse response) {
+            HttpServletResponse response) {
         CookieUtil.deleteCookie(request, response, OAUTH2_AUTHORIZATION_REQUEST_COOKIE_NAME);
     }
 
     @Override
     public OAuth2AuthorizationRequest loadAuthorizationRequest(HttpServletRequest request) {
 
+        log.info("[OAuth2AuthorizationRequestBasedOnCookieRepository] loadAuthorizationRequest() 메서드 시작");
+
         // 현재 사용자가 인증된 상태인지 확인, OAUTH2 로그인 성공 후 브라우저에서 페이지 새로고침하면 다시 실행되기 때문에 이 로직 추가
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication != null && authentication.isAuthenticated()) {
-            return null;  // 이미 인증된 경우 OAuth2AuthorizationRequest를 처리하지 않음
+
+            log.info(
+                    "[OAuth2AuthorizationRequestBasedOnCookieRepository] loadAuthorizationRequest() 메서드 인증된 상태 분기 진행");
+
+            return null; // 이미 인증된 경우 OAuth2AuthorizationRequest를 처리하지 않음
         }
 
-        //쿠키에서 해당 이름의 쿠키를 가져옴
+        log.info(
+                "[OAuth2AuthorizationRequestBasedOnCookieRepository] loadAuthorizationRequest() 메서드 인증되지 않은 상태 분기 진행");
+
+        // 쿠키에서 해당 이름의 쿠키를 가져옴
         Cookie cookie = WebUtils.getCookie(request, OAUTH2_AUTHORIZATION_REQUEST_COOKIE_NAME);
 
         // 쿠키를 가져오지 못했다면 초기에 구글 로그인 페이지로 리다이렉트 하기 전의 쿠키 정보가 아니라는 의미.
         if (cookie == null) {
+
+            log.info(
+                    "[OAuth2AuthorizationRequestBasedOnCookieRepository] loadAuthorizationRequest() 메서드 쿠키가 null 분기 진행");
             return null;
         }
 
-        return CookieUtil.deserialize(cookie, OAuth2AuthorizationRequest.class);  // String 값을 역직렬화
+        log.info(
+                "[OAuth2AuthorizationRequestBasedOnCookieRepository] loadAuthorizationRequest() 메서드 쿠키가 null이 아닌 경우 분기 진행");
+
+        return SerializationUtils.deserialize(cookie, OAuth2AuthorizationRequest.class); // String 값을 역직렬화
 
     }
 
     @Override
-    public void saveAuthorizationRequest(OAuth2AuthorizationRequest authorizationRequest, HttpServletRequest request, HttpServletResponse response) {
+    public void saveAuthorizationRequest(OAuth2AuthorizationRequest authorizationRequest, HttpServletRequest request,
+            HttpServletResponse response) {
+
+        log.info("[OAuth2AuthorizationRequestBasedOnCookieRepository] saveAuthorizationRequest() 메서드 시작");
 
         if (authorizationRequest == null) {
+
+            log.info(
+                    "[OAuth2AuthorizationRequestBasedOnCookieRepository] saveAuthorizationRequest() 메서드 authorizationRequest == null 분기 진행");
             removeAuthorizationRequestCookies(request, response);
             return;
         }
 
         CookieUtil.addCookie(response, OAUTH2_AUTHORIZATION_REQUEST_COOKIE_NAME,
-                CookieUtil.serialize(authorizationRequest), COOKIE_EXPIRE_SECONDS);
+        SerializationUtils.serialize(authorizationRequest), COOKIE_EXPIRE_SECONDS);
     }
 
     @Override
-    public OAuth2AuthorizationRequest removeAuthorizationRequest(HttpServletRequest request, HttpServletResponse response) {
+    public OAuth2AuthorizationRequest removeAuthorizationRequest(HttpServletRequest request,
+            HttpServletResponse response) {
+
+        log.info("[OAuth2AuthorizationRequestBasedOnCookieRepository] removeAuthorizationRequest() 메서드 시작");
+
         return this.loadAuthorizationRequest(request);
     }
 }

@@ -30,6 +30,8 @@ public class CategoryController {
         public ResponseEntity<ApiResponse> createCategory(@RequestBody CategoryRequestPayLoad categoryRequestPayLoad,
                         @P("userBlogId") @PathVariable("blogId") String blogId) {
 
+                log.info("[CategoryController] createCategory() 요청");
+
                 categoryService.createCategory(categoryRequestPayLoad, blogId);
 
                 return ResponseEntity.status(HttpStatus.CREATED)
@@ -40,6 +42,8 @@ public class CategoryController {
         // 특정 사용자의 모든 카테고리 조회. 모든 사용자가 볼 수 있어야 해서 preauthorize 제거
         @GetMapping
         public ResponseEntity<ApiResponse> getAllCategoriesWithChildrenByUserId(@PathVariable("blogId") String blogId) {
+
+                log.info("[CategoryController] getAllCategoriesWithChildrenByUserId() 요청");
 
                 List<CategoryResponse> categories = categoryService.getAllCategoriesWithChildrenByUserId(blogId);
 

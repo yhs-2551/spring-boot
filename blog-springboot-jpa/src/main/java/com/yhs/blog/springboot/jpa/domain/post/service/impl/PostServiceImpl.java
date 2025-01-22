@@ -76,14 +76,22 @@ public class PostServiceImpl implements PostService {
             String categoryName,
             Pageable pageable) {
 
+        log.info(
+                "[PostServiceImpl] getAllPostsSpecificUser 메서드 시작: blogId: {}, keyword: {}, searchType: {}, categoryName: {}, pageable: {}",
+                blogId, keyword, searchType, categoryName, pageable);
+
         Long userId = userService.findUserByBlogIdAndConvertDTO(blogId).id();
 
         if (categoryName != null) {
+
+            log.info("[PostServiceImpl] getAllPostsSpecificUser 카테고리 존재");
 
             String categoryId = categoryService.findCategoryByNameAndUserId(categoryName, userId).getId();
 
             return postRepository.findPostsByUserIdAndCategoryId(userId, categoryId, keyword, searchType, pageable);
         }
+
+        log.info("[PostServiceImpl] getAllPostsSpecificUser 카테고리 미존재");
 
         return postRepository.findPostsByUserId(userId, keyword, searchType, pageable);
     }
@@ -92,6 +100,9 @@ public class PostServiceImpl implements PostService {
     @Transactional(readOnly = true)
     public Page<PostResponse> getAllPostsAllUser(String keyword, SearchType searchType, Pageable pageable) {
 
+        log.info("[PostServiceImpl] getAllPostsAllUser 메서드 시작: keyword: {}, searchType: {}, pageable: {}", keyword,
+                searchType, pageable);
+
         return postRepository.findPostsAllUser(keyword, searchType, pageable);
     }
 
@@ -99,6 +110,9 @@ public class PostServiceImpl implements PostService {
     @Override
     @Transactional(readOnly = true)
     public PostResponse getPostByPostId(Long postId) {
+
+        log.info("[PostServiceImpl] getPostByPostId 메서드 시작: postId: {}", postId);
+
         Post post = postRepository.findById(postId)
                 .orElseThrow(() -> new BusinessException(
                         ErrorCode.POST_NOT_FOUND,
@@ -113,6 +127,8 @@ public class PostServiceImpl implements PostService {
     @Transactional
     @Override
     public void deletePostByPostId(Long postId) {
+
+        log.info("[PostServiceImpl] deletePostByPostId 메서드 시작: postId: {}", postId);
 
         Post post = postRepository.findById(postId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.POST_NOT_FOUND, postId + "번 게시글을 찾을 수 없습니다.",
@@ -139,6 +155,9 @@ public class PostServiceImpl implements PostService {
 
         // 해당 사용자와 포스트에서만 사용된 태그 삭제
         if (!postTagIds.isEmpty()) {
+
+            log.info("[PostServiceImpl] deletePostByPostId !postTagIds.isEmpty() 분기 시작");
+
             tagRepository.deleteUnusedTags(postTagIds, postId, userId);
         }
 
@@ -154,6 +173,8 @@ public class PostServiceImpl implements PostService {
     @Override
     public void createNewPost(PostRequest postRequest, String blogId) {
 
+        log.info("[PostServiceImpl] createNewPost 메서드 시작:  blogId: {}", blogId);
+
         try {
 
             User user = userService.findUserByBlogId(blogId);
@@ -161,8 +182,13 @@ public class PostServiceImpl implements PostService {
             Category category;
             if (postRequest.getCategoryName() != null) {
 
+                log.info("[PostServiceImpl] createNewPost 카테고리 존재 분기 시작");
+
                 category = categoryService.findCategoryByNameAndUserId(postRequest.getCategoryName(), user.getId());
             } else {
+
+                log.info("[PostServiceImpl] createNewPost 카테고리 미존재 분기 시작");
+
                 category = null;
             }
 
@@ -180,7 +206,7 @@ public class PostServiceImpl implements PostService {
             post.setPostTags(processTags(post, postRequest.getTags(), user));
             postRepository.save(post);
 
-            log.info("메인 스레드 시작: {}", Thread.currentThread().getName());
+            log.info("[PostServiceImpl] createNewPost S3 메인 스레드 시작: {}", Thread.currentThread().getName());
 
             TransactionSynchronizationManager.registerSynchronization(
                     new TransactionSynchronization() {
@@ -198,13 +224,15 @@ public class PostServiceImpl implements PostService {
                     user.getBlogId());
 
             s3Future.thenAcceptAsync(result -> {
-                log.info("S3 작업 완료");
+                log.info("[PostServiceImpl] createNewPost S3 작업 완료");
             }).exceptionally(throwable -> {
-                log.error("S3 작업 실패: {}", throwable.getMessage());
+                log.error("[PostServiceImpl] createNewPost S3 작업 실패: {}", throwable.getMessage());
                 return null;
             });
 
-            log.info("메인 스레드 종료: {}", Thread.currentThread().getName());
+            log.info("[PostServiceImpl] createNewPost 메인 스레드 종료: {}", Thread.currentThread().getName());
+
+            log.info("[PostServiceImpl] createNewPost 메서드 종료");
 
         } catch (DataAccessException ex) {
             throw new SystemException(ErrorCode.POST_CREATE_ERROR, "게시글 생성 중 서버 에러가 발생했습니다.",
@@ -220,6 +248,9 @@ public class PostServiceImpl implements PostService {
     public void updatePostByPostId(Long postId, String blogId,
             PostUpdateRequest postUpdateRequest) {
 
+        log.info("[PostServiceImpl] updatePostByPostId 메서드 시작: postId: {}, blogId: {}",
+                postId, blogId);
+
         // fetch join으로 user까지 함께 가져와 영속성 컨텍스트에 저장. 이후 getUser()로 가져올때 추가 select 쿼리 없음
         Post post = postRepository.findByIdWithUser(postId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.POST_NOT_FOUND, postId +
@@ -230,9 +261,13 @@ public class PostServiceImpl implements PostService {
 
         Category category;
         if (postUpdateRequest.getCategoryName() != null) {
+            log.info("[PostServiceImpl] updatePostByPostId 카테고리 존재 분기 시작");
+
             category = categoryService.findCategoryByNameAndUserId(postUpdateRequest.getCategoryName(), user.getId());
 
         } else {
+
+            log.info("[PostServiceImpl] updatePostByPostId 카테고리 미존재 분기 시작");
             category = null;
         }
 
@@ -241,6 +276,9 @@ public class PostServiceImpl implements PostService {
 
         if (postUpdateRequest.getEditPageDeletedTags() != null
                 && !postUpdateRequest.getEditPageDeletedTags().isEmpty()) {
+
+            log.info(
+                    "[PostServiceImpl] updatePostByPostId !postUpdateRequest.getEditPageDeletedTags().isEmpty() 분기 시작");
 
             List<Tag> unusedTags = tagRepository.findUnusedTagsNotUsedByOtherPostsAndOtherUsers(
                     postUpdateRequest.getEditPageDeletedTags(), postId, user.getId());
@@ -276,8 +314,14 @@ public class PostServiceImpl implements PostService {
 
     // 아래쪽은 헬퍼 메서드
     private Set<File> processFiles(Post post, List<FileRequest> fileRequests, User user) {
+
+        log.info("[PostServiceImpl] processFiles 메서드 시작");
+
         Set<File> files = new HashSet<>();
         if (fileRequests != null && !fileRequests.isEmpty()) {
+
+            log.info("[PostServiceImpl] processFiles !fileRequests.isEmpty() 분기 시작");
+
             for (FileRequest fileRequest : fileRequests) {
 
                 // 최종적으로 post를 저장시에 aws 파일 저장 위치를 temp -> final로 변경하기 때문에 final로 변경하는 로직 추가.
@@ -293,8 +337,11 @@ public class PostServiceImpl implements PostService {
 
     private List<PostTag> processTags(Post post, List<String> tagNames, User user) {
 
+        log.info("[PostServiceImpl] processTags 메서드 시작");
+
         List<PostTag> postTags = new ArrayList<>();
         if (tagNames != null && !tagNames.isEmpty()) {
+            log.info("[PostServiceImpl] processTags !tagNames.isEmpty() 분기 시작");
             for (String tagName : tagNames) {
                 Tag tag = tagRepository.findByName(tagName).orElseGet(() -> Tag.create(tagName));
                 tagRepository.save(tag);
@@ -306,7 +353,12 @@ public class PostServiceImpl implements PostService {
     }
 
     private FeaturedImage processFeaturedImage(FeaturedImageRequest featuredImageRequest) {
+
+        log.info("[PostServiceImpl] processFeaturedImage 메서드 시작");
+
         if (featuredImageRequest != null) {
+
+            log.info("[PostServiceImpl] processFeaturedImage featuredImageRequest != null 분기 시작");
 
             // 최종적으로 post를 저장시에 aws 파일 저장 위치를 temp -> final로 변경하기 때문에 final로 변경하는 로직 추가. 따라서
             // db에 final 경로로 저장한다

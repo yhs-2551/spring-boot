@@ -28,8 +28,6 @@ public class QUser extends EntityPathBase<User> {
 
     public final SetPath<com.yhs.blog.springboot.jpa.domain.category.entity.Category, com.yhs.blog.springboot.jpa.domain.category.entity.QCategory> categories = this.<com.yhs.blog.springboot.jpa.domain.category.entity.Category, com.yhs.blog.springboot.jpa.domain.category.entity.QCategory>createSet("categories", com.yhs.blog.springboot.jpa.domain.category.entity.Category.class, com.yhs.blog.springboot.jpa.domain.category.entity.QCategory.class, PathInits.DIRECT2);
 
-    public final SetPath<com.yhs.blog.springboot.jpa.domain.post.entity.Comment, com.yhs.blog.springboot.jpa.domain.post.entity.QComment> comments = this.<com.yhs.blog.springboot.jpa.domain.post.entity.Comment, com.yhs.blog.springboot.jpa.domain.post.entity.QComment>createSet("comments", com.yhs.blog.springboot.jpa.domain.post.entity.Comment.class, com.yhs.blog.springboot.jpa.domain.post.entity.QComment.class, PathInits.DIRECT2);
-
     //inherited
     public final DateTimePath<java.time.LocalDateTime> createdAt = _super.createdAt;
 
@@ -38,8 +36,6 @@ public class QUser extends EntityPathBase<User> {
     public final SetPath<com.yhs.blog.springboot.jpa.domain.file.entity.File, com.yhs.blog.springboot.jpa.domain.file.entity.QFile> files = this.<com.yhs.blog.springboot.jpa.domain.file.entity.File, com.yhs.blog.springboot.jpa.domain.file.entity.QFile>createSet("files", com.yhs.blog.springboot.jpa.domain.file.entity.File.class, com.yhs.blog.springboot.jpa.domain.file.entity.QFile.class, PathInits.DIRECT2);
 
     public final NumberPath<Long> id = createNumber("id", Long.class);
-
-    public final SetPath<com.yhs.blog.springboot.jpa.domain.post.entity.Like, com.yhs.blog.springboot.jpa.domain.post.entity.QLike> likes = this.<com.yhs.blog.springboot.jpa.domain.post.entity.Like, com.yhs.blog.springboot.jpa.domain.post.entity.QLike>createSet("likes", com.yhs.blog.springboot.jpa.domain.post.entity.Like.class, com.yhs.blog.springboot.jpa.domain.post.entity.QLike.class, PathInits.DIRECT2);
 
     public final StringPath password = createString("password");
 

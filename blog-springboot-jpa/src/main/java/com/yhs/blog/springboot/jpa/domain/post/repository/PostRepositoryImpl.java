@@ -3,6 +3,7 @@ package com.yhs.blog.springboot.jpa.domain.post.repository;
 import co.elastic.clients.elasticsearch._types.ElasticsearchException;
 import com.querydsl.core.BooleanBuilder;
 import com.querydsl.core.types.Projections;
+import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import com.yhs.blog.springboot.jpa.aop.log.Loggable;
 import com.yhs.blog.springboot.jpa.common.constant.code.ErrorCode;
@@ -36,58 +37,64 @@ public class PostRepositoryImpl implements PostRepositoryCustom {
         @Loggable
         @Override
         public Page<PostResponse> findPostsAllUser(String keyword, SearchType searchType, Pageable pageable) {
+
+                log.info("[PostRepositoryImpl] findPostsAllUser() 메서드 시작");
                 if (StringUtils.hasText(keyword)) {
 
-//                        아래는 일반 DB 조회
-//                        QPost post = QPost.post;
-//                        QUser user = QUser.user;
-//                        QCategory category = QCategory.category;
-//                        QFeaturedImage featuredImage = QFeaturedImage.featuredImage;
-//
-//                        List<PostResponse> posts = queryFactory
-//                                .select(Projections.constructor(PostResponse.class,
-//                                        post.id,
-//                                        post.title,
-//                                        post.content,
-//                                        user.username,
-//                                        category.name,
-//                                        featuredImage))
-//                                .from(post)
-//                                .innerJoin(post.user, user) // Join with user entity
-//                                .leftJoin(post.category, category) // Left join with category entity
-//                                .leftJoin(post.featuredImage, featuredImage) // Left join with featuredImage entity
-//                                .where(post.title.contains(keyword))
-//                                .offset(pageable.getOffset())
-//                                .limit(pageable.getPageSize())
-//                                .fetch();
-//
-//                        long total = queryFactory
-//                                .select(post.count())
-//                                .from(post)
-//                                .where(post.title.contains(keyword))
-//                                .fetchOne();
-//
-//                        return new PageImpl<>(posts, pageable, total);
+                        log.info("[PostRepositoryImpl] findPostsAllUser() 메서드 검색어가 있을때 분기 진행");
 
-                        try {
-                                Page<PostDocument> searchResult = switch (searchType) {
-                                        case TITLE -> searchRepository.searchByTitleForAllUser(keyword,
-                                                pageable);
-                                        case CONTENT -> searchRepository.searchByContentForAllUser(keyword,
-                                                pageable);
-                                        case ALL -> searchRepository.searchByAllForAllUser(keyword, pageable);
-                                };
+                        // 아래는 일반 DB 조회
+                        QPost post = QPost.post;
+                        QUser user = QUser.user;
+                        QCategory category = QCategory.category;
+                        QFeaturedImage featuredImage = QFeaturedImage.featuredImage;
 
-                                return searchResult.map(PostResponse::fromDocument);
-                        } catch (ElasticsearchException e) {
-                                throw new SystemException(ErrorCode.ELASTIC_SEARCH_SPECIFIC_ERROR,
-                                        "검색 처리 중 오류가 발생 하였습니다.", "PostRepositoryImpl", "findPostsAllUser", e);
-                        } catch (Exception e) {
-                                throw new SystemException(ErrorCode.ELASTIC_SEARCH_GENERAL_ERROR,
-                                        "검색 처리 중 오류가 발생 하였습니다.", "PostRepositoryImpl", "findPostsAllUser", e);
-                        }
+                        List<PostResponse> posts = queryFactory
+                                        .select(Projections.constructor(PostResponse.class,
+                                                        post.id,
+                                                        post.title,
+                                                        post.content,
+                                                        user.username,
+                                                        category.name,
+                                                        featuredImage))
+                                        .from(post)
+                                        .innerJoin(post.user, user)
+                                        .leftJoin(post.category, category)
+                                        .leftJoin(post.featuredImage, featuredImage)
+                                        .where(searchByType(keyword, searchType))
+                                        .offset(pageable.getOffset())
+                                        .limit(pageable.getPageSize())
+                                        .fetch();
+
+                        long total = queryFactory
+                                        .select(post.count())
+                                        .from(post)
+                                        .where(searchByType(keyword, searchType))
+                                        .fetchOne();
+
+                        return new PageImpl<>(posts, pageable, total);
+
+                        // try {
+                        // Page<PostDocument> searchResult = switch (searchType) {
+                        // case TITLE -> searchRepository.searchByTitleForAllUser(keyword,
+                        // pageable);
+                        // case CONTENT -> searchRepository.searchByContentForAllUser(keyword,
+                        // pageable);
+                        // case ALL -> searchRepository.searchByAllForAllUser(keyword, pageable);
+                        // };
+
+                        // return searchResult.map(PostResponse::fromDocument);
+                        // } catch (ElasticsearchException e) {
+                        // throw new SystemException(ErrorCode.ELASTIC_SEARCH_SPECIFIC_ERROR,
+                        // "검색 처리 중 오류가 발생 하였습니다.", "PostRepositoryImpl", "findPostsAllUser", e);
+                        // } catch (Exception e) {
+                        // throw new SystemException(ErrorCode.ELASTIC_SEARCH_GENERAL_ERROR,
+                        // "검색 처리 중 오류가 발생 하였습니다.", "PostRepositoryImpl", "findPostsAllUser", e);
+                        // }
 
                 }
+
+                log.info("[PostRepositoryImpl] findPostsAllUser() 메서드 검색어가 없을때 분기 진행");
 
                 try {
                         // 검색어가 없는 경우 기존 QueryDSL 사용
@@ -105,7 +112,11 @@ public class PostRepositoryImpl implements PostRepositoryCustom {
         public Page<PostResponse> findPostsByUserId(Long userId, String keyword, SearchType searchType,
                         Pageable pageable) {
 
+                log.info("[PostRepositoryImpl] findPostsByUserId() 메서드 시작");
+
                 if (StringUtils.hasText(keyword)) {
+
+                        log.info("[PostRepositoryImpl] findPostsByUserId() 메서드 검색어가 있을때 분기 진행");
 
                         try {
                                 Page<PostDocument> searchResult = switch (searchType) {
@@ -132,6 +143,8 @@ public class PostRepositoryImpl implements PostRepositoryCustom {
 
                 }
 
+                log.info("[PostRepositoryImpl] findPostsByUserId() 메서드 검색어가 없을때 분기 진행");
+
                 try {
                         // 검색어가 없는 경우 기존 QueryDSL 사용
 
@@ -153,8 +166,12 @@ public class PostRepositoryImpl implements PostRepositoryCustom {
         public Page<PostResponse> findPostsByUserIdAndCategoryId(Long userId, String categoryId, String keyword,
                         SearchType searchType, Pageable pageable) {
 
+                log.info("[PostRepositoryImpl] findPostsByUserIdAndCategoryId() 메서드 시작");
+
                 // 검색어가 있는 경우 Elasticsearch 사용
                 if (StringUtils.hasText(keyword)) {
+
+                        log.info("[PostRepositoryImpl] findPostsByUserIdAndCategoryId() 메서드 검색어가 있을때 분기 진행");
 
                         try {
                                 Page<PostDocument> searchResult = switch (searchType) {
@@ -185,6 +202,8 @@ public class PostRepositoryImpl implements PostRepositoryCustom {
                         }
                 }
 
+                log.info("[PostRepositoryImpl] findPostsByUserIdAndCategoryId() 메서드 검색어가 없을때 분기 진행");
+
                 try {
                         // 검색어가 없는 경우 기존 QueryDSL 사용
                         QPost post = QPost.post;
@@ -199,7 +218,22 @@ public class PostRepositoryImpl implements PostRepositoryCustom {
 
         }
 
+        // BooleanExpression은 where절에서 사용되는 조건식. and(), or() 체이닝 가능, null 처리 가능
+        private BooleanExpression searchByType(String keyword, SearchType searchType) {
+                QPost post = QPost.post;
+
+                return switch (searchType) {
+                        case TITLE -> post.title.contains(keyword);
+                        case CONTENT -> post.content.contains(keyword);
+                        case ALL -> post.title.contains(keyword).or(post.content.contains(keyword));
+                        default -> null;
+                };
+        }
+
         private Page<PostResponse> executeQueryDSLQuery(BooleanBuilder builder, Pageable pageable) {
+
+                log.info("[PostRepositoryImpl] executeQueryDSLQuery() 메서드 시작");
+
                 QPost post = QPost.post;
                 QUser user = QUser.user;
                 QCategory category = QCategory.category;
@@ -228,8 +262,6 @@ public class PostRepositoryImpl implements PostRepositoryCustom {
                                 .from(post)
                                 .where(builder.hasValue() ? builder : null)
                                 .fetchOne();
-
-                log.debug("total >>>>>> {}", total);
 
                 return new PageImpl<>(
                                 posts,

@@ -57,11 +57,11 @@ public class Post extends BaseEntity {
 
     @Enumerated(EnumType.STRING)
     @Column(length = 10, nullable = false)
-    private PostStatus postStatus;
+    private PostStatus postStatus = PostStatus.PUBLIC;
 
     @Enumerated(EnumType.STRING)
     @Column(length = 10, nullable = false)
-    private CommentsEnabled commentsEnabled;
+    private CommentsEnabled commentsEnabled = CommentsEnabled.ALLOW;
 
     @OneToOne
     @JoinColumn(name = "featured_image_id", nullable = true) // 대표 이미지가 있을 수도, 없을 수도 있음
@@ -71,20 +71,6 @@ public class Post extends BaseEntity {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
-    @Column(name = "views", nullable = true)
-    private int views = 0; // 조회수 기본값은 0
-
-    @Column(name = "comment_count", nullable = true)
-    private int commentCount = 0; // 총 댓글 수 기본값은 0
-
-    @Column(name = "reply_count", nullable = true)
-    private int replyCount = 0; // 대댓글 수 기본값은 0
-
-    @OneToMany(mappedBy = "post", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
-    private Set<Comment> comments;
-
-    @OneToMany(mappedBy = "post", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
-    private Set<Like> likes;
 
     @Builder
     public Post(Long id, User user, Category category, String title, String content,

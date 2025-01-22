@@ -22,21 +22,33 @@ public class ClaimsExtractor {
     // 토큰 기반으로 유저 ID를 가져오는 메서드
 
     public Long getUserId(String token) {
+
+        log.info("[ClaimsExtractor] getUserId() 메서드 시작");
+
         Claims claims = getClaims(token);
         return claims.get("id", Long.class);
     }
 
     public String getSubject(String token) {
+
+        log.info("[ClaimsExtractor] getSubject() 메서드 시작");
+
         Claims claims = getClaims(token);
         return claims.getSubject(); // sub 클레임에서 토큰 발급자 추출
     }
 
     public String getBlogId(String token) {
+
+        log.info("[ClaimsExtractor] getBlogId() 메서드 시작");
+
         Claims claims = getClaims(token);
         return claims.get("blogId", String.class);
     }
 
     public List<String> getRoles(String token) {
+
+        log.info("[ClaimsExtractor] getRoles() 메서드 시작");
+
         Claims claims = getClaims(token);
         List<?> rawRoles = claims.get("roles", List.class);
         return rawRoles.stream()
@@ -46,11 +58,14 @@ public class ClaimsExtractor {
 
     // 페이로드, 즉 내용(클레임) 반환 메서드
     private Claims getClaims(String token) {
+
+        log.info("[ClaimsExtractor] getClaims() 메서드 시작");
+
         try {
             return Jwts.parser().verifyWith(jwtConfig.getJwtSecretKey()).build().parseSignedClaims(token)
                     .getPayload();
         } catch (ExpiredJwtException e) {
-            log.debug("만료된 토큰 {}", e);
+            log.info("[ClaimsExtractor] getClaims() 메서드 - 만료된 토큰에서 클레임 반환");
             return e.getClaims(); // 만료된 토큰에서도 클레임 반환
 
         }

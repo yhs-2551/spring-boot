@@ -15,14 +15,17 @@ public class PerformanceAspect {
 
     @Around("@annotation(MeasurePerformance)")
     public Object measureTime(ProceedingJoinPoint joinPoint) throws Throwable {
+        log.info("[PerformanceAspect] measureTime() 메서드 시작");
+
         StopWatch stopWatch = new StopWatch();
         stopWatch.start();
 
         Object result = joinPoint.proceed();
 
         stopWatch.stop();
-        log.info("실행 시간: {} ms", stopWatch.getTotalTimeMillis());
-        
+
+        log.info("[PerformanceAspect] measureTime() 실행 시간: {} ms", stopWatch.getTotalTimeMillis());
+
         return result;
     }
 

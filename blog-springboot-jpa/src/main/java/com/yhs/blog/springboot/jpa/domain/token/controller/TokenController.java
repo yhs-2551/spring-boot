@@ -2,10 +2,9 @@ package com.yhs.blog.springboot.jpa.domain.token.controller;
 
 import com.yhs.blog.springboot.jpa.common.response.ApiResponse;
 import com.yhs.blog.springboot.jpa.common.response.ErrorResponse;
-import com.yhs.blog.springboot.jpa.common.response.SuccessResponse; 
+import com.yhs.blog.springboot.jpa.common.response.SuccessResponse;
 import com.yhs.blog.springboot.jpa.domain.token.jwt.service.TokenService;
 import com.yhs.blog.springboot.jpa.domain.token.jwt.validation.TokenValidator;
- 
 
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
@@ -33,11 +32,13 @@ public class TokenController {
     private final TokenValidator tokenValidator;
     private final TokenService tokenService;
 
-    // OAuth2로 로그인하는 사용자자 액세스 토큰 발급 처리
+    // OAuth2로 로그인하는 사용자 액세스 토큰 발급 처리
     @GetMapping("/initial-token")
     public ResponseEntity<String> createInitialToken(HttpServletRequest request,
             HttpServletResponse response,
             Authentication authentication) {
+
+        log.info("[TokenController] createInitialToken() 요청");
 
         String accessToken = null;
 
@@ -46,14 +47,20 @@ public class TokenController {
         accessToken = accessTokenCookie.getValue();
 
         if (accessToken == null) {
-            log.debug("쿠키에 액세스 토큰이 존재하지 않습니다.");
+
+            log.warn("[TokenController] createInitialToken() 요청 accessToken == null 분기 시작");
+
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("쿠키에 액세스 토큰이 존재하지 않습니다.");
         }
 
         if (!tokenValidator.validateAccessToken(accessToken)) {
-            log.debug("유효하지 않은 토큰입니다.");
+
+            log.warn("[TokenController] createInitialToken() 요청 validateAccessToken 유효성 검사 실패 분기 시작");
+
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("유효하지 않은 토큰입니다.");
         }
+
+        log.info("[TokenController] createInitialToken() 요청 accessToken 유효성 검사 통과 분기 시작");
 
         // 클라이언트 측 쿠키에 액세스 토큰이 있을 경우
         HttpHeaders headers = new HttpHeaders();
@@ -67,7 +74,7 @@ public class TokenController {
     @PreAuthorize("isAuthenticated()") // 없어도 tokenAuthenticationFilter에 의해 검증되긴 하지만, 가독성을 위해 추가
     public ResponseEntity<SuccessResponse<Void>> checkAccessToken() {
 
-        log.info("체크 엑세스 토큰 실행");
+        log.info("[TokenController] checkAccessToken() 요청");
 
         return ResponseEntity.ok(new SuccessResponse<>("액세스 토큰이 유효합니다."));
     }
@@ -79,6 +86,9 @@ public class TokenController {
     @GetMapping("/new-token")
     public ResponseEntity<ApiResponse> createNewAccessByRefreshToken(HttpServletRequest request,
             HttpServletResponse response) {
+
+        log.info("[TokenController] createNewAccessByRefreshToken() 요청");
+
         HttpHeaders headers = new HttpHeaders();
 
         Cookie cookie = WebUtils.getCookie(request, "refresh_token");
@@ -87,9 +97,14 @@ public class TokenController {
 
         // null, 빈 문자열, 공백 문자열 모두 체크
         if (!(StringUtils.hasText(refreshToken))) {
+
+            log.warn("[TokenController] createNewAccessByRefreshToken() 요청 refreshToken이 존재하지 않을 때 분기 시작");
+
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body(new ErrorResponse("세션이 만료되었습니다. 다시 로그인해주세요.", HttpStatus.UNAUTHORIZED.value()));
         }
+
+        log.info("[TokenController] createNewAccessByRefreshToken() 요청 refreshToken이 존재할 때 분기 시작");
 
         // 리프레시 토큰이 유효하다면 새로운 액세스 토큰 발급
         String newAccessToken = tokenService.createNewAccessToken(refreshToken);

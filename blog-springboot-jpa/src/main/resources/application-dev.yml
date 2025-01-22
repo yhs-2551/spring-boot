@@ -4,6 +4,9 @@ server:
 # spring.datasource.driver-class-name=com.mysql.cj.jdbc.Driver
 
 spring:
+    main:
+        banner-MODE: "off"
+
     datasource:
         # Sets the Log4jdbc driver to enable SQL logging (helps in tracking SQL queries)
         driver-class-name: net.sf.log4jdbc.sql.jdbcapi.DriverSpy
@@ -21,31 +24,35 @@ spring:
         # Uncomment if using standard MySQL dialect (for MySQL versions below 8)
         # database-platform: org.hibernate.dialect.MySQLDialect
 
-        # Sets Hibernate dialect to MySQL8Dialect for MySQL 8.x versions
-        database-platform: org.hibernate.dialect.MySQL8Dialect
+        # Hibernate 6.x부터는 dialect 자동 감지
+        # database-platform: org.hibernate.dialect.MySQL8Dialect
 
         # Disables the "Open Session in View" pattern to avoid keeping database sessions open in the view layer
         open-in-view: false
 
+        # update: 매 시작마다 스키마 검사(엔티티가 정의하는 테이블 구조) 및 업데이트(이에따라 엔티티에 Enum이 있으면 앱 시작 시 mysql enum과 자바 enum 동기화를 위해 alter쿼리가 발생함)
+        # validate: 엔티티-테이블 매핑 검증. 운영환경 사용
         hibernate:
             ddl-auto: update
 
-        # Enables SQL logging, showing SQL statements executed by Hibernate
-        show-sql: true
+        # Spring Boot의 JPA 설정 레벨  System.out으로 출력되는 SQL문을 보기 좋게 출력해줌
+        show-sql: false
 
         properties:
             hibernate:
                 # Formats SQL output to make it more readable (prints SQL statements in an organized format)
                 format_sql: true
-
+                show_sql: false # Hibernate 내부 설정 레벨 Hibernate가 생성하는 SQL문을 출력해줌
+                use_sql_comments: true #JPQL과 실제 SQL 쿼리가 함께 출력
+                highlight_sql: true
                 # Enables detailed logging for Hibernate parameter values
-                type: trace
+                type.descriptor.sql: trace
 
     batch:
         job:
             enabled: false # true면 앱 시작 시 스케줄러에 의해 관리되는 job을 제외하고 모든 Job이 자동 실행. 나의 경우 직접 제어하므로 false로 설정
         jdbc:
-            initialize-schema: always # 배치 메타테이블 생성/업데이트용
+            initialize-schema: never # 배치 메타테이블 생성/업데이트용. 운영환경에선 never 로컬 개발 환경에선 always
 
     servlet:
         multipart:

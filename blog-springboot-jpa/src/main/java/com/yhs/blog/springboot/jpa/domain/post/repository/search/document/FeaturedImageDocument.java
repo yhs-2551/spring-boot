@@ -9,11 +9,13 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.extern.log4j.Log4j2;
 
 @Getter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+@Log4j2
 public class FeaturedImageDocument {
 
     @Field(type = FieldType.Keyword)
@@ -32,6 +34,7 @@ public class FeaturedImageDocument {
     private Long fileSize;
 
     public static FeaturedImageDocument from(FeaturedImage featuredImage) {
+
         return FeaturedImageDocument.builder().id(String.valueOf(featuredImage.getId()))
                 .fileName(featuredImage.getFileName())
                 .fileUrl(featuredImage.getFileUrl()).fileType(featuredImage.getFileType())

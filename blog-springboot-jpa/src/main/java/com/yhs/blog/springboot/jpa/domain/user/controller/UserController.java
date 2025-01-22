@@ -61,28 +61,42 @@ public class UserController extends SimpleUrlAuthenticationSuccessHandler {
         public ResponseEntity<ApiResponse> signup(@RequestBody @Valid SignUpUserRequest signUpUserRequest)
                         throws JsonProcessingException {
 
+                log.info("[UserController] signup() 요청");
+
                 // 수정 필요 인증코드 전송 응답 SignUpUserRequest안에 너무 불필요하고 민감한 정보가 들어가 있음
                 RateLimitResponse<Void> result = emailService.processEmailVerification(signUpUserRequest);
                 if (result.isSuccess()) {
+
+                        log.info("[UserController] signup() result.isSuccess(): true 성공 분기 응답");
+
                         return ResponseEntity.status(result.getStatusCode())
                                         .body(new SuccessResponse<>(result.getMessage()));
                 }
+
+                log.info("[UserController] signup() 실패 응답 - result: {}", result);
 
                 return ResponseEntity.status(result.getStatusCode())
                                 .body(new ErrorResponse(result.getMessage(), result.getStatusCode()));
 
         }
-        
+
         // 불필요한 응답DTO 삭제 후 성능 향상
         @PostMapping("/api/users/verify-email")
         public ResponseEntity<ApiResponse> verifyEmail(@RequestBody @Valid VerifyEmailRequest verifyEmailRequest) {
 
+                log.info("[UserController] verifyEmail() 요청");
+
                 RateLimitResponse<Void> result = emailService.completeVerification(verifyEmailRequest);
 
                 if (result.isSuccess()) {
+
+                        log.info("[UserController] verifyEmail() result.isSuccess(): true 성공 분기 응답");
+
                         return ResponseEntity.status(result.getStatusCode())
                                         .body(new SuccessResponse<>(result.getMessage()));
                 }
+
+                log.info("[UserController] verifyEmail() 실패 응답");
 
                 return ResponseEntity.status(result.getStatusCode())
                                 .body(new ErrorResponse(result.getMessage(), result.getStatusCode()));
@@ -95,6 +109,8 @@ public class UserController extends SimpleUrlAuthenticationSuccessHandler {
         public ResponseEntity<ApiResponse> login(@RequestBody @Valid LoginRequest loginRequest,
                         HttpServletRequest request,
                         HttpServletResponse response) throws ServletException, IOException {
+
+                log.info("[UserController] login() 요청");
 
                 // 스프링에서 제공하는 User가 아닌 Entity 유저
                 // RateLimitAspect에서 인증 실패에 관한 예외 처리 진행
@@ -125,9 +141,14 @@ public class UserController extends SimpleUrlAuthenticationSuccessHandler {
         @Transactional // deleteRefreshToken DB작업 있어서 트랜잭션 추가해야함
         public ResponseEntity<String> logout(HttpServletRequest request, HttpServletResponse response) {
 
+                log.info("[UserController] logout() 요청");
+
                 String authorizationHeader = request.getHeader("Authorization");
 
                 if (authorizationHeader == null || !authorizationHeader.startsWith("Bearer ")) {
+
+                        log.info("[UserController] logout() 요청 실패: authorizationHeader가 존재하지 않는 경우 분기 응답");
+
                         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("로그인 상태가 아닙니다.");
                 }
 
@@ -142,12 +163,18 @@ public class UserController extends SimpleUrlAuthenticationSuccessHandler {
                         // 아래
                         // ExpiredJwtException Catch문으로 넘어간다.
                         logoutProcessService.logoutUser(token);
+
+                        log.info("[UserController] logout() 요청 성공 - 만료되지 않은 토큰으로 로그아웃");
+
                         return ResponseEntity.ok("로그아웃에 성공하였습니다.");
 
                 } catch (ExpiredJwtException e) {
                         // 만료된 토큰일 때도 userId를 추출 가능 (ExpiredJwtException을 통해 Claims에 접근) 즉
                         // ExpiredJwtException을 통해 만료된 토큰에 있는 Claims에 접근한다.
                         logoutProcessService.logoutUserByExpiredToken(e);
+
+                        log.info("[UserController] logout() 요청 성공 - 만료된 토큰으로 로그아웃");
+
                         return ResponseEntity.ok("로그아웃에 성공하였습니다.");
 
                 } catch (Exception e) {
@@ -164,8 +191,12 @@ public class UserController extends SimpleUrlAuthenticationSuccessHandler {
         public ResponseEntity<ApiResponse> updateSettings(
                         @P("userBlogId") @PathVariable("blogId") String blogId,
                         @ModelAttribute @Valid UserSettingsRequest settingsRequest) {
+
+                log.info("[UserController] updateSettings() 요청");
+
                 try {
                         userService.updateUserSettings(blogId, settingsRequest);
+
                         return ResponseEntity.ok()
                                         .body(new SuccessResponse<>("사용자 설정이 성공적으로 업데이트되었습니다."));
                 } catch (Exception e) {
@@ -183,7 +214,11 @@ public class UserController extends SimpleUrlAuthenticationSuccessHandler {
          */
         @GetMapping("/api/users/{blogId}/profile")
         public ResponseEntity<ApiResponse> getUserProfilePublic(@PathVariable("blogId") String blogId) {
+
+                log.info("[UserController] getUserProfilePublic() 요청 - blogId: {}", blogId);
+
                 UserPublicProfileResponse publicUserProfile = userService.findUserByBlogIdAndConvertDTO(blogId);
+
                 return ResponseEntity.ok().body(new SuccessResponse<>(publicUserProfile, "공개 사용자 정보 조회를 성공하였습니다."));
         }
 
@@ -192,19 +227,28 @@ public class UserController extends SimpleUrlAuthenticationSuccessHandler {
         public ResponseEntity<ApiResponse> getUserProfilePrivate(HttpServletRequest request,
                         @AuthenticationPrincipal org.springframework.security.core.userdetails.User user) {
 
+                log.info("[UserController] getUserProfilePrivate() 요청");
+
                 String blogId = user.getUsername();
 
                 UserPrivateProfileResponse privateUserProfile = userService.findUserByTokenAndByBlogId(blogId);
+
                 return ResponseEntity.ok().body(new SuccessResponse<>(privateUserProfile, "비공개 사용자 정보 조회를 성공하였습니다."));
         }
 
         @GetMapping("/api/check/blog-id/exists/{blogId}")
         public ResponseEntity<ApiResponse> checkExistsBlogId(@PathVariable("blogId") String blogId) {
 
+                log.info("[UserController] checkExistsBlogId() 요청 - blogId: {}", blogId);
+
                 if (userService.isExistsBlogId(blogId)) {
+                        log.info("[UserController] checkExistsBlogId() 요청 성공 - blogId 존재 분기 응답");
+
                         return ResponseEntity.ok()
                                         .body(new SuccessResponse<>(blogId + " 사용자가 존재 합니다."));
                 }
+
+                log.info("[UserController] checkExistsBlogId() 요청 실패 - blogId 미존재 분기 응답");
 
                 return ResponseEntity
                                 .status(HttpStatus.NOT_FOUND)
@@ -221,6 +265,8 @@ public class UserController extends SimpleUrlAuthenticationSuccessHandler {
         @GetMapping("/api/check/blog-id/duplicate/{blogId}")
         public ResponseEntity<ApiResponse> checkDuplicateBlogId(@PathVariable("blogId") String blogId) {
 
+                log.info("[UserController] checkDuplicateBlogId() 요청 - blogId: {}", blogId);
+
                 DuplicateCheckResponse response = userService.isDuplicateBlogId(blogId);
 
                 return checkDuplicate(response);
@@ -235,6 +281,8 @@ public class UserController extends SimpleUrlAuthenticationSuccessHandler {
         @Parameter(name = "email", description = "확인할 이메일", required = true)
         @GetMapping("/api/check/email/duplicate/{email}")
         public ResponseEntity<ApiResponse> checkDuplicateEmail(@PathVariable("email") String email) {
+
+                log.info("[UserController] checkDuplicateEmail() 요청");
 
                 DuplicateCheckResponse response = userService.isDuplicateEmail(email);
 
@@ -252,6 +300,8 @@ public class UserController extends SimpleUrlAuthenticationSuccessHandler {
         @GetMapping("/api/check/username/duplicate/{username}")
         public ResponseEntity<ApiResponse> checkDuplicateUsername(@PathVariable("username") String username) {
 
+                log.info("[UserController] checkDuplicateUsername() 요청 - username: {}", username);
+
                 DuplicateCheckResponse response = userService.isDuplicateUsername(username);
 
                 return checkDuplicate(response);
@@ -260,10 +310,14 @@ public class UserController extends SimpleUrlAuthenticationSuccessHandler {
         private ResponseEntity<ApiResponse> checkDuplicate(DuplicateCheckResponse response) {
 
                 if (response.isExist()) {
+                        log.info("[UserController] checkDuplicate() 중복확인 요청 실패 - 이미 존재하는 경우 분기 응답");
+
                         // 이미 존재하는 경우
                         return ResponseEntity.status(HttpStatus.CONFLICT) // 409
                                         .body(new ErrorResponse(response.getMessage(), HttpStatus.CONFLICT.value()));
                 }
+
+                log.info("[UserController] checkDuplicate() 중복확인 요청 성공 - 존재하지 않는 경우 분기 응답");
 
                 return ResponseEntity.ok(new SuccessResponse<>(response.isExist(), response.getMessage()));
         }

@@ -83,7 +83,9 @@ public class BatchConfig {
     @PostConstruct
     public void init() {
         userBlogIds = userRepository.findAll().stream().map(user -> user.getBlogId()).toList();
-        log.info("사용자 블로그 ID 목록: {}", userBlogIds);
+
+        log.info("[BatchConfig] init() 메서드 시작 - 사용자 블로그 Id 목록: {}", userBlogIds);
+
     }
 
     @Value("${aws.s3.bucketName}")
@@ -109,6 +111,9 @@ public class BatchConfig {
 
     @Bean
     public ItemReader<S3Object> s3TempFileReader() {
+
+        log.info("[BatchConfig] s3TempFileReader() 메서드 시작");
+
         // 익명 클래스로 ItemReader 구현
         return new ItemReader<S3Object>() {
             private ListObjectsV2Response currentResponse;
@@ -150,7 +155,8 @@ public class BatchConfig {
 
                     if (!response.hasContents()) {
                         currentUserIndex++; // 다음 사용자로
-                        continuationToken = null; // 토큰 초기화를 하지 않으면 같은 사용자의 데이터를 반복해서 조회 즉 무한루프에 걸리게 되고, 다음 사용자로 넘어가지 않게 된다. 
+                        continuationToken = null; // 토큰 초기화를 하지 않으면 같은 사용자의 데이터를 반복해서 조회 즉 무한루프에 걸리게 되고, 다음 사용자로 넘어가지 않게
+                                                  // 된다.
                         return fetchNextBatch();
                     }
 
@@ -163,7 +169,7 @@ public class BatchConfig {
 
                     return response;
                 } catch (Exception e) {
-                    log.error("S3 파일 조회 실패", e);
+                    log.error("[BatchConfig] s3TempFileReader() 메서드 - S3 파일 조회 실패 에러", e.getMessage());
                     return null;
                 }
             }
@@ -172,10 +178,11 @@ public class BatchConfig {
 
     @Bean
     public ItemProcessor<S3Object, S3Object> s3TempFileProcessor() {
+
+        log.info("[BatchConfig] s3TempFileProcessor() 메서드 시작");
+
         return item -> {
             String key = item.key();
-
-            log.info("s3TempFileProcessor로 넘어온 파일 {}", key);
 
             // {userId}/temp/ 패턴 확인
             if (key.contains("/temp/")) {
@@ -195,16 +202,16 @@ public class BatchConfig {
     // 10개 모이션 writer에서 삭제
     @Bean
     public ItemWriter<S3Object> s3TempFileWriter() {
+
+        log.info("[BatchConfig] s3TempFileWriter() 메서드 시작");
+
         return items -> {
             for (S3Object item : items) {
-                log.info("삭제 시도 파일: {}", item.key());
                 DeleteObjectRequest deleteRequest = DeleteObjectRequest.builder()
                         .bucket(bucketName)
                         .key(item.key())
                         .build();
                 s3Client.deleteObject(deleteRequest);
-
-                log.info("삭제 완료 파일: {}", item.key());
 
             }
         };

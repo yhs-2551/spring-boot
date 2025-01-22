@@ -28,25 +28,20 @@
 
     <Loggers>
         <!-- Root logger: 기본 로그 레벨 설정 -->
-        <Root level="debug">
+        <Root level="warn">
             <AppenderRef ref="Console" />
             <AppenderRef ref="RollingFile" />
         </Root>
 
-        <!-- Hibernate SQL 로그 레벨 설정 -->
+        <!-- Hibernate SQL 로그 레벨 설정. warn으로 지정하면 콘솔에는 찍히지만 파일에는 찍히지가 않아서 debug -->
+        <!-- additivity="false": 상위 로거(Root)의 설정을 상속받지 않음 -->
         <Logger name="org.hibernate.SQL" level="debug" additivity="false">
             <AppenderRef ref="Console" />
             <AppenderRef ref="RollingFile" />
         </Logger>
 
+
         <!-- 바인딩된 파라미터 값 로그 레벨 설정 -->
-        <Logger name="org.hibernate.type.descriptor.sql" level="trace" additivity="false">
-            <AppenderRef ref="Console" />
-            <AppenderRef ref="RollingFile" />
-
-        </Logger>
-
-        <!-- ResultSet 로깅. 불필요하게 ResultSet 찍힐때 이걸로 조정정-->
         <Logger name="org.hibernate.type.descriptor.sql.BasicBinder" level="trace"
             additivity="false">
             <AppenderRef ref="Console" />
@@ -54,35 +49,41 @@
 
         </Logger>
 
+        <!-- 얘가 있어야 바인딩 파라미터값이 보임 -->
+        <Logger name="org.hibernate.orm.jdbc.bind" level="trace" additivity="false">
+            <AppenderRef ref="Console" />
+            <AppenderRef ref="RollingFile" />
+        </Logger>
+
         <!-- 트랜잭션 관련 로그 -->
-        <Logger name="org.springframework.transaction" level="debug" additivity="false">
+        <Logger name="org.springframework.transaction" level="warn" additivity="false">
             <AppenderRef ref="Console" />
             <AppenderRef ref="RollingFile" />
 
         </Logger>
 
         <!-- JPA 관련 로그 -->
-        <Logger name="org.springframework.orm.jpa" level="debug" additivity="false">
+        <Logger name="org.springframework.orm.jpa" level="warn" additivity="false">
             <AppenderRef ref="Console" />
             <AppenderRef ref="RollingFile" />
 
         </Logger>
 
         <!-- 애플리케이션 비즈니스 로직 로그 -->
-        <Logger name="com.yhs.blog.springboot.jpa" level="debug" additivity="false">
+        <Logger name="com.yhs.blog.springboot.jpa" level="info" additivity="false">
             <AppenderRef ref="Console" />
             <AppenderRef ref="RollingFile" />
 
         </Logger>
 
-        <!-- 톰캣 로깅. info로 안해놓으면 불필요한 로그가 많이 찍힘 -->
-        <Logger name="org.apache.tomcat" level="info" additivity="false">
+        <!-- 톰캣 로깅. info로 안해놓으면(debug로 하면) 불필요한 로그가 많이 찍힘 -->
+        <Logger name="org.apache.tomcat" level="warn" additivity="false">
             <AppenderRef ref="Console" />
             <AppenderRef ref="RollingFile" />
 
         </Logger>
 
-        <Logger name="org.apache.catalina" level="info" additivity="false">
+        <Logger name="org.apache.catalina" level="warn" additivity="false">
             <AppenderRef ref="Console" />
             <AppenderRef ref="RollingFile" />
         </Logger>

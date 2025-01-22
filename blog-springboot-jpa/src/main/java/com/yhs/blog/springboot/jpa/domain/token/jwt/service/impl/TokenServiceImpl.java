@@ -11,6 +11,7 @@ import com.yhs.blog.springboot.jpa.domain.user.service.UserService;
 import com.yhs.blog.springboot.jpa.exception.custom.BusinessException;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.log4j.Log4j2;
 
 import org.springframework.stereotype.Service;
 
@@ -18,6 +19,7 @@ import java.time.Duration;
 
 @RequiredArgsConstructor
 @Service
+@Log4j2
 public class TokenServiceImpl implements TokenService {
 
     private final TokenProvider tokenProvider;
@@ -29,11 +31,15 @@ public class TokenServiceImpl implements TokenService {
     @Loggable
     public String createNewAccessToken(String refreshToken) {
 
+        log.info("[TokenServiceImpl] createNewAccessToken 메서드 시작");
+
         Long userId = claimsExtractor.getUserId(refreshToken);
 
         if (userId != null // Long은 wrapper 클래스라 null 비교 가능
                 && tokenValidator.validateRefreshToken(refreshToken, userId)) {
-            //
+
+            log.info("[TokenServiceImpl] createNewAccessToken RefreshToken 유효성 검사 통과 완료 분기");
+
             User user = userService.findUserById(userId);
 
             return tokenProvider.generateToken(user, Duration.ofHours(1));

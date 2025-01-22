@@ -45,11 +45,19 @@ public class S3ServiceImpl implements S3Service {
     @Loggable
     public String tempUploadFile(MultipartFile file, String folder, String blogId) throws IOException {
 
+        log.info("[S3ServiceImpl] tempUploadFile() 메서드 시작");
+
         // 대표 이미지 구분하기 위함
         if (folder == null || folder.isEmpty()) {
+
+            log.info("[S3ServiceImpl] tempUploadFile() - folder 값이 없을때 분기 진행");
+
             folder = Objects.requireNonNull(file.getContentType()).startsWith("image/") ? blogId + "/temp/images/"
                     : blogId + "/temp/files/";
         } else if (folder.equals("featured")) {
+
+            log.info("[S3ServiceImpl] tempUploadFile() - folder 값이 featured 일때 분기 진행");
+
             folder = blogId + "/temp/" + folder + "/";
         }
         String fileName = folder + UUID.randomUUID() + "-" + file.getOriginalFilename();
@@ -75,6 +83,9 @@ public class S3ServiceImpl implements S3Service {
 
     @Override
     public void deleteProfileImage(String blogId) {
+
+        log.info("[S3ServiceImpl] deleteProfileImage() 메서드 시작");
+
         String folder = blogId + "/final/profile/";
 
         // 폴더 내 모든 객체 삭제. ListObjects는 버킷 내 객체들을 나열한다.
@@ -94,6 +105,8 @@ public class S3ServiceImpl implements S3Service {
 
     @Override
     public String uploadProfileImage(MultipartFile file, String blogId) throws IOException {
+
+        log.info("[S3ServiceImpl] uploadProfileImage() 메서드 시작");
 
         deleteProfileImage(blogId);
 
@@ -117,6 +130,8 @@ public class S3ServiceImpl implements S3Service {
     @Override
     public CompletableFuture<Void> processCreatePostS3TempOperation(PostRequest postRequest, String blogId) {
 
+        log.info("[S3ServiceImpl] processCreatePostS3TempOperation() 메서드 시작");
+
         try {
             // String userFolder = getUserFolder();
 
@@ -126,18 +141,25 @@ public class S3ServiceImpl implements S3Service {
             processTempFilesToFinal(tempfileUrls, blogId);
 
             if (postRequest.getFeaturedImage() != null) {
+
+                log.info("[S3ServiceImpl] processCreatePostS3TempOperation() - 대표 이미지 파일 final 폴더로 이동 분기 진행");
+
                 moveTempFilesToFinal(postRequest.getFeaturedImage().getFileUrl(),
                         blogId + "/final/featured/", blogId);
             }
 
-            for (String tempFileUrl : postRequest.getDeleteTempImageUrls()) {
-                tempDeleteFile(tempFileUrl, blogId);
+            if (postRequest.getDeleteTempImageUrls() != null && !postRequest.getDeleteTempImageUrls().isEmpty()) {
+                log.info("[S3ServiceImpl] processCreatePostS3TempOperation() - temp 이미지 삭제 분기 진행");
+
+                for (String tempFileUrl : postRequest.getDeleteTempImageUrls()) {
+                    tempDeleteFile(tempFileUrl, blogId);
+                }
             }
 
             return CompletableFuture.completedFuture(null);
         } catch (Exception ex) {
             log.error("processCreatePostS3TempOperation 에러 발생", ex);
-             // 언체크드 예외로 변경했기 때문에 throws를 던지지 안아도 됨. 비동기 설정에서 예외 처리 
+            // 언체크드 예외로 변경했기 때문에 throws를 던지지 안아도 됨. 비동기 설정에서 예외 처리
             throw new S3OperationException("processCreatePostS3TempOperation 에러 발생", ex);
 
         }
@@ -148,6 +170,8 @@ public class S3ServiceImpl implements S3Service {
     @Async
     public CompletableFuture<Void> processUpdatePostS3TempOperation(PostUpdateRequest postUpdateRequest,
             String blogId) {
+
+        log.info("[S3ServiceImpl] processUpdatePostS3TempOperation() 메서드 시작");
 
         try {
 
@@ -166,12 +190,22 @@ public class S3ServiceImpl implements S3Service {
             processTempFilesToFinal(tempfileUrls, blogId);
 
             if (postUpdateRequest.getFeaturedImage() != null) {
+
+                log.info("[S3ServiceImpl] processUpdatePostS3TempOperation() - 대표 이미지 파일 final 폴더로 이동 분기 진행");
+
                 moveTempFilesToFinal(postUpdateRequest.getFeaturedImage().getFileUrl(),
                         blogId + "/final/featured/", blogId);
             }
 
-            for (String tempFileUrl : postUpdateRequest.getDeleteTempImageUrls()) {
-                tempDeleteFile(tempFileUrl, blogId);
+            if (postUpdateRequest.getDeleteTempImageUrls() != null
+                    && !postUpdateRequest.getDeleteTempImageUrls().isEmpty()) {
+
+                log.info("[S3ServiceImpl] processUpdatePostS3TempOperation() - temp 이미지 삭제 분기 진행");
+
+                for (String tempFileUrl : postUpdateRequest.getDeleteTempImageUrls()) {
+                    tempDeleteFile(tempFileUrl, blogId);
+                }
+
             }
 
             return CompletableFuture.completedFuture(null);
@@ -186,6 +220,8 @@ public class S3ServiceImpl implements S3Service {
 
     private void processTempFilesToFinal(List<String> tempfileUrls, String blogId) {
 
+        log.info("[S3ServiceImpl] processTempFilesToFinal() 메서드 시작");
+
         for (String tempFileUrl : tempfileUrls) {
             String finalFolder;
             if (tempFileUrl.contains("/images/")) {
@@ -198,6 +234,8 @@ public class S3ServiceImpl implements S3Service {
     }
 
     private void moveTempFilesToFinal(String tempFileUrl, String finalFolder, String blogId) {
+
+        log.info("[S3ServiceImpl] moveTempFilesToFinal() 메서드 시작");
 
         String fileName = tempFileUrl.substring(tempFileUrl.lastIndexOf("/") + 1);
 
@@ -234,6 +272,8 @@ public class S3ServiceImpl implements S3Service {
     }
 
     private void tempDeleteFile(String fileUrl, String blogId) {
+
+        log.info("[S3ServiceImpl] tempDeleteFile() 메서드 시작");
 
         // String userFolder = getUserFolder();
 

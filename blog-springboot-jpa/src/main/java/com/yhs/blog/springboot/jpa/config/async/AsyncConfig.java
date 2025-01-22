@@ -61,7 +61,10 @@ public class AsyncConfig implements AsyncConfigurer {
     // 비동기 작업 중 발생하는 예외처리 관련 메서드.
     @Override
     public AsyncUncaughtExceptionHandler getAsyncUncaughtExceptionHandler() {
+
+        log.info("[AsyncConfig] getAsyncUncaughtExceptionHandler 메서드 시작");
         return (ex, method, params) -> {
+
             log.error("비동기 함수 {} 에러: {}", method.getName(), ex);
             log.error("파라미터: {}", Arrays.toString(params));
 

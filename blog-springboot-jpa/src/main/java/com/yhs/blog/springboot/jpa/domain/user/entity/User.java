@@ -4,9 +4,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.yhs.blog.springboot.jpa.common.entity.BaseEntity;
 import com.yhs.blog.springboot.jpa.domain.category.entity.Category;
-import com.yhs.blog.springboot.jpa.domain.file.entity.File;
-import com.yhs.blog.springboot.jpa.domain.post.entity.Comment;
-import com.yhs.blog.springboot.jpa.domain.post.entity.Like;
+import com.yhs.blog.springboot.jpa.domain.file.entity.File; 
 import com.yhs.blog.springboot.jpa.domain.post.entity.Post;
 import com.yhs.blog.springboot.jpa.domain.post.entity.PostTag;
 import com.yhs.blog.springboot.jpa.domain.user.type.UserRole;
@@ -85,14 +83,6 @@ public class User extends BaseEntity implements UserDetails {
     @OneToMany(mappedBy = "user", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
     @JsonIgnore
     private Set<PostTag> postTags;
-
-    @OneToMany(mappedBy = "user", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
-    @JsonIgnore
-    private Set<Comment> comments;
-
-    @OneToMany(mappedBy = "user", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
-    @JsonIgnore
-    private Set<Like> likes;
 
     // 필드의 기본값 (UserRole.USER)은 객체가 기본 생성자를 통해 생성될 때 적용된다. 반면, 빌더 패턴을 사용하거나 파라미터화된
     // 생성자를 사용하는

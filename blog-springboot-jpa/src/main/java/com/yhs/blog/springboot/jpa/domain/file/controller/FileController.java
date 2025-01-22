@@ -41,14 +41,22 @@ public class FileController {
             @RequestParam(value = "featured", required = false) String featured,
             @P("userBlogId") @PathVariable("blogId") String blogId) {
 
+        log.info("[FileController] uploadFile() 요청 - file: {}, featured: {}, blogId: {}", file, featured, blogId);
+
         try {
 
             if (Objects.requireNonNull(file.getContentType()).startsWith("image/")
                     && file.getSize() > 5 * 1024 * 1024) { // 5MB
+
+                log.warn("[FileController] uploadFile() image fileSize 초과 분기 응답");
+
                 // limit for image files
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                         .body("이미지 파일 크기는 5MB를 초과할 수 없습니다.");
             } else if (!file.getContentType().startsWith("image/") && file.getSize() > 10 * 1024 * 1024) {
+
+                log.warn("[FileController] uploadFile() 일반 파일 fileSize 초과 분기 응답");
+
                 // 10MB limit for other files
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                         .body("일반 파일 크기는 10MB를 초과할 수 없습니다.");
@@ -57,6 +65,7 @@ public class FileController {
             String fileUrl = fileService.uploadTempFile(file, featured, blogId);
 
             return ResponseEntity.ok(fileUrl);
+
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("파일 업로드에 실패하였습니다.");
         }
@@ -68,6 +77,9 @@ public class FileController {
     @GetMapping("/{blogId}/proxy-image")
     public ResponseEntity<byte[]> proxyImage(@P("userBlogId") @PathVariable("blogId") String blogId,
             @RequestParam(name = "url") String url) {
+
+        log.info("[FileController] proxyImage() 요청 - URL: {}", url);
+
         try {
             return ResponseEntity.ok()
                     .contentType(fileService.getContentType(url))

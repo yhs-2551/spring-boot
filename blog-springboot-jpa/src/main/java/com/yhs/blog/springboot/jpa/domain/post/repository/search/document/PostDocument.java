@@ -18,6 +18,7 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import lombok.extern.log4j.Log4j2;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
@@ -28,6 +29,7 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 @AllArgsConstructor // 필수는 아니지만 권장
 @Builder
 @JsonIgnoreProperties(ignoreUnknown = true) // elasticSearch의 _class 같은 필드를 무시하도록 설정
+@Log4j2
 public class PostDocument {
 
         @Id
@@ -69,6 +71,7 @@ public class PostDocument {
         private LocalDateTime createdAt;
 
         public static PostDocument from(Post post) {
+
                 return PostDocument.builder()
                                 .id(String.valueOf(post.getId())) // Long을 String으로 변환
                                 .title(post.getTitle())
