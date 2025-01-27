@@ -7,7 +7,7 @@ import com.yhs.blog.springboot.jpa.aop.ratelimit.RateLimit;
 import com.yhs.blog.springboot.jpa.common.constant.code.ErrorCode;
 import com.yhs.blog.springboot.jpa.common.response.RateLimitResponse;
 import com.yhs.blog.springboot.jpa.domain.oauth2.dto.request.AdditionalInfoRequest;
-import com.yhs.blog.springboot.jpa.domain.oauth2.dto.request.OAuth2SignUpResponse;
+import com.yhs.blog.springboot.jpa.domain.oauth2.dto.response.OAuth2SignUpResponse;
 import com.yhs.blog.springboot.jpa.domain.oauth2.service.OAuth2SignUpService;
 import com.yhs.blog.springboot.jpa.domain.oauth2.service.OAuth2TempDataService;
 import com.yhs.blog.springboot.jpa.domain.user.service.UserRegistrationService;

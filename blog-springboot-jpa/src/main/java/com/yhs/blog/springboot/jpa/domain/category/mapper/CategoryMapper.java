@@ -3,12 +3,17 @@ package com.yhs.blog.springboot.jpa.domain.category.mapper;
 import com.yhs.blog.springboot.jpa.domain.category.dto.response.CategoryResponse;
 import com.yhs.blog.springboot.jpa.domain.category.entity.Category;
 
+import lombok.extern.log4j.Log4j2;
+
 import java.util.Collections; 
 import java.util.stream.Collectors;
 
+@Log4j2
 public class CategoryMapper {
  
     public static CategoryResponse from(Category category) {
+
+        log.info("postCount >>>> {}", category.getPosts() != null && !category.getPosts().isEmpty() ? category.getPosts().size() : 0);
 
         return new CategoryResponse(
                 category.getId(),

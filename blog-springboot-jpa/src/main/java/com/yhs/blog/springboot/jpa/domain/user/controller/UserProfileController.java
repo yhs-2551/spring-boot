@@ -11,7 +11,7 @@ import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-
+ 
 import com.yhs.blog.springboot.jpa.common.response.BaseResponse;
 import com.yhs.blog.springboot.jpa.common.response.ErrorResponse;
 import com.yhs.blog.springboot.jpa.common.response.SuccessResponse;
@@ -69,7 +69,7 @@ public class UserProfileController {
         }
 
     }
-
+ 
     @Operation(summary = "사용자 민감하지 않은 정보 조회", description = "블로그Id, 블로그명, 사용자명, 프로필 이미지 url, 소개글을 조회")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "사용자 민감하지 않은 프로필 정보 조회 성공", content = @Content(schema = @Schema(implementation = SuccessResponse.class))),

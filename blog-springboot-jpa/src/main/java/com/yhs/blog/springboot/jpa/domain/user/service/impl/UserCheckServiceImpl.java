@@ -50,12 +50,13 @@ public class UserCheckServiceImpl implements UserCheckService {
             log.info("[UserCheckServiceImpl] isExistsBlogId 메서드 - DB에 사용자가 존재하는 경우 분기 시작");
 
             // 캐시에 저장.
-            redisTemplate.opsForValue().set(cacheKey, true, CacheConstants.PROFILE_CACHE_HOURS, TimeUnit.HOURS);
+            redisTemplate.opsForValue().set(cacheKey, true, CacheConstants.IS_EXISTS_BLOG_ID_CACHE_HOURS, TimeUnit.HOURS);
+            return userExists;
         }
 
         log.info("[UserCheckServiceImpl] isExistsBlogId 메서드 - DB에 사용자가 존재하지 않는 경우 분기 시작");
 
-        return false;
+        return userExists;
     }
 
     // 아래는 회원가입 시 중복확인 관련

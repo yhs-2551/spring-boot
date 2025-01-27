@@ -35,10 +35,11 @@ public class UserProfileServiceImpl implements UserProfileService {
     private final UserRepository userRepository;
     private final S3Service s3Service;
 
-    private final RedisTemplate<String, UserPublicProfileResponse> userPublicProfileRedisTemplate;
-    private final RedisTemplate<String, UserPrivateProfileResponse> userPrivateProfileRedisTemplate;
+    private final RedisTemplate<String, UserPublicProfileResponse> userPublicProfileRedisTemplate; 
     private final RedisTemplate<String, Boolean> redisTemplateBoolean;
 
+
+    // getUserPublicProfile 은 캐시에서 가져오기 때문에 User 엔티티 자체가 필요한 경우 아니면 여러곳에서 사용 가능
     @Loggable
     @Override
     @Transactional(readOnly = true)
@@ -48,7 +49,7 @@ public class UserProfileServiceImpl implements UserProfileService {
 
         String cacheKey = "userPublicProfile:" + blogId;
 
-        // Try to get user from cache first
+        //UserPublicProfileResponse에서 id값은 JsonIgnore 했기 때문에 id값은 null값으로 저장됨. 
         UserPublicProfileResponse cachedUser = userPublicProfileRedisTemplate.opsForValue().get(cacheKey);
         if (cachedUser != null) {
             log.info("[UserProfileServiceImpl] getUserPublicProfile 메서드 Redis 캐시에 존재하는 경우 분기 시작");
@@ -58,7 +59,6 @@ public class UserProfileServiceImpl implements UserProfileService {
 
         log.info("[UserProfileServiceImpl] getUserPublicProfile 메서드 Redis 캐시에 존재하지 않는 경우 분기 시작");
 
-        // If not in cache, get from database
         Optional<User> optionalUser = userRepository.findByBlogId(blogId);
         if (optionalUser.isEmpty()) {
             throw new BusinessException(
@@ -70,7 +70,7 @@ public class UserProfileServiceImpl implements UserProfileService {
 
         User user = optionalUser.get();
 
-        UserPublicProfileResponse userPublicProfileResponseDTO = new UserPublicProfileResponse(user.getId(),
+        UserPublicProfileResponse userPublicProfileResponseDTO = new UserPublicProfileResponse(
                 user.getBlogId(),
                 user.getBlogName(),
                 user.getUsername(), user.getProfileImageUrl());
@@ -152,8 +152,7 @@ public class UserProfileServiceImpl implements UserProfileService {
                         @Override
                         public void afterCommit() {
                             // 사용자 정보 변경 시 캐시 무효화. 트랜잭션이 성공적으로 커밋되어야만 redis 캐시 무효화
-                            userPublicProfileRedisTemplate.delete("userPublicProfile:" + blogId);
-                            userPrivateProfileRedisTemplate.delete("userPrivateProfile:" + blogId);
+                            userPublicProfileRedisTemplate.delete("userPublicProfile:" + blogId); 
                             redisTemplateBoolean.delete("isDuplicateUsername:" + oldUsername);
                         }
 

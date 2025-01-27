@@ -12,8 +12,8 @@ import java.util.List;
 @Repository
 public interface PostTagRepository extends JpaRepository<PostTag, PostTagId> {
 
-
-        @Query("SELECT DISTINCT pt.tag.id FROM PostTag pt WHERE pt.post.id = :postId")
+        // tag.id값의 경우 중복될 가능성이 없기 때문에 distinct 필요x
+        @Query("SELECT pt.tag.id FROM PostTag pt WHERE pt.post.id = :postId")
         List<Long> findTagIdsByPostId(@Param("postId") Long postId);
 
 }

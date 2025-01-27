@@ -2,9 +2,7 @@ package com.yhs.blog.springboot.jpa.domain.post.dto.response;
 
 import com.yhs.blog.springboot.jpa.domain.post.entity.FeaturedImage;
 import com.yhs.blog.springboot.jpa.domain.category.entity.Category;
-import com.yhs.blog.springboot.jpa.domain.post.entity.Post;
-import com.yhs.blog.springboot.jpa.domain.post.repository.search.document.CategoryDocument;
-import com.yhs.blog.springboot.jpa.domain.post.repository.search.document.PostDocument;
+import com.yhs.blog.springboot.jpa.domain.post.entity.Post; 
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
@@ -60,21 +58,5 @@ public class PostResponse {
                 response.createdAt = post.getCreatedAt();
 
                 return response;
-        }
-
-        public static PostResponse fromDocument(PostDocument document) {
-                PostResponse response = new PostResponse();
-                response.id = Long.parseLong(document.getId());
-                response.featuredImage = Optional.ofNullable(document.getFeaturedImage())
-                                .map(FeaturedImageResponse::from).orElse(null);
-                response.title = document.getTitle();
-                response.content = document.getContent();
-                response.categoryName = Optional.ofNullable(document.getCategory())
-                                .map(CategoryDocument::getName)
-                                .orElse(null);
-                response.createdAt = document.getCreatedAt();
-                response.username = document.getUsername();
-                // response.blogId = document.getBlogId();
-                return response;
-        }
+        } 
 }

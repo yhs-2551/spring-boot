@@ -7,7 +7,6 @@ import com.yhs.blog.springboot.jpa.common.response.BaseResponse;
 import com.yhs.blog.springboot.jpa.common.response.ErrorResponse;
 import com.yhs.blog.springboot.jpa.common.response.SuccessResponse;
 import com.yhs.blog.springboot.jpa.domain.category.service.CategoryService;
-
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -15,6 +14,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.http.HttpStatus;
@@ -22,7 +22,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.parameters.P;
 import org.springframework.web.bind.annotation.*;
-
 import java.util.List;
 
 @Tag(name = "카테고리 등록, 카테고리 조회", description = "카테고리 생성, 수정, 삭제, 조회 API")
@@ -32,9 +31,10 @@ import java.util.List;
 @RequestMapping("/api/{blogId}/categories")
 public class CategoryController {
 
-        private final CategoryService categoryService;
+        private final CategoryService categoryService; 
 
         // 서비스단에서 userRepository 불필요한 조회 제거, 부모 카테고리 조회 필요할때만 진행. 즉 불필요한 쿼리를 줄임으로써 성능 향상
+        // 카테고리 생성, 수정, 삭제시 불필요한 N+1 제거 후 성능 향상 및 DB 네트워크 요청 감소
         @Operation(summary = "카테고리 생성, 수정, 삭제 요청 처리", description = "사용자가 카테고리를 (생성, 수정, 삭제) 요청을 보내면 해당 요청을 처리")
         @ApiResponses(value = {
                         @ApiResponse(responseCode = "201", description = "카테고리 작업 성공", content = @Content(schema = @Schema(implementation = SuccessResponse.class))),
@@ -59,17 +59,20 @@ public class CategoryController {
                                                 "카테고리 생성에 성공하였습니다."));
         }
 
+        @MeasurePerformance
         // 특정 사용자의 모든 카테고리 조회. 모든 사용자가 볼 수 있어야 해서 preauthorize 제거
+        // 상대적으로 자주 조회되며, 변경이 적은 데이터 redis사용 미세한 속도 개선 및 DB 부하 감소
+        // Cateogry를 가져올때 자식 및 연관된 게시글을 LEFT JOIN FETCH로 가져옴으로써 N+1 문제 해결 및 네트워크
+        // 요청감소, 성능 향상.
         @Operation(summary = "카테고리 조회 요청 처리", description = "사용자가 카테고리 조회 요청을 보내면 해당 요청을 처리")
         @ApiResponses(value = {
                         @ApiResponse(responseCode = "200", description = "카테고리 조회 성공", content = @Content(schema = @Schema(implementation = SuccessResponse.class))),
-                         
 
         })
         @Parameter(name = "blogId", description = "사용자 블로그 아이디", required = true)
         @GetMapping
         public ResponseEntity<BaseResponse> getAllCategoriesWithChildrenByUserId(
-                        @PathVariable("blogId") String blogId) {
+                        @PathVariable("blogId") String blogId, HttpServletRequest request) {
 
                 log.info("[CategoryController] getAllCategoriesWithChildrenByUserId() 요청");
 

@@ -118,10 +118,8 @@ public class TokenController {
 
         Cookie cookie = WebUtils.getCookie(request, "refresh_token");
 
-        String refreshToken = cookie.getValue();
-
         // null, 빈 문자열, 공백 문자열 모두 체크
-        if (!(StringUtils.hasText(refreshToken))) {
+        if (!(StringUtils.hasText(cookie.getValue()))) {
 
             log.warn("[TokenController] createNewAccessByRefreshToken() 요청 refreshToken이 존재하지 않을 때 분기 시작");
 
@@ -130,6 +128,8 @@ public class TokenController {
         }
 
         log.info("[TokenController] createNewAccessByRefreshToken() 요청 refreshToken이 존재할 때 분기 시작");
+
+        String refreshToken = cookie.getValue();
 
         // 리프레시 토큰이 유효하다면 새로운 액세스 토큰 발급
         String newAccessToken = tokenService.createNewAccessToken(refreshToken);

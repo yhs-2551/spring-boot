@@ -1,18 +1,25 @@
 package com.yhs.blog.springboot.jpa.domain.auth.token.util;
 
+import org.springframework.stereotype.Component;
+
 import com.yhs.blog.springboot.jpa.aop.log.Loggable;
 import com.yhs.blog.springboot.jpa.common.constant.code.ErrorCode;
 import com.yhs.blog.springboot.jpa.domain.auth.token.claims.ClaimsExtractor;
 import com.yhs.blog.springboot.jpa.exception.custom.BusinessException;
 
 import jakarta.servlet.http.HttpServletRequest;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 
+@Component
+@RequiredArgsConstructor
 @Log4j2
-public class TokenUtil {
+public class TokenUtil { // 아직 안쓰이지만 일단 보류 
+
+    private final ClaimsExtractor claimsExtractor;
 
     @Loggable
-    public static Long extractUserIdFromRequestToken(HttpServletRequest request, ClaimsExtractor claimsExtractor) {
+    public Long extractUserIdFromRequestToken(HttpServletRequest request) {
 
         log.info("[TokenUtil] extractUserIdFromRequestToken 메서드 시작");
 

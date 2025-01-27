@@ -49,7 +49,6 @@ public class UserFindServiceImpl implements UserFindService {
 
         log.info("[UserFindServiceImpl] findUserByBlogId 메서드 시작");
 
-        // If not in cache, get from database
         Optional<User> optionalUser = userRepository.findByBlogId(blogId);
         if (optionalUser.isEmpty()) {
             throw new BusinessException(

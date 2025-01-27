@@ -13,6 +13,7 @@ import com.yhs.blog.springboot.jpa.domain.post.entity.Post;
 import com.yhs.blog.springboot.jpa.domain.post.repository.PostRepository;
 import com.yhs.blog.springboot.jpa.domain.post.repository.search.SearchType;
 import com.yhs.blog.springboot.jpa.domain.post.service.PostFindService;
+import com.yhs.blog.springboot.jpa.domain.user.service.UserFindService;
 import com.yhs.blog.springboot.jpa.domain.user.service.UserProfileService;
 import com.yhs.blog.springboot.jpa.exception.custom.BusinessException;
 
@@ -26,8 +27,7 @@ public class PostFindServiceImpl implements PostFindService {
 
     private final CategoryService categoryService;
     private final PostRepository postRepository;
-
-    private final UserProfileService userProfileService;
+    private final UserFindService userFindService;
 
     @Override
     @Transactional(readOnly = true)
@@ -39,7 +39,7 @@ public class PostFindServiceImpl implements PostFindService {
                 "[PostFindServiceImpl] getAllPostsSpecificUser 메서드 시작: blogId: {}, keyword: {}, searchType: {}, categoryName: {}, pageable: {}",
                 blogId, keyword, searchType, categoryName, pageable);
 
-        Long userId = userProfileService.getUserPublicProfile(blogId).id();
+        Long userId = userFindService.findUserByBlogId(blogId).getId();
 
         if (categoryName != null) {
 
@@ -72,7 +72,8 @@ public class PostFindServiceImpl implements PostFindService {
 
         log.info("[PostFindServiceImpl] getPostByPostId 메서드 시작: postId: {}", postId);
 
-        Post post = postRepository.findById(postId)
+        Post post = postRepository.findByIdWithDetails(postId) // 연관된 엔티티도 한번에 가져와서 이후 연관 엔티티 조회 시 DB 추가 조회 없이 영속성 컨텍스트
+                                                               // 1차 캐시에서 바로 반환
                 .orElseThrow(() -> new BusinessException(
                         ErrorCode.POST_NOT_FOUND,
                         postId + "번 게시글을 찾을 수 없습니다.",

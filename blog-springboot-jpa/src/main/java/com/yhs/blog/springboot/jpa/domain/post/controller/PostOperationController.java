@@ -88,7 +88,7 @@ public class PostOperationController {
 
         log.info("[PostOperationController] deletePostById() 요청");
 
-        postOperationService.deletePostByPostId(postId);
+        postOperationService.deletePostByPostId(postId, blogId);
 
         return ResponseEntity.ok(new SuccessResponse<>("게시글이 성공적으로 삭제되었습니다."));
     }

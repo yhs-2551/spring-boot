@@ -7,11 +7,15 @@ import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 
 import org.springframework.dao.DataAccessException;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import com.yhs.blog.springboot.jpa.aop.log.Loggable;
 import com.yhs.blog.springboot.jpa.common.constant.code.ErrorCode;
+import com.yhs.blog.springboot.jpa.domain.category.dto.response.CategoryResponse;
 import com.yhs.blog.springboot.jpa.domain.category.entity.Category;
 import com.yhs.blog.springboot.jpa.domain.category.service.CategoryService;
 import com.yhs.blog.springboot.jpa.domain.file.dto.request.FileRequest;
@@ -53,6 +57,7 @@ public class PostOperationServiceImpl implements PostOperationService {
     private final TagRepository tagRepository;
     private final PostTagRepository postTagRepository;
     private final S3Service s3Service;
+    private final RedisTemplate<String, List<CategoryResponse>> categoryResponseRedisTemplate;
 
     @Loggable
     @Transactional
@@ -94,20 +99,19 @@ public class PostOperationServiceImpl implements PostOperationService {
 
             log.info("[PostOperationServiceImpl] createNewPost S3 메인 스레드 시작: {}", Thread.currentThread().getName());
 
-            // s3 Temp 파일 관련 작업은 비동기로 처리. 사용자에게 빠르게 응답하기 위함
-            CompletableFuture<Void> s3Future = s3Service.processCreatePostS3TempOperation(postRequest,
-                    user.getBlogId());
+            // 트랜잭션이 성공되어야만 실행
+            TransactionSynchronizationManager.registerSynchronization(
+                    new TransactionSynchronization() {
+                        @Override
+                        public void afterCommit() {
+                            // 카테고리 작업 캐시 무효화. 트랜잭션이 성공적으로 커밋되어야만 redis 캐시 무효화
+                            categoryResponseRedisTemplate.delete("categories:" + blogId);
+                            // s3 Temp 파일 관련 작업은 비동기로 처리. 사용자에게 빠르게 응답하기 위함
+                            s3Service.processCreatePostS3TempOperation(postRequest,
+                                    user.getBlogId());
+                        }
 
-            s3Future.thenAcceptAsync(result -> {
-                log.info("[PostOperationServiceImpl] createNewPost S3 작업 완료");
-            }).exceptionally(throwable -> {
-                log.error("[PostOperationServiceImpl] createNewPost S3 작업 실패: {}", throwable.getMessage());
-                return null;
-            });
-
-            log.info("[PostOperationServiceImpl] createNewPost 메인 스레드 종료: {}", Thread.currentThread().getName());
-
-            log.info("[PostOperationServiceImpl] createNewPost 메서드 종료");
+                    });
 
         } catch (DataAccessException ex) {
             throw new SystemException(ErrorCode.POST_CREATE_ERROR, "게시글 생성 중 서버 에러가 발생했습니다.",
@@ -172,18 +176,29 @@ public class PostOperationServiceImpl implements PostOperationService {
                 PostStatus.valueOf(postUpdateRequest.getPostStatus().toUpperCase()),
                 CommentsEnabled.valueOf(postUpdateRequest.getCommentsEnabled().toUpperCase()), featuredImage);
 
-        s3Service.processUpdatePostS3TempOperation(postUpdateRequest, user.getBlogId());
+        // 트랜잭션이 성공되어야만 실행
+        TransactionSynchronizationManager.registerSynchronization(
+                new TransactionSynchronization() {
+                    @Override
+                    public void afterCommit() {
+                        // 카테고리 작업 캐시 무효화. 트랜잭션이 성공적으로 커밋되어야만 redis 캐시 무효화
+                        categoryResponseRedisTemplate.delete("categories:" + blogId);
+                        // s3 Temp 파일 관련 작업은 비동기로 처리. 사용자에게 빠르게 응답하기 위함
+                        s3Service.processUpdatePostS3TempOperation(postUpdateRequest, user.getBlogId());
+                    }
+
+                });
 
     }
 
     @Loggable
     @Transactional
     @Override
-    public void deletePostByPostId(Long postId) {
+    public void deletePostByPostId(Long postId, String blogId) {
 
         log.info("[PostOperationServiceImpl] deletePostByPostId 메서드 시작: postId: {}", postId);
 
-        Post post = postRepository.findById(postId)
+        Post post = postRepository.findByIdWithUser(postId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.POST_NOT_FOUND, postId + "번 게시글을 찾을 수 없습니다.",
                         "PostOperationServiceImpl", "deletePostByPostId"));
 
@@ -209,6 +224,17 @@ public class PostOperationServiceImpl implements PostOperationService {
         // 시 posttag가
         // 영속성 컨텍스트에서 삭제되었기 PostTag엔티티 관련된 JPQL실행이 제대로 되지 않아서이다.
         // 따라서 최종적으로 위쪽 방식으로 사용한다.
+
+        // 트랜잭션이 성공되어야만 실행
+        TransactionSynchronizationManager.registerSynchronization(
+                new TransactionSynchronization() {
+                    @Override
+                    public void afterCommit() {
+                        // 카테고리 작업 시 캐시 무효화. 트랜잭션이 성공적으로 커밋되어야만 redis 캐시 무효화
+                        categoryResponseRedisTemplate.delete("categories:" + blogId);
+                    }
+
+                });
     }
 
     // 아래쪽은 헬퍼 메서드

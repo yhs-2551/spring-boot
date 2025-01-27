@@ -1,6 +1,7 @@
 package com.yhs.blog.springboot.jpa.domain.category.service.impl;
 
 import com.yhs.blog.springboot.jpa.aop.log.Loggable;
+import com.yhs.blog.springboot.jpa.common.constant.cache.CacheConstants;
 import com.yhs.blog.springboot.jpa.common.constant.code.ErrorCode;
 import com.yhs.blog.springboot.jpa.domain.category.dto.request.CategoryRequest;
 import com.yhs.blog.springboot.jpa.domain.category.dto.request.CategoryRequestPayLoad;
@@ -11,14 +12,18 @@ import com.yhs.blog.springboot.jpa.exception.custom.BusinessException;
 import com.yhs.blog.springboot.jpa.domain.category.repository.CategoryRepository;
 import com.yhs.blog.springboot.jpa.domain.category.service.CategoryService;
 import com.yhs.blog.springboot.jpa.domain.user.service.UserFindService;
-import com.yhs.blog.springboot.jpa.domain.user.service.UserProfileService;
 import com.yhs.blog.springboot.jpa.domain.category.mapper.CategoryMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
+
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 @Log4j2
@@ -28,8 +33,7 @@ public class CategoryServiceImpl implements CategoryService {
 
     private final CategoryRepository categoryRepository;
     private final UserFindService userFindService;
-    private final UserProfileService userProfileService;
-
+    private final RedisTemplate<String, List<CategoryResponse>> categoryResponseRedisTemplate;
     private User user;
     boolean isParentCategoryExist = true;
 
@@ -66,6 +70,16 @@ public class CategoryServiceImpl implements CategoryService {
 
         categoryRepository.saveAll(categories);
 
+        TransactionSynchronizationManager.registerSynchronization(
+                new TransactionSynchronization() {
+                    @Override
+                    public void afterCommit() {
+                        // 카테고리 작업 시 캐시 무효화. 트랜잭션이 성공적으로 커밋되어야만 redis 캐시 무효화
+                        categoryResponseRedisTemplate.delete("categories:" + blogId);
+                    }
+
+                });
+
     }
 
     @Override
@@ -74,20 +88,56 @@ public class CategoryServiceImpl implements CategoryService {
 
         log.info("[CategoryServiceImpl] getAllCategoriesWithChildrenByUserId 메서드 시작");
 
-        Long userId = userProfileService.getUserPublicProfile(blogId).id();
+        String key = "categories:" + blogId;
 
-        List<Category> categories = categoryRepository.findAllWithChildrenByUserId(userId);
+        List<CategoryResponse> redisCategories = categoryResponseRedisTemplate.opsForValue().get(key);
 
-        if (categories.isEmpty()) {
+        if (redisCategories != null && !redisCategories.isEmpty()) {
 
-            log.info("[CategoryServiceImpl] getAllCategoriesWithChildrenByUserId 메서드 카테고리가 존재하지 않는 경우 분기 진행");
+            log.info("[CategoryServiceImpl] getAllCategoriesWithChildrenByUserId 메서드 Redis 캐시에 존재하는 경우 분기 시작");
+
+            return redisCategories;
+        }
+
+        log.info("[CategoryServiceImpl] getAllCategoriesWithChildrenByUserId 메서드 Redis 캐시에 존재하지 않는 경우 분기 시작");
+
+        Long userId = userFindService.findUserByBlogId(blogId).getId();
+
+        List<Category> dbCategories = categoryRepository.findAllWithChildrenAndPostsByUserId(userId);
+
+        if (dbCategories.isEmpty()) {
+
+            log.info("[CategoryServiceImpl] getAllCategoriesWithChildrenByUserId 메서드 DB에 카테고리가 존재하지 않는 경우 분기 진행");
 
             return Collections.emptyList(); // 불변 빈 배열 반환
         }
 
-        log.info("[CategoryServiceImpl] getAllCategoriesWithChildrenByUserId 메서드 카테고리가 존재하는 경우 분기 진행");
+        log.info("[CategoryServiceImpl] getAllCategoriesWithChildrenByUserId 메서드 DB에 카테고리가 존재하는 경우 분기 진행");
 
-        return categories.stream().map(CategoryMapper::from).collect(Collectors.toList());
+        List<CategoryResponse> categories = dbCategories.stream().map(CategoryMapper::from)
+                .collect(Collectors.toList());
+
+        categoryResponseRedisTemplate.opsForValue().set(key, categories, CacheConstants.CATEGORY_CACHE_HOURS,
+                TimeUnit.HOURS);
+
+        return categories;
+
+    }
+
+    @Loggable
+    @Override
+    public Category findCategoryByNameAndUserId(String categoryName, Long userId) {
+
+        log.info("[CategoryServiceImpl] findCategoryByNameAndUserId 메서드 시작");
+
+        Category category = categoryRepository.findByNameAndUserId(categoryName, userId)
+                .orElseThrow(() -> new BusinessException(
+                        ErrorCode.CATEGORY_NOT_FOUND,
+                        categoryName + " 카테고리를 찾을 수 없습니다.",
+                        "CategoryServiceImpl",
+                        "findCategoryByNameAndUserId"));
+
+        return category;
 
     }
 
@@ -96,7 +146,8 @@ public class CategoryServiceImpl implements CategoryService {
 
         log.info("[CategoryServiceImpl] deleteCategory 메서드 시작");
 
-        Optional<Category> categoryOptional = categoryRepository.findById(categoryRequest.getCategoryUuid());
+        Optional<Category> categoryOptional = categoryRepository
+                .findByIdWithChildrenAndPosts(categoryRequest.getCategoryUuid());
 
         if (categoryOptional.isPresent()) {
 
@@ -104,11 +155,11 @@ public class CategoryServiceImpl implements CategoryService {
 
             Category category = categoryOptional.get();
 
-            if (categoryRequest.getChildren() != null && !categoryRequest.getChildren().isEmpty()) {
+            if (category.getChildren() != null && !category.getChildren().isEmpty()) {
 
                 throw new BusinessException(
                         ErrorCode.CATEGORY_HAS_CHILDREN,
-                        "카테고리 UUID: " + categoryRequest.getCategoryUuid() + " 자식 카테고리가 존재하여 삭제할 수 없습니다.",
+                        "카테고리 UUID: " + category.getId() + "는 자식 카테고리가 존재하여 삭제할 수 없습니다.",
                         "CategoryServiceImpl",
                         "deleteCategory");
 
@@ -118,8 +169,8 @@ public class CategoryServiceImpl implements CategoryService {
 
                 throw new BusinessException(
                         ErrorCode.CATEGORY_HAS_POSTS,
-                        "카테고리 UUID: " + categoryRequest.getCategoryUuid()
-                                + " 게시글이 존재하여 삭제할 수 없습니다.",
+                        "카테고리 UUID: " + category.getId()
+                                + "는 게시글이 존재하여 삭제할 수 없습니다.",
                         "CategoryServiceImpl",
                         "deleteCategory");
             }
@@ -130,11 +181,13 @@ public class CategoryServiceImpl implements CategoryService {
 
         } else {
 
-            throw new BusinessException(
-                    ErrorCode.CATEGORY_NOT_FOUND,
-                    "카테고리 UUID: " + categoryRequest.getCategoryUuid() + "를 찾을 수 없습니다.",
-                    "CategoryServiceImpl",
-                    "deleteCategory");
+            return; // 프론트에서 카테고리 새롭게 생성하고 바로 삭제할 경우 해당 카테고리가 DB에 존재하지 않아도 삭제할 수 있도록 처리
+
+            // throw new BusinessException(
+            // ErrorCode.CATEGORY_NOT_FOUND,
+            // "카테고리 UUID: " + categoryRequest.getCategoryUuid() + "를 찾을 수 없습니다.",
+            // "CategoryServiceImpl",
+            // "deleteCategory");
         }
     }
 
@@ -214,20 +267,35 @@ public class CategoryServiceImpl implements CategoryService {
             long orderIndex) {
         log.info("[CategoryServiceImpl] saveCategoryHierarchy 메서드 시작");
 
-        // 부모까지 한번에 조회. 아래 category.getParent()에서 N+1 문제 발생을 방지하기 위함
-        Optional<Category> existingCategory = categoryRepository.findByIdWithParent(categoryRequest.getCategoryUuid());
+        // 부모까지 한번에 가져올 수 없는 이유는, 프론트측에서 자식까지 한번에 설정하기 때문에(즉 프론트에서 먼저 설정) 아직 DB에는 부모가
+        // 설정되지 않은 상태이기 때문
+        Optional<Category> existingCategory = categoryRepository.findById(categoryRequest.getCategoryUuid());
         Category category;
 
-        if (existingCategory.isPresent()) { // 부모 카테고리가 이미 DB에 있는 경우
+        // 초기 부모 카테고리가 이미 DB에 있는 경우에만 실행, 초기에 부모 카테고리가 DB에 없으면 관련 자식 까지
+        // createSingleCategory에서 모두 처리
+        if (existingCategory.isPresent()) {
 
             log.info("[CategoryServiceImpl] saveCategoryHierarchy 메서드 DB에 카테고리가 존재하는 경우 분기 진행");
+
             category = existingCategory.get();
             category.setName(categoryRequest.getName());
 
-            // 상위 카테고리 설정
-            Category parentCategory = categoryRequest.getCategoryUuidParent() != null
-                    ? category.getParent() // id값만 build해서 설정하는 것보다 양방향 매핑이라 부모 엔티티 자체를 넘겨주는게 안전
-                    : null;
+            Category parentCategory;
+
+            if (categoryRequest.getCategoryUuidParent() != null) {
+
+                log.info("[CategoryServiceImpl] saveCategoryHierarchy 메서드 부모 카테고리가 존재하는 경우 분기 진행");
+
+                // id값만 build해서 설정하는 것보다 양방향 매핑이라 부모 엔티티 자체를 넘겨주는게 안전
+                parentCategory = categoryRepository
+                        .findById(categoryRequest.getCategoryUuidParent()).get();
+            } else {
+
+                log.info("[CategoryServiceImpl] saveCategoryHierarchy 메서드 부모 카테고리가 존재하지 않는 경우 분기 진행");
+
+                parentCategory = null;
+            }
 
             // orderIndex 순서를 사용하여 children 설정
             List<Category> newChildren = categoryRequest.getChildren() != null
@@ -262,23 +330,6 @@ public class CategoryServiceImpl implements CategoryService {
         // 새롭게 생성 시 또는 수정 시 한번의 save 메서드로 처리 CASCADE.PERSIST를 이용하여 부모가 저장될때 자식도 같이 저장되게
         // 처리
         return category;
-    }
-
-    @Loggable
-    @Override
-    public Category findCategoryByNameAndUserId(String categoryName, Long userId) {
-
-        log.info("[CategoryServiceImpl] findCategoryByNameAndUserId 메서드 시작");
-
-        Category category = categoryRepository.findByNameAndUserId(categoryName, userId)
-                .orElseThrow(() -> new BusinessException(
-                        ErrorCode.CATEGORY_NOT_FOUND,
-                        categoryName + " 카테고리를 찾을 수 없습니다.",
-                        "CategoryServiceImpl",
-                        "findCategoryByNameAndUserId"));
-
-        return category;
-
     }
 
 }
