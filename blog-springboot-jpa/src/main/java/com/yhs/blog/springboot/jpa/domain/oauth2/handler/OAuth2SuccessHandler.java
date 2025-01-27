@@ -1,10 +1,10 @@
 package com.yhs.blog.springboot.jpa.domain.oauth2.handler;
 
 import com.yhs.blog.springboot.jpa.common.constant.token.TokenConstants;
+import com.yhs.blog.springboot.jpa.domain.auth.token.provider.TokenProvider;
 import com.yhs.blog.springboot.jpa.domain.oauth2.repository.OAuth2AuthorizationRequestBasedOnCookieRepository;
-import com.yhs.blog.springboot.jpa.domain.token.jwt.provider.TokenProvider;
 import com.yhs.blog.springboot.jpa.domain.user.entity.User;
-import com.yhs.blog.springboot.jpa.domain.user.service.UserService;
+import com.yhs.blog.springboot.jpa.domain.user.service.UserFindService;
 import com.yhs.blog.springboot.jpa.web.cookie.TokenCookieManager;
 
 import jakarta.servlet.ServletException;
@@ -37,7 +37,7 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
     private final TokenProvider tokenProvider;
     private final TokenCookieManager tokenCookieManager;
     private final OAuth2AuthorizationRequestBasedOnCookieRepository auth2AuthorizationRequestBasedOnCookieRepository;
-    private final UserService userService;
+    private final UserFindService userFindService;
     private final RedisTemplate<String, String> redisTemplate;
     private static final long REGISTRATION_TIMEOUT_HOURS_TTL = 1;
 
@@ -53,7 +53,7 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
         // 가져옴
         OAuth2User oAuth2User = (OAuth2User) authentication.getPrincipal();
 
-        Optional<User> user = userService.findUserByEmail((String) oAuth2User.getAttributes().get("email"));
+        Optional<User> user = userFindService.findUserByEmail((String) oAuth2User.getAttributes().get("email"));
 
         Cookie uniqueIdCookie = WebUtils.getCookie(request, "oauth2_remember_me_unique_id");
         assert uniqueIdCookie != null;

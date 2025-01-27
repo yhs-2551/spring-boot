@@ -8,9 +8,7 @@ import java.util.stream.Collectors;
 
 public class CategoryMapper {
  
-
-
-    public static CategoryResponse of(Category category) {
+    public static CategoryResponse from(Category category) {
 
         return new CategoryResponse(
                 category.getId(),

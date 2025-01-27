@@ -109,3 +109,14 @@ aws:
     s3:
         bucketName: ${AWS_S3_BUCKET_NAME}
         region: ${AWS_REGION}
+
+# 아래는 없어도 기본값으로 되긴 할텐데 일단 추가
+springdoc:
+    swagger-ui:
+        path: /swagger-ui.html # Swagger UI 접속 경로
+        tags-sorter: alpha # API 태그 알파벳 정렬
+        operations-sorter: method # HTTP 메서드별 정렬
+    api-docs:
+        path: /v3/api-docs # OpenAPI 명세 JSON 경로
+    default-consumes-media-type: application/json # 기본 요청 타입
+    default-produces-media-type: application/json # 기본 응답 타입

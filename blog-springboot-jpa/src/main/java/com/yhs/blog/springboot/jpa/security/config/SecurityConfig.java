@@ -1,14 +1,14 @@
 package com.yhs.blog.springboot.jpa.security.config;
 
+import com.yhs.blog.springboot.jpa.domain.auth.token.filter.TokenAuthenticationFilter;
+import com.yhs.blog.springboot.jpa.domain.auth.token.provider.AuthenticationProvider;
+import com.yhs.blog.springboot.jpa.domain.auth.token.provider.TokenProvider;
+import com.yhs.blog.springboot.jpa.domain.auth.token.validation.TokenValidator;
 import com.yhs.blog.springboot.jpa.domain.oauth2.filter.RememberMeAuthenticationFilter;
 import com.yhs.blog.springboot.jpa.domain.oauth2.handler.OAuth2SuccessHandler;
 import com.yhs.blog.springboot.jpa.domain.oauth2.repository.OAuth2AuthorizationRequestBasedOnCookieRepository;
 import com.yhs.blog.springboot.jpa.domain.oauth2.service.OAuth2UserLoadService;
-import com.yhs.blog.springboot.jpa.domain.token.jwt.filter.TokenAuthenticationFilter;
-import com.yhs.blog.springboot.jpa.domain.token.jwt.provider.AuthenticationProvider;
-import com.yhs.blog.springboot.jpa.domain.token.jwt.provider.TokenProvider;
-import com.yhs.blog.springboot.jpa.domain.token.jwt.validation.TokenValidator;
-import com.yhs.blog.springboot.jpa.domain.user.service.UserService; 
+import com.yhs.blog.springboot.jpa.domain.user.service.UserFindService;
 import com.yhs.blog.springboot.jpa.security.service.CustomUserDetailsService;
 import com.yhs.blog.springboot.jpa.web.cookie.TokenCookieManager;
 
@@ -43,30 +43,20 @@ import java.util.List;
 
 @Configuration
 @EnableWebSecurity
-@EnableMethodSecurity(prePostEnabled = true)
+@EnableMethodSecurity(prePostEnabled = true) // PreAuthorize, PostAuthorize관련 어노테이션 활성화
 @RequiredArgsConstructor
 @Log4j2
 public class SecurityConfig {
 
-        private final OAuth2UserLoadService oAuth2UserCustomService;
+        private final OAuth2UserLoadService oAuth2UserLoadService;
         private final TokenProvider tokenProvider;
         private final TokenValidator tokenValidator;
         private final AuthenticationProvider authenticationProvider;
         private final TokenCookieManager TokenCookieManager;
-        private final UserService userService;
+        private final UserFindService userFindService;
         private final CustomUserDetailsService userDetailService;
         private final RedisTemplate<String, String> redisTemplate;
-
-        // 스프링 시큐리티 기능 비활성화. 일반적으로 정적 리소스(이미지, html 파일)
-        @Bean
-        public WebSecurityCustomizer configure() {
-
-                log.info("[SecurityConfig] configure() 메서드 시작");
-
-
-                return (web) -> web.ignoring().requestMatchers("/static/**");
-        }
-
+ 
         // cors 설정 빈
         @Bean
         public CorsConfigurationSource corsConfigurationSource() {
@@ -129,9 +119,8 @@ public class SecurityConfig {
         @Bean
         public OAuth2SuccessHandler oAuth2SuccessHandler() {
                 return new OAuth2SuccessHandler(tokenProvider, TokenCookieManager,
-                                oAuth2AuthorizationRequestBasedOnCookieRepository(), userService, redisTemplate);
+                                oAuth2AuthorizationRequestBasedOnCookieRepository(), userFindService, redisTemplate);
         }
- 
 
         @Bean
         public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
@@ -147,6 +136,8 @@ public class SecurityConfig {
                                                 UsernamePasswordAuthenticationFilter.class)
                                 // /resource/**
                                 .authorizeHttpRequests((authorize) -> authorize
+                                                // 정적 리소스
+                                                .requestMatchers("/static/**").permitAll()
                                                 // SWAGGER 설정 부분
                                                 // 인증 없이 접근 가능한 경로 설정
                                                 .requestMatchers(SWAGGER_WHITELIST).permitAll()
@@ -166,9 +157,9 @@ public class SecurityConfig {
                                                 .requestMatchers(HttpMethod.GET, "/api/check/**").permitAll()
                                                 // POST 요청 permitAll
                                                 .requestMatchers(HttpMethod.POST, "/api/users/signup").permitAll()
-                                                .requestMatchers(HttpMethod.POST, "/api/users/login").permitAll()
-                                                .requestMatchers(HttpMethod.POST, "/api/users/logout").permitAll()
-                                                .requestMatchers(HttpMethod.POST, "/api/users/verify-email").permitAll()
+                                                .requestMatchers(HttpMethod.POST, "/api/auth/login").permitAll()
+                                                .requestMatchers(HttpMethod.POST, "/api/auth/logout").permitAll()
+                                                .requestMatchers(HttpMethod.POST, "/api/users/verify-code").permitAll()
                                                 .requestMatchers(HttpMethod.POST, "/api/oauth2/users").permitAll()
                                                 .requestMatchers(HttpMethod.POST, "/api/admin/batch/cleanup")
                                                 .permitAll()
@@ -188,7 +179,7 @@ public class SecurityConfig {
                                                                                                 oAuth2AuthorizationRequestBasedOnCookieRepository()))
                                                 .userInfoEndpoint(
                                                                 (userInfoEndpointConfig) -> userInfoEndpointConfig
-                                                                                .userService(oAuth2UserCustomService))
+                                                                                .userService(oAuth2UserLoadService))
                                                 .redirectionEndpoint(
                                                                 redirectEndpointConfig -> redirectEndpointConfig
                                                                                 .baseUri("/login/oauth2/code/*"))

@@ -4,7 +4,7 @@ import lombok.Getter;
 
 // 에러 응답 CreatePost 부분에서 사용됨.
 @Getter
-public final class ErrorResponse extends ApiResponse {
+public final class ErrorResponse extends BaseResponse {
     private final int errorCode;
 
     public ErrorResponse(String message, int errorCode) {

@@ -6,7 +6,7 @@ import lombok.Builder;
 import lombok.Getter;
 import org.springframework.beans.factory.annotation.Autowired;
 
-import com.yhs.blog.springboot.jpa.domain.token.jwt.config.JwtConfig;
+import com.yhs.blog.springboot.jpa.domain.auth.token.config.JwtConfig;
 
 import javax.crypto.SecretKey;
 import java.time.Duration;

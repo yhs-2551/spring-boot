@@ -5,7 +5,7 @@ import org.springframework.lang.Nullable;
 import lombok.Getter;
 
 @Getter
-public final class SuccessResponse<T> extends ApiResponse {
+public final class SuccessResponse<T> extends BaseResponse {
 
     @Nullable
     private final T data;

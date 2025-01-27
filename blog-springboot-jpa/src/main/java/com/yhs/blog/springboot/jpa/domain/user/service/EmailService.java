@@ -6,9 +6,9 @@ import com.yhs.blog.springboot.jpa.aop.log.Loggable;
 import com.yhs.blog.springboot.jpa.aop.performance.MeasurePerformance;
 import com.yhs.blog.springboot.jpa.aop.ratelimit.RateLimit;
 import com.yhs.blog.springboot.jpa.common.constant.code.StatusCode;
+import com.yhs.blog.springboot.jpa.common.response.RateLimitResponse;
 import com.yhs.blog.springboot.jpa.domain.user.dto.request.SignUpUserRequest;
 import com.yhs.blog.springboot.jpa.domain.user.dto.request.VerifyEmailRequest;
-import com.yhs.blog.springboot.jpa.domain.user.dto.response.RateLimitResponse; 
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
@@ -26,7 +26,7 @@ public class EmailService {
 
     private final RedisTemplate<String, String> redisTemplate;
     private final ObjectMapper objectMapper;
-    private final UserService userService;
+    private final UserRegistrationService userRegistrationService;
     private final EmailSender emailSender;
 
     private static final String VERIFICATION_CODE_PREFIX = "verificationCode:";
@@ -127,7 +127,7 @@ public class EmailService {
 
                 SignUpUserRequest signUpUserRequest = objectMapper.readValue(userJson, SignUpUserRequest.class);
 
-                userService.createUser(signUpUserRequest);
+                userRegistrationService.createUser(signUpUserRequest);
 
                 redisTemplate.delete(TEMP_USER_PREFIX + verifyEmailRequest.getBlogId());
                 redisTemplate.delete(VERIFICATION_CODE_PREFIX + verifyEmailRequest.getBlogId());

@@ -52,10 +52,6 @@ public enum ErrorCode {
     // OAuth2 추가 정보 입력 시 이메일이 없음
     OAUTH2_EMAIL_EMPTY(500, "SO002", "OAuth2 인증 실패"),
 
-    // ES 관련 오류
-    ELASTIC_SEARCH_SPECIFIC_ERROR(500, "SES001", "ElasticsearchException 엘라스틱 서치 검색 중 오류 발생"),
-    ELASTIC_SEARCH_GENERAL_ERROR(500, "SES002", "Exception 엘라스틱 서치 검색 중 오류 발생"),
-
     // querydsl 관련 오류
     QUERY_DSL_ERROR(500, "SQS001", "QueryDSL 검색 중 오류 발생");
 

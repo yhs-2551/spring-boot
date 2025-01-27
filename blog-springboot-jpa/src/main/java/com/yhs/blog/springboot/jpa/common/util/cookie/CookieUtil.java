@@ -8,18 +8,7 @@ import lombok.extern.log4j.Log4j2;
 @Log4j2
 public class CookieUtil {
 
-    // 아래 대신 WebUtils에서 제공하는 쿠키 유틸 메서드 사용하면 됨
-    // public static String getCookie(HttpServletRequest request, String name) {
-    // Cookie[] cookies = request.getCookies();
-    // if (cookies != null) {
-    // for (Cookie cookie : cookies) {
-    // if (name.equals(cookie.getName())) {
-    // return cookie.getValue();
-    // }
-    // }
-    // }
-    // return null;
-    // }
+    // getCookie는 Spring에서 제공해주는 기능 사용 
 
     // 요청 값(이름, 값, 만료 기간)을 바탕으로 쿠키 추가
     public static void addCookie(HttpServletResponse httpServletResponse, String name,

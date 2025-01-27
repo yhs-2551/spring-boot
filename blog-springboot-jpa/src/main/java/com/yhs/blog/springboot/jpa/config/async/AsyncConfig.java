@@ -1,16 +1,12 @@
 package com.yhs.blog.springboot.jpa.config.async;
 
 import org.springframework.aop.interceptor.AsyncUncaughtExceptionHandler;
-import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.retry.backoff.FixedBackOffPolicy;
-import org.springframework.retry.policy.SimpleRetryPolicy;
-import org.springframework.retry.support.RetryTemplate;
+
 import org.springframework.scheduling.annotation.AsyncConfigurer;
 import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 
-import com.yhs.blog.springboot.jpa.exception.custom.ElasticsearchCustomException;
 import com.yhs.blog.springboot.jpa.exception.custom.S3OperationException;
 import lombok.extern.log4j.Log4j2;
 
@@ -42,22 +38,6 @@ public class AsyncConfig implements AsyncConfigurer {
 
     }
 
-    @Bean
-    public RetryTemplate retryTemplate() {
-        RetryTemplate retryTemplate = new RetryTemplate();
-        FixedBackOffPolicy backOffPolicy = new FixedBackOffPolicy();
-        backOffPolicy.setBackOffPeriod(1000L); // 1초 대기
-
-        SimpleRetryPolicy retryPolicy = new SimpleRetryPolicy();
-        retryPolicy.setMaxAttempts(3); // 최대 3번 재시도
-
-        retryTemplate.setBackOffPolicy(backOffPolicy);
-        retryTemplate.setRetryPolicy(retryPolicy);
-
-        return retryTemplate;
-
-    }
-
     // 비동기 작업 중 발생하는 예외처리 관련 메서드.
     @Override
     public AsyncUncaughtExceptionHandler getAsyncUncaughtExceptionHandler() {
@@ -68,19 +48,8 @@ public class AsyncConfig implements AsyncConfigurer {
             log.error("비동기 함수 {} 에러: {}", method.getName(), ex);
             log.error("파라미터: {}", Arrays.toString(params));
 
-            // Elasticsearch 관련 예외 처리
-            if (ex instanceof ElasticsearchCustomException esEx) {
-
-                // ElasticsearchCustomException esEx = (ElasticsearchCustomException) ex;
-                log.error(
-                        "Elasticsearch 오류 발생 - 메시지: {}, 코드: {}, 원인: {}",
-                        esEx.getMessage(),
-                        esEx.getErrorCode(),
-                        Optional.ofNullable(esEx.getCause())
-                                .map(Throwable::getMessage)
-                                .orElse("원인 불명"));
-                // 추가 에러 처리 로직 (모니터링 알림 등)
-            } else if (ex instanceof S3OperationException s3Ex) { // S3 관련 예외 처리
+            if (ex instanceof S3OperationException s3Ex) { // S3 관련 예외 처리
+                // S3OperationException esEx = (S3OperationException) ex;
                 log.error(
                         "S3 오류 발생 - 메시지: {}, 원인: {}",
                         s3Ex.getMessage(),

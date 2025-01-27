@@ -10,7 +10,8 @@ import com.yhs.blog.springboot.jpa.domain.user.entity.User;
 import com.yhs.blog.springboot.jpa.exception.custom.BusinessException;
 import com.yhs.blog.springboot.jpa.domain.category.repository.CategoryRepository;
 import com.yhs.blog.springboot.jpa.domain.category.service.CategoryService;
-import com.yhs.blog.springboot.jpa.domain.user.service.UserService;
+import com.yhs.blog.springboot.jpa.domain.user.service.UserFindService;
+import com.yhs.blog.springboot.jpa.domain.user.service.UserProfileService;
 import com.yhs.blog.springboot.jpa.domain.category.mapper.CategoryMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
@@ -26,7 +27,8 @@ import java.util.stream.Collectors;
 public class CategoryServiceImpl implements CategoryService {
 
     private final CategoryRepository categoryRepository;
-    private final UserService userService;
+    private final UserFindService userFindService;
+    private final UserProfileService userProfileService;
 
     private User user;
     boolean isParentCategoryExist = true;
@@ -51,7 +53,7 @@ public class CategoryServiceImpl implements CategoryService {
             categoryRepository.flush();
         }
 
-        user = userService.findUserByBlogId(blogId);
+        user = userFindService.findUserByBlogId(blogId);
 
         List<Category> categories = new ArrayList<>();
 
@@ -72,7 +74,7 @@ public class CategoryServiceImpl implements CategoryService {
 
         log.info("[CategoryServiceImpl] getAllCategoriesWithChildrenByUserId 메서드 시작");
 
-        Long userId = userService.findUserByBlogIdAndConvertDTO(blogId).id();
+        Long userId = userProfileService.getUserPublicProfile(blogId).id();
 
         List<Category> categories = categoryRepository.findAllWithChildrenByUserId(userId);
 
@@ -85,7 +87,7 @@ public class CategoryServiceImpl implements CategoryService {
 
         log.info("[CategoryServiceImpl] getAllCategoriesWithChildrenByUserId 메서드 카테고리가 존재하는 경우 분기 진행");
 
-        return categories.stream().map(CategoryMapper::of).collect(Collectors.toList());
+        return categories.stream().map(CategoryMapper::from).collect(Collectors.toList());
 
     }
 
@@ -162,7 +164,7 @@ public class CategoryServiceImpl implements CategoryService {
         if (isParentCategoryAlreadyExistInDB) {
 
             log.info(
-                    "[CategoryServiceImpl] createSingleCategory 메서드 DB에 부모 카테고리가 이미 존재하는 경우 및 자식 카테고리가 DB에 존재하지 않는 경우우 분기 진행");
+                    "[CategoryServiceImpl] createSingleCategory 메서드 DB에 부모 카테고리가 이미 존재하는 경우 및 자식 카테고리가 DB에 존재하지 않는 경우 분기 진행");
 
             // 새로운 카테고리를 생성하고 이미 존재하는 부모에게 자식으로 추가할 때 처리 로직
             parentCategory = categoryRepository.findById(categoryRequest.getCategoryUuidParent())

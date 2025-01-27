@@ -13,15 +13,17 @@ public interface S3Service {
     String tempUploadFile(MultipartFile file, String folder, String blogId) throws IOException;
 
     String uploadProfileImage(MultipartFile file, String blogId) throws IOException;
-    
+
     void deleteProfileImage(String blogId) throws IOException;
 
-//    public void tempDeleteFile(String fileUrl);
-//    void moveTempFilesToFinal(String tempFileUrl, String finalFolder) throws IOException;
+    // public void tempDeleteFile(String fileUrl);
+    // void moveTempFilesToFinal(String tempFileUrl, String finalFolder) throws
+    // IOException;
     @Async
     CompletableFuture<Void> processCreatePostS3TempOperation(PostRequest postRequest, String blogId);
+
     @Async
     CompletableFuture<Void> processUpdatePostS3TempOperation(PostUpdateRequest postUpdateRequest,
-                                          String blogId);
+            String blogId);
 
 }

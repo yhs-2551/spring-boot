@@ -8,8 +8,7 @@ import lombok.extern.log4j.Log4j2;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.authorization.AuthorizationDeniedException;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.security.authorization.AuthorizationDeniedException; 
 
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -59,18 +58,7 @@ public class GlobalExceptionHandler {
                 .status(HttpStatus.FORBIDDEN)
                 .body(error);
     }
-
-    @ExceptionHandler(UsernameNotFoundException.class)
-    public ResponseEntity<ErrorResponse> handleUserNotFoundException(UsernameNotFoundException ex) {
-        ErrorResponse error = new ErrorResponse(
-                ex.getMessage(),
-                HttpStatus.NOT_FOUND.value());
-
-        return ResponseEntity
-                .status(HttpStatus.NOT_FOUND)
-                .body(error);
-    }
-
+ 
     // @Valid 어노테이션이 붙은 DTO에 유효성 검사를 통과하지 못하면 실행.
     // @ResponseStatus(HttpStatus.BAD_REQUEST)
     @ExceptionHandler(MethodArgumentNotValidException.class)
@@ -93,7 +81,7 @@ public class GlobalExceptionHandler {
         log.error("처리되지 않은 예외 발생: ", ex);
 
         ErrorResponse error = new ErrorResponse(
-                "예기치 않은 오류가 발생했습니다.",
+                "예기치 않은 서버 내부 오류가 발생했습니다.",
                 HttpStatus.INTERNAL_SERVER_ERROR.value());
 
         return ResponseEntity.internalServerError().body(error);
