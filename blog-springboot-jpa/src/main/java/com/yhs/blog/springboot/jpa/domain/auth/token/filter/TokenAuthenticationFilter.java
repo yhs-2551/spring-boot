@@ -13,6 +13,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 
+import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.filter.OncePerRequestFilter;
@@ -93,7 +94,7 @@ public class TokenAuthenticationFilter extends OncePerRequestFilter {
 
                         ErrorResponse errorResponse = new ErrorResponse(
                                         "액세스 토큰이 누락되었습니다.",
-                                        StatusCode.UNAUTHORIZED.getCode());
+                                        HttpStatus.UNAUTHORIZED.value());
 
                         // Content-Type 설정
                         response.setContentType("application/json;charset=UTF-8");
@@ -113,7 +114,7 @@ public class TokenAuthenticationFilter extends OncePerRequestFilter {
 
                         ErrorResponse errorResponse = new ErrorResponse(
                                         "유효하지 않거나 만료된 토큰입니다.",
-                                        StatusCode.UNAUTHORIZED.getCode());
+                                        HttpStatus.UNAUTHORIZED.value());
 
                         log.debug("실행 dofilterinternal 유효성검사 후 - 실패 ");
                         // Content-Type 설정

@@ -25,7 +25,7 @@ import org.springframework.security.authentication.ProviderManager;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
-import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity; 
+import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -55,7 +55,7 @@ public class SecurityConfig {
         private final UserFindService userFindService;
         private final CustomUserDetailsService userDetailService;
         private final RedisTemplate<String, String> redisTemplate;
- 
+
         // cors 설정 빈
         @Bean
         public CorsConfigurationSource corsConfigurationSource() {

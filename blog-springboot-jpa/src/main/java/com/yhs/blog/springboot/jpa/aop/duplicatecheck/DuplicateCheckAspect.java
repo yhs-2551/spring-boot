@@ -5,7 +5,7 @@ package com.yhs.blog.springboot.jpa.aop.duplicatecheck;
 import com.yhs.blog.springboot.jpa.common.constant.code.ErrorCode;
 import com.yhs.blog.springboot.jpa.domain.user.dto.response.DuplicateCheckResponse;
 import com.yhs.blog.springboot.jpa.exception.custom.BusinessException;
-
+import com.yhs.blog.springboot.jpa.exception.custom.SystemException;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
@@ -15,7 +15,8 @@ import org.aspectj.lang.annotation.Aspect;
 import org.springframework.core.annotation.Order;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Component;
-
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
 import java.util.concurrent.TimeUnit;
 
 @Aspect
@@ -25,8 +26,7 @@ import java.util.concurrent.TimeUnit;
 @Log4j2
 public class DuplicateCheckAspect {
 
-    private final RedisTemplate<String, String> redisTemplate;
-    private final HttpServletRequest request;
+    private final RedisTemplate<String, String> redisTemplate; 
 
     // private static final String CHECK_ATTEMPT_PREFIX = "duplicateCheck:";
     private static final int MAX_ATTEMPTS = 3;
@@ -102,6 +102,28 @@ public class DuplicateCheckAspect {
     private String getClientIp() {
 
         log.info("[DuplicateCheckAspect] getClientIp() 메서드 시작");
+
+        
+     // 현재 요청의 RequestAttributes를 가져옴
+        ServletRequestAttributes attributes = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
+
+        if (attributes == null) {
+
+            log.info("[DuplicateCheckAspect] getClientIp() 메서드 - RequestAttributes가 null일 때(웹 요청 컨텍스트 없음) 분기 진행");
+
+            throw new SystemException(
+                    ErrorCode.REQUEST_CONTEXT_NOT_FOUND,
+                    "웹 요청 컨텍스트를 찾을 수 없습니다.",
+                    "DuplicateCheckAspect",
+                    "getClientIp");
+
+        }
+
+        // 실제 HttpServletRequest 객체 추출
+        HttpServletRequest request = attributes.getRequest();
+
+        // 요청 정보 로깅
+        log.info("[DuplicateCheckAspect] getClientIp() 메서드 - RequestAttributes가 null이 아닐때 Remote Address: {}", request.getRemoteAddr());
 
         String clientIp = request.getHeader("X-Forwarded-For");
 

@@ -3,10 +3,9 @@ package com.yhs.blog.springboot.jpa.security.service;
 import com.yhs.blog.springboot.jpa.domain.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
-
-import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
 @RequiredArgsConstructor
@@ -18,6 +17,8 @@ public class CustomUserDetailsService implements UserDetailsService {
     @Override
     public UserDetails loadUserByUsername(String email) {
         log.info("[CustomUserDetailsService] loadUserByUsername() 메서드 시작");
+
+        log.info("[CustomUserDetailsService] loadUserByUsername() email: {}", email);
         //
         // User user =
         // userRepository.findByEmail(email).orElseThrow(() -> new
@@ -28,9 +29,8 @@ public class CustomUserDetailsService implements UserDetailsService {
         // org.springframework.security.core.userdetails.User(user.getEmail(),
         // user.getPassword(), user.getAuthorities());
 
-        // Srping Security의 BadCredentialsException 유지. 커스텀으로 변경하지 않음
-        // UserNameNotFoundException Spring Security에서 제공하는 예외도 있음
-        return userRepository.findByEmail(email).orElseThrow(() -> new BadCredentialsException(
-                "이메일 또는 비밀번호가 잘못되었습니다."));
+        // BadCredentialsException Spring Security에서 제공하는 예외도 있음
+        return userRepository.findByEmail(email).orElseThrow(() -> new UsernameNotFoundException(
+                email + "에 해당하는 사용자를 찾을 수 없습니다."));
     }
 }

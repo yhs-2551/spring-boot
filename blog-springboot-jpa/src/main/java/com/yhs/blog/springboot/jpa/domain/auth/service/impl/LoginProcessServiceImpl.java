@@ -5,6 +5,7 @@ import java.util.concurrent.TimeUnit;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 
+import com.yhs.blog.springboot.jpa.aop.ratelimit.RateLimit;
 import com.yhs.blog.springboot.jpa.common.constant.token.TokenConstants;
 import com.yhs.blog.springboot.jpa.domain.auth.dto.request.LoginRequest;
 import com.yhs.blog.springboot.jpa.domain.auth.dto.response.LoginResultToken;
@@ -25,13 +26,15 @@ public class LoginProcessServiceImpl implements LoginProcessService {
     private final AuthenticationService authenticationService;
 
     @Override
+    @RateLimit(key = "Login")
     public LoginResultToken loginUser(LoginRequest loginRequest) {
+
+        
+        log.info("[UserServiceImpl] getTokenForLoginUser 메서드 시작");
 
         // 스프링에서 제공하는 User가 아닌 Entity 유저
         // RateLimitAspect에서 인증 실패에 관한 예외 처리 진행
         User user = authenticationService.authenticateUser(loginRequest);
-
-        log.info("[UserServiceImpl] getTokenForLoginUser 메서드 시작");
 
         // 리프레시 토큰 생성
         String refreshToken;

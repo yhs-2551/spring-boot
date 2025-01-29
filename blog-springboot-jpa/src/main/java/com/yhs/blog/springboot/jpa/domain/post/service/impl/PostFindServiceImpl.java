@@ -13,8 +13,7 @@ import com.yhs.blog.springboot.jpa.domain.post.entity.Post;
 import com.yhs.blog.springboot.jpa.domain.post.repository.PostRepository;
 import com.yhs.blog.springboot.jpa.domain.post.repository.search.SearchType;
 import com.yhs.blog.springboot.jpa.domain.post.service.PostFindService;
-import com.yhs.blog.springboot.jpa.domain.user.service.UserFindService;
-import com.yhs.blog.springboot.jpa.domain.user.service.UserProfileService;
+import com.yhs.blog.springboot.jpa.domain.user.service.UserFindService; 
 import com.yhs.blog.springboot.jpa.exception.custom.BusinessException;
 
 import lombok.RequiredArgsConstructor;

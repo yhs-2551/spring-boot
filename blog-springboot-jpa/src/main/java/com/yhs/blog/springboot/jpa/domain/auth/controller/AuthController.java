@@ -57,19 +57,19 @@ public class AuthController extends SimpleUrlAuthenticationSuccessHandler {
             @ApiResponse(responseCode = "500", description = "서버 내부 오류", content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
 
     })
+
     @Loggable
-    @RateLimit(key = "Login")
     @PostMapping("/login")
     @Transactional // saveRefreshToken DB작업 있어서 트랜잭션 추가해야함
     public ResponseEntity<BaseResponse> login(@RequestBody @Valid LoginRequest loginRequest,
             HttpServletRequest request,
             HttpServletResponse response) throws ServletException, IOException {
 
-        log.info("[UserController] login() 요청");
-
-        HttpHeaders headers = new HttpHeaders();
+        log.info("[AuthController] login() 요청");
 
         LoginResultToken loginResultToken = loginProcessService.loginUser(loginRequest);
+
+        HttpHeaders headers = new HttpHeaders();
 
         // 생성된 리프레시 토큰을 클라이언트측 쿠키에 저장 -> 클라이언트에서 액세스 토큰이 만료되면 재발급 요청하기 위함
         TokenCookieManager.addRefreshTokenToCookie(request, response, loginResultToken.refreshToken(),
@@ -98,13 +98,13 @@ public class AuthController extends SimpleUrlAuthenticationSuccessHandler {
     @Transactional // deleteRefreshToken DB작업 있어서 트랜잭션 추가해야함
     public ResponseEntity<String> logout(HttpServletRequest request, HttpServletResponse response) {
 
-        log.info("[UserController] logout() 요청");
+        log.info("[AuthController] logout() 요청");
 
         String authorizationHeader = request.getHeader("Authorization");
 
         if (authorizationHeader == null || !authorizationHeader.startsWith("Bearer ")) {
 
-            log.info("[UserController] logout() 요청 실패: authorizationHeader가 존재하지 않는 경우 분기 응답");
+            log.info("[AuthController] logout() 요청 실패: authorizationHeader가 존재하지 않는 경우 분기 응답");
 
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("로그인 상태가 아닙니다.");
         }
@@ -121,7 +121,7 @@ public class AuthController extends SimpleUrlAuthenticationSuccessHandler {
             // ExpiredJwtException Catch문으로 넘어간다.
             logoutProcessService.logoutUser(token);
 
-            log.info("[UserController] logout() 요청 성공 - 만료되지 않은 토큰으로 로그아웃");
+            log.info("[AuthController] logout() 요청 성공 - 만료되지 않은 토큰으로 로그아웃");
 
             return ResponseEntity.ok("로그아웃에 성공하였습니다.");
 
@@ -130,7 +130,7 @@ public class AuthController extends SimpleUrlAuthenticationSuccessHandler {
             // ExpiredJwtException을 통해 만료된 토큰에 있는 Claims에 접근한다.
             logoutProcessService.logoutUserByExpiredToken(e);
 
-            log.info("[UserController] logout() 요청 성공 - 만료된 토큰으로 로그아웃");
+            log.info("[AuthController] logout() 요청 성공 - 만료된 토큰으로 로그아웃");
 
             return ResponseEntity.ok("로그아웃에 성공하였습니다.");
 

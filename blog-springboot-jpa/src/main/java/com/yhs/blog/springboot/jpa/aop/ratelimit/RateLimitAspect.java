@@ -1,20 +1,20 @@
 package com.yhs.blog.springboot.jpa.aop.ratelimit;
 
 import com.yhs.blog.springboot.jpa.common.constant.code.ErrorCode;
-import com.yhs.blog.springboot.jpa.exception.custom.BusinessException; 
-
+import com.yhs.blog.springboot.jpa.exception.custom.BusinessException;
+import com.yhs.blog.springboot.jpa.exception.custom.SystemException;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.log4j.Log4j2; 
+import lombok.extern.log4j.Log4j2;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
 import org.springframework.core.annotation.Order;
 import org.springframework.data.redis.core.RedisTemplate;
-
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.stereotype.Component;
-
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
 import java.util.concurrent.TimeUnit;
 
 @Log4j2
@@ -23,15 +23,13 @@ import java.util.concurrent.TimeUnit;
 @Order(2)
 @RequiredArgsConstructor
 public class RateLimitAspect {
-    private final RedisTemplate<String, String> redisTemplate;
-    private final HttpServletRequest request; // IP 기반 키 생성용
+    private final RedisTemplate<String, String> redisTemplate; 
 
     @Around("@annotation(RateLimit)")
 
     public Object checkRateLimit(ProceedingJoinPoint joinPoint, RateLimit rateLimit) throws Throwable {
 
         log.info("[RateLimitAspect] checkRateLimit() 메서드 시작");
- 
 
         String clientIp = getClientIp();
         String rateLimitKey = "rateLimit" + rateLimit.key() + ":" + clientIp; // rateLimitVerifyCode:127.0.0.1
@@ -58,7 +56,8 @@ public class RateLimitAspect {
 
             log.info("[RateLimitAspect] checkRateLimit() 최대 횟수를 초과 했을 때 분기 진행 - 최초x");
 
-            throw new BusinessException(ErrorCode.RATE_LIMIT_EXCEEDED, "너무 많은 시도입니다. 1분 후 다시 시도해주세요.", "RateLimitAspect", "checkRateLimit");
+            throw new BusinessException(ErrorCode.RATE_LIMIT_EXCEEDED, "너무 많은 시도입니다. 1분 후 다시 시도해주세요.",
+                    "RateLimitAspect", "checkRateLimit");
 
         }
 
@@ -79,8 +78,7 @@ public class RateLimitAspect {
 
             return result;
 
-        } 
-        catch (AuthenticationException e) { // 로그인의 경우 컨트롤러에서 AOP를 적용했는데, 인증이 실패하면 AuthenticationException 발생
+        } catch (AuthenticationException e) { // 로그인의 경우 컨트롤러에서 AOP를 적용했는데, 인증이 실패하면 AuthenticationException 발생
             // AuthenticationException이 발생하면 @Around의 joinPoint.proceed() 이후의 로직을 실행하지 않기
             // 때문에 여기서 catch로 바로 잡아줘서 횟수를
             // 증가시켜야함
@@ -88,8 +86,9 @@ public class RateLimitAspect {
             log.info("[RateLimitAspect] checkRateLimit() - UserController login 대상 메서드 실행 후 로그인 실패 분기 진행");
 
             updateRateLimitAttempts(rateLimitKey, attempts, rateLimit.windowMinutes());
-            // 로그인 실패 예외 처리 
-            throw new BusinessException(ErrorCode.AUTHENTICATION_FAILED, "아이디 및 패스워드가 틀렸습니다.", "RateLimitAspect", "checkRateLimit");
+            // 로그인 실패 예외 처리
+            throw new BusinessException(ErrorCode.AUTHENTICATION_FAILED, "아이디 및 패스워드가 틀렸습니다.", "RateLimitAspect",
+                    "checkRateLimit", e);
 
         }
 
@@ -98,6 +97,27 @@ public class RateLimitAspect {
     private String getClientIp() {
 
         log.info("[RateLimitAspect] getClientIp() 메서드 시작");
+
+        // 현재 요청의 RequestAttributes를 가져옴
+        ServletRequestAttributes attributes = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
+
+        if (attributes == null) {
+
+            log.info("[RateLimitAspect] getClientIp() 메서드 - RequestAttributes가 null일 때(웹 요청 컨텍스트 없음) 분기 진행");
+
+            throw new SystemException(
+                    ErrorCode.REQUEST_CONTEXT_NOT_FOUND,
+                    "웹 요청 컨텍스트를 찾을 수 없습니다.",
+                    "RateLimitAspect",
+                    "getClientIp");
+
+        }
+
+        // 실제 HttpServletRequest 객체 추출
+        HttpServletRequest request = attributes.getRequest();
+
+        // 요청 정보 로깅
+        log.info("[RateLimitAspect] getClientIp() 메서드 - RequestAttributes가 null이 아닐때 Remote Address: {}", request.getRemoteAddr());
 
         String clientIp = request.getHeader("X-Forwarded-For");
 
