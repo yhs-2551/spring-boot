@@ -185,29 +185,15 @@ public class SecurityConfig {
                                                 // 인증 성공 시 실행할 핸들러
                                                 .successHandler(oAuth2SuccessHandler())
 
-                                )
-                                // .formLogin(formLogin ->
-                                // formLogin.loginProcessingUrl("/user/login").successHandler(formLoginSuccessHandler()))
-                                // /api/로 시작하는 url인 경우 401 상태 코드 즉, 권한이 없다는 상태 코드를 반환하도록 예외 처리.
+                                ) 
+                                // /api/로 시작하는 url인 경우 + Security Filter Chain에서 발생하는 인증/인가 예외 처리. 401 상태 코드 즉, 권한이 없다는 상태 코드를 반환하도록 예외 처리.
                                 .exceptionHandling(exceptionHandling -> exceptionHandling
                                                 .defaultAuthenticationEntryPointFor(
                                                                 new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED),
                                                                 new AntPathRequestMatcher("/api/**")));
 
                 return http.build();
-
-                // 시큐리티를 사용한 세션 로그아웃 처리 방식
-                // .logout((logout) -> logout
-                // .logoutUrl("/logout")
-                // .permitAll() // 로그아웃 엔드포인트를 모두에게 허용
-                // .addLogoutHandler(new CookieClearingLogoutHandler("JSESSIONID")) // 쿠키 정리
-                // // 핸들러 추가 (세션 방식의 경우 브라우저의 쿠키에 세션 ID값이 담겨있기 때문)
-                // .addLogoutHandler(new HeaderWriterLogoutHandler(new
-                // ClearSiteDataHeaderWriter(COOKIES))) // Clear-Site-Data 헤더 추가 (쿠키만 지우기),
-                // COOKIE이외에 Cache도 지울 수 있다
-                // .logoutSuccessHandler(new HttpStatusReturningLogoutSuccessHandler()) // 로그아웃
-                // 성공 시 HTTP 상태 코드만 반환
-                // )
+ 
 
         }
 

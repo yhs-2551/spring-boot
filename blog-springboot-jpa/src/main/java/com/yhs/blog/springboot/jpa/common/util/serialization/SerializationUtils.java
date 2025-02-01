@@ -14,6 +14,7 @@ import java.io.*;
 import jakarta.servlet.http.Cookie;
 import lombok.extern.log4j.Log4j2;
 
+// 스프링에서 제공해주는 직렬화/역직렬화 유틸리티 클래스(메서드)가 있을것임 나중에는 그거 사용해보기
 @Log4j2
 public class SerializationUtils {
 
