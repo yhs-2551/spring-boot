@@ -18,6 +18,7 @@ import com.yhs.blog.springboot.jpa.exception.custom.SystemException;
 @Log4j2
 public class OAuth2UserLoadService extends DefaultOAuth2UserService {
 
+    // 테스트 코드 때문에 private 대신 protected
     protected OAuth2User callSuperLoadUser(OAuth2UserRequest request) {
         return super.loadUser(request);
     }

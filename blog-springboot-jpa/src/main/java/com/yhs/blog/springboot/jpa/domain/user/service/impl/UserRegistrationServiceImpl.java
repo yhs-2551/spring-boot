@@ -26,6 +26,7 @@ import lombok.extern.log4j.Log4j2;
 @Service
 public class UserRegistrationServiceImpl implements UserRegistrationService {
 
+    private final BCryptPasswordEncoder encoder; // 원래는 createUser 메서드 내 new를 통해 인스턴스를 생성해서 진행했으나, 테스트 코드에서 @Mock로 사용시 호출되기 위해선 의존성 주입을 받아야 함
     private final UserRepository userRepository;
     private final RedisTemplate<String, String> redisTemplate;
     private final TokenProvider tokenProvider;
@@ -38,7 +39,6 @@ public class UserRegistrationServiceImpl implements UserRegistrationService {
         log.info("[UserRegistrationServiceImpl] createUser 메서드 시작");
 
         try {
-            BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
             User user = User.builder()
                     .blogId(signUpUserRequest.getBlogId())
                     .username(signUpUserRequest.getUsername())

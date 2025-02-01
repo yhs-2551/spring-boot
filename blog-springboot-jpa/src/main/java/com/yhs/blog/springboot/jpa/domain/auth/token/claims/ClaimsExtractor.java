@@ -61,13 +61,8 @@ public class ClaimsExtractor {
 
         log.info("[ClaimsExtractor] getClaims() 메서드 시작");
 
-        try {
-            return Jwts.parser().verifyWith(jwtConfig.getJwtSecretKey()).build().parseSignedClaims(token)
-                    .getPayload();
-        } catch (ExpiredJwtException e) {
-            log.info("[ClaimsExtractor] getClaims() 메서드 - 만료된 토큰에서 클레임 반환");
-            return e.getClaims(); // 만료된 토큰에서도 클레임 반환
+        return Jwts.parser().verifyWith(jwtConfig.getJwtSecretKey()).build().parseSignedClaims(token)
+                .getPayload();
 
-        }
     }
 }

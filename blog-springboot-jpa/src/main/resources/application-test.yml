@@ -50,15 +50,15 @@ spring:
                     google:
                         authorization-uri: ${GOOGLE_AUTHORIZATION_URI}
 
-#Test관련 log4j2-test.xml 따로 설정 필요
-logging:
-    level:
-        root: info # vscode에서 테스트시 DEBUG CONSOLE에서 보기 위함 
-        org.hibernate.SQL: debug # SQL 쿼리 출력
-        org.hibernate.type.descriptor.sql: trace # SQL 쿼리 파라미터 출력
-        org.springframework.transaction: debug # 트랜잭션 로그
-        org.springframework.orm.jpa: debug # JPA 로그
-        com.yhs.blog.springboot.jpa: debug # 애플리케이션 로그
+# #Test관련 log4j2-test.xml 따로 설정 필요
+# logging:
+#     level:
+#         root: info # vscode에서 테스트시 DEBUG CONSOLE에서 보기 위함 
+#         org.hibernate.SQL: debug # SQL 쿼리 출력
+#         org.hibernate.type.descriptor.sql: trace # SQL 쿼리 파라미터 출력
+#         org.springframework.transaction: debug # 트랜잭션 로그
+#         org.springframework.orm.jpa: debug # JPA 로그
+#         com.yhs.blog.springboot.jpa: debug # 애플리케이션 로그
 
 jwt:
     issuer: test_issuer

@@ -23,7 +23,8 @@ import java.util.concurrent.TimeUnit;
 @Order(2)
 @RequiredArgsConstructor
 public class RateLimitAspect {
-    private final RedisTemplate<String, String> redisTemplate; 
+
+    private final RedisTemplate<String, String> redisTemplate;
 
     @Around("@annotation(RateLimit)")
 
@@ -78,17 +79,14 @@ public class RateLimitAspect {
 
             return result;
 
-        } catch (AuthenticationException e) { // 로그인의 경우 컨트롤러에서 AOP를 적용했는데, 인증이 실패하면 AuthenticationException 발생
-            // AuthenticationException이 발생하면 @Around의 joinPoint.proceed() 이후의 로직을 실행하지 않기
-            // 때문에 여기서 catch로 바로 잡아줘서 횟수를
-            // 증가시켜야함
+        } catch (AuthenticationException e) { // 로그인의 경우 대상 메서드에서, 인증이 실패하면 AuthenticationException 발생
 
             log.info("[RateLimitAspect] checkRateLimit() - UserController login 대상 메서드 실행 후 로그인 실패 분기 진행");
 
             updateRateLimitAttempts(rateLimitKey, attempts, rateLimit.windowMinutes());
-            // 로그인 실패 예외 처리
-            throw new BusinessException(ErrorCode.AUTHENTICATION_FAILED, "아이디 및 패스워드가 틀렸습니다.", "RateLimitAspect",
-                    "checkRateLimit", e);
+
+            // 횟수만 증가 후, AuthController에서 처리할 수 있도록 예외를 다시 던짐(단일 책임 원칙으로 여기선 횟수 관리만 진행)
+            throw e;
 
         }
 
@@ -98,7 +96,7 @@ public class RateLimitAspect {
 
         log.info("[RateLimitAspect] getClientIp() 메서드 시작");
 
-        // 현재 요청의 RequestAttributes를 가져옴
+        // 현재 요청의 RequestAttributes를 가져옴. ThreadLocal을 통해 현재 스레드의 요청 객체 획득
         ServletRequestAttributes attributes = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
 
         if (attributes == null) {
@@ -117,7 +115,8 @@ public class RateLimitAspect {
         HttpServletRequest request = attributes.getRequest();
 
         // 요청 정보 로깅
-        log.info("[RateLimitAspect] getClientIp() 메서드 - RequestAttributes가 null이 아닐때 Remote Address: {}", request.getRemoteAddr());
+        log.info("[RateLimitAspect] getClientIp() 메서드 - RequestAttributes가 null이 아닐때 Remote Address: {}",
+                request.getRemoteAddr());
 
         String clientIp = request.getHeader("X-Forwarded-For");
 

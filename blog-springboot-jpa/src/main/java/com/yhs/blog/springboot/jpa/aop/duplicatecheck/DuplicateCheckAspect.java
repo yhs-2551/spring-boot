@@ -71,7 +71,7 @@ public class DuplicateCheckAspect {
 
             log.info("[DuplicateCheckAspect] checkLimit() 최대 횟수를 초과 했을 때 분기 진행 - 최초x");
 
-            throw new BusinessException(ErrorCode.RATE_LIMIT_EXCEEDED, "너무 많은 시도입니다. 1분 후 다시 시도해주세요.",
+            throw new BusinessException(ErrorCode.DUPLICATE_CHECK_LIMIT_EXCEEDED, "너무 많은 시도입니다. 1분 후 다시 시도해주세요.",
                     "DuplicateCheckAspect", "checkLimit");
 
             // return new DuplicateCheckResponse(false, "너무 많은 시도입니다. 1분 후 다시 시도해주세요.",
@@ -122,9 +122,6 @@ public class DuplicateCheckAspect {
         // 실제 HttpServletRequest 객체 추출
         HttpServletRequest request = attributes.getRequest();
 
-        // 요청 정보 로깅
-        log.info("[DuplicateCheckAspect] getClientIp() 메서드 - RequestAttributes가 null이 아닐때 Remote Address: {}", request.getRemoteAddr());
-
         String clientIp = request.getHeader("X-Forwarded-For");
 
         if (clientIp == null || clientIp.isEmpty() || "unknown".equalsIgnoreCase(clientIp)) {
@@ -142,6 +139,11 @@ public class DuplicateCheckAspect {
         if (clientIp == null || clientIp.isEmpty() || "unknown".equalsIgnoreCase(clientIp)) {
             clientIp = request.getRemoteAddr();
         }
+
+        
+        // 요청 정보 로깅
+        log.info("[DuplicateCheckAspect] getClientIp() 메서드 - RequestAttributes가 null이 아닐때 clientIp: {}", clientIp);
+
 
         return clientIp;
     }

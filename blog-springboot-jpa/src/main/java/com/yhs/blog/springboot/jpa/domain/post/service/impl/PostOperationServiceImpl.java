@@ -3,9 +3,7 @@ package com.yhs.blog.springboot.jpa.domain.post.service.impl;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
-import java.util.concurrent.CompletableFuture;
-
+import java.util.Set; 
 import org.springframework.dao.DataAccessException;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
@@ -108,7 +106,7 @@ public class PostOperationServiceImpl implements PostOperationService {
                             categoryResponseRedisTemplate.delete("categories:" + blogId);
                             // s3 Temp 파일 관련 작업은 비동기로 처리. 사용자에게 빠르게 응답하기 위함
                             s3Service.processCreatePostS3TempOperation(postRequest,
-                                    user.getBlogId());
+                                    blogId);
                         }
 
                     });

@@ -51,6 +51,9 @@ public class GlobalExceptionHandler {
     // @PreAuthorize 어노테이션을 통해 권한이 없는 사용자가 접근할 때 발생하는 예외. 기본값이 500이기 때문에 403으로 변경
     @ExceptionHandler(AuthorizationDeniedException.class)
     public ResponseEntity<ErrorResponse> handleAuthorizationDeniedException(AuthorizationDeniedException ex) {
+
+        log.info("GlobalExceptionHandler - 접근 권한 없음", ex);
+
         ErrorResponse error = new ErrorResponse(
                 "접근 권한이 없습니다.",
                 HttpStatus.FORBIDDEN.value());
@@ -71,6 +74,8 @@ public class GlobalExceptionHandler {
 
         String errorMessage = String.join(", ", errorMessages);
 
+        log.info("GlobalExceptionHandler - 유효성 검사 실패: {}", errorMessage, ex);
+
         return ResponseEntity
                 .status(HttpStatus.BAD_REQUEST)
                 .body(new ErrorResponse(errorMessage, HttpStatus.BAD_REQUEST.value()));
@@ -78,7 +83,7 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> generalException(Exception ex) {
-        log.error("처리되지 않은 예외 발생: ", ex);
+        log.error("GlobalExceptionHandler - 처리되지 않은 예외 발생: ", ex);
 
         ErrorResponse error = new ErrorResponse(
                 "예기치 않은 서버 내부 오류가 발생했습니다.",

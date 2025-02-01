@@ -3,7 +3,7 @@ package com.yhs.blog.springboot.jpa.domain.post.entity;
 import com.yhs.blog.springboot.jpa.domain.category.entity.Category;
 import com.yhs.blog.springboot.jpa.domain.file.entity.File;
 import com.yhs.blog.springboot.jpa.domain.post.entity.enums.CommentsEnabled;
-import com.yhs.blog.springboot.jpa.domain.post.entity.enums.PostStatus; 
+import com.yhs.blog.springboot.jpa.domain.post.entity.enums.PostStatus;
 import com.yhs.blog.springboot.jpa.domain.user.entity.User;
 import com.yhs.blog.springboot.jpa.common.entity.BaseEntity;
 import jakarta.persistence.*;
@@ -71,11 +71,9 @@ public class Post extends BaseEntity {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
-
     @Builder
-    public Post(Long id, User user, Category category, String title, String content,
+    public Post(User user, Category category, String title, String content,
             PostStatus postStatus, CommentsEnabled commentsEnabled, FeaturedImage featuredImage) {
-        this.id = id;
         this.user = user;
         this.category = category;
         this.title = title;

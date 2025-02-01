@@ -34,7 +34,7 @@ public class UserFindServiceImpl implements UserFindService {
 
     @Override
     @Transactional(readOnly = true)
-    public Optional<User> findUserByEmail(String email) {
+    public Optional<User> findUserByEmail(String email) { // OAuth2성공 핸들러에서 신규 사용자 및 기존 사용자를 구분해야해서 찾지 못하더라도 예외를 발생시키면 안됨 
 
         log.info("[UserFindServiceImpl] findUserByEmail 메서드 시작");
 
