@@ -34,8 +34,6 @@ public class QFeaturedImage extends EntityPathBase<FeaturedImage> {
 
     public final NumberPath<Long> id = createNumber("id", Long.class);
 
-    public final DateTimePath<java.time.LocalDateTime> updatedAt = createDateTime("updatedAt", java.time.LocalDateTime.class);
-
     public QFeaturedImage(String variable) {
         super(FeaturedImage.class, forVariable(variable));
     }

@@ -5,9 +5,7 @@ import org.springframework.context.annotation.Configuration;
 
 import org.springframework.scheduling.annotation.AsyncConfigurer;
 import org.springframework.scheduling.annotation.EnableAsync;
-import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
-
-import com.yhs.blog.springboot.jpa.exception.custom.S3OperationException;
+import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor; 
 import lombok.extern.log4j.Log4j2;
 
 import java.util.Arrays;
@@ -39,25 +37,25 @@ public class AsyncConfig implements AsyncConfigurer {
     }
 
     // 비동기 작업 중 발생하는 예외처리 관련 메서드.
-    @Override
-    public AsyncUncaughtExceptionHandler getAsyncUncaughtExceptionHandler() {
+    // @Override
+    // public AsyncUncaughtExceptionHandler getAsyncUncaughtExceptionHandler() {
 
-        log.info("[AsyncConfig] getAsyncUncaughtExceptionHandler 메서드 시작");
-        return (ex, method, params) -> {
+    //     log.info("[AsyncConfig] getAsyncUncaughtExceptionHandler 메서드 시작");
+    //     return (ex, method, params) -> {
 
-            log.error("비동기 함수 {} 에러: {}", method.getName(), ex);
-            log.error("파라미터: {}", Arrays.toString(params));
+    //         log.error("비동기 함수 {} 에러: {}", method.getName(), ex);
+    //         log.error("파라미터: {}", Arrays.toString(params));
 
-            if (ex instanceof S3OperationException s3Ex) { // S3 관련 예외 처리
-                // S3OperationException esEx = (S3OperationException) ex;
-                log.error(
-                        "S3 오류 발생 - 메시지: {}, 원인: {}",
-                        s3Ex.getMessage(),
-                        Optional.ofNullable(s3Ex.getCause())
-                                .map(Throwable::getMessage)
-                                .orElse("원인 불명"));
-            }
-        };
-    }
+    //         if (ex instanceof S3OperationException s3Ex) { // S3 관련 예외 처리
+    //             // S3OperationException esEx = (S3OperationException) ex;
+    //             log.error(
+    //                     "S3 오류 발생 - 메시지: {}, 원인: {}",
+    //                     s3Ex.getMessage(),
+    //                     Optional.ofNullable(s3Ex.getCause())
+    //                             .map(Throwable::getMessage)
+    //                             .orElse("원인 불명"));
+    //         }
+    //     };
+    // }
 
 }

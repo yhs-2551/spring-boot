@@ -3,10 +3,7 @@ package com.yhs.blog.springboot.jpa.domain.post.entity;
 import com.yhs.blog.springboot.jpa.common.entity.BaseEntity;
 import jakarta.persistence.*;
 import lombok.*;
-import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
-
-import java.time.LocalDateTime;
 
 @EntityListeners(AuditingEntityListener.class)
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
@@ -31,10 +28,6 @@ public class FeaturedImage extends BaseEntity {
 
     @Column(nullable = false)
     private Long fileSize;     // 파일 사이즈 (바이트 단위)
-
-    @LastModifiedDate
-    @Column(name = "updated_at")
-    private LocalDateTime updatedAt;
 
     @Builder
     public FeaturedImage(String fileName, String fileUrl, String fileType, Long fileSize) {

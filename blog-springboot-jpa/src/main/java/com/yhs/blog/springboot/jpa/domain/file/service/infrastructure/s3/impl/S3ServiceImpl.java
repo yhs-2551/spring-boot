@@ -6,7 +6,6 @@ import com.yhs.blog.springboot.jpa.domain.file.dto.request.FileRequest;
 import com.yhs.blog.springboot.jpa.domain.file.service.infrastructure.s3.S3Service;
 import com.yhs.blog.springboot.jpa.domain.post.dto.request.PostRequest;
 import com.yhs.blog.springboot.jpa.domain.post.dto.request.PostUpdateRequest;
-import com.yhs.blog.springboot.jpa.exception.custom.S3OperationException;
 
 import com.yhs.blog.springboot.jpa.exception.custom.SystemException;
 import lombok.RequiredArgsConstructor;
@@ -148,21 +147,23 @@ public class S3ServiceImpl implements S3Service {
                         blogId + "/final/featured/", blogId);
             }
 
-            if (postRequest.getDeleteTempImageUrls() != null && !postRequest.getDeleteTempImageUrls().isEmpty()) {
+            if (postRequest.getDeletedImageUrlsInFuture() != null
+                    && !postRequest.getDeletedImageUrlsInFuture().isEmpty()) {
                 log.info("[S3ServiceImpl] processCreatePostS3TempOperation() - temp 이미지 삭제 분기 진행");
 
-                for (String tempFileUrl : postRequest.getDeleteTempImageUrls()) {
+                for (String tempFileUrl : postRequest.getDeletedImageUrlsInFuture()) {
                     tempDeleteFile(tempFileUrl, blogId);
                 }
             }
 
-            return CompletableFuture.completedFuture(null);
         } catch (Exception ex) {
-            log.error("processCreatePostS3TempOperation 에러 발생", ex);
-            // 언체크드 예외로 변경했기 때문에 throws를 던지지 안아도 됨. 비동기 설정에서 예외 처리
-            throw new S3OperationException("processCreatePostS3TempOperation 에러 발생", ex);
+            // AWSS3 서버가 마비 되는거 아닌 이상 발생할 이유 없지만. 만약 발생한다면 삭제될 파일 제외하고 실제 DB에 저장된 요청온 파일을 따로
+            // DB 테이블에 저장하고 이후 temp -> final로 옮기는 배치 작업을 추가하면 됨. or 비동기 작업이 실패하면 요청 DTO를 활용해 DB에서 DTO와 일치하는 엔티티 가져온 후 업데이트 하면 됨. 나중에 추가 고려
+            log.error("[S3ServiceImpl] processCreatePostS3TempOperation() - AwSS3 실패 에러", ex);
 
         }
+
+        return CompletableFuture.completedFuture(null);
 
     }
 
@@ -197,24 +198,24 @@ public class S3ServiceImpl implements S3Service {
                         blogId + "/final/featured/", blogId);
             }
 
-            if (postUpdateRequest.getDeleteTempImageUrls() != null
-                    && !postUpdateRequest.getDeleteTempImageUrls().isEmpty()) {
+            if (postUpdateRequest.getDeletedImageUrlsInFuture() != null
+                    && !postUpdateRequest.getDeletedImageUrlsInFuture().isEmpty()) {
 
                 log.info("[S3ServiceImpl] processUpdatePostS3TempOperation() - temp 이미지 삭제 분기 진행");
 
-                for (String tempFileUrl : postUpdateRequest.getDeleteTempImageUrls()) {
+                for (String tempFileUrl : postUpdateRequest.getDeletedImageUrlsInFuture()) {
                     tempDeleteFile(tempFileUrl, blogId);
                 }
 
             }
 
-            return CompletableFuture.completedFuture(null);
-
         } catch (Exception ex) {
-            log.error("processUpdatePostS3TempOperation 에러 발생", ex);
-            throw new S3OperationException("processUpdatePostS3TempOperation 에러 발생", ex);
+
+            log.error("[S3ServiceImpl] processUpdatePostS3TempOperation() - AwSS3 실패 에러", ex);
 
         }
+
+        return CompletableFuture.completedFuture(null);
 
     }
 

@@ -1,12 +1,7 @@
 package com.yhs.blog.springboot.jpa.domain.user.entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.yhs.blog.springboot.jpa.common.entity.BaseEntity;
-import com.yhs.blog.springboot.jpa.domain.category.entity.Category;
-import com.yhs.blog.springboot.jpa.domain.file.entity.File; 
-import com.yhs.blog.springboot.jpa.domain.post.entity.Post;
-import com.yhs.blog.springboot.jpa.domain.post.entity.PostTag;
 import com.yhs.blog.springboot.jpa.domain.user.type.UserRole;
 
 import jakarta.persistence.*;
@@ -20,7 +15,6 @@ import org.springframework.security.core.userdetails.UserDetails;
 import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.List;
-import java.util.Set;
 
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @EntityListeners(AuditingEntityListener.class)
@@ -28,7 +22,7 @@ import java.util.Set;
 @Setter
 @ToString
 @Entity
-@Table(name = "Users")
+@Table(name = "users")
 public class User extends BaseEntity implements UserDetails {
 
     private static final String DEFAULT_PROFILE_IMAGE_URL = "https://iceamericano-blog-storage.s3.ap-northeast-2.amazonaws.com/default/default-avatar-profile.webp";
@@ -39,6 +33,20 @@ public class User extends BaseEntity implements UserDetails {
 
     @Column(nullable = false, length = 50, unique = true)
     private String username;
+
+    // OAUTH2 사용자의 경우 비밀번호를 저장할 필요가 없기 때문에 nullable true 설정
+    // redis에 json형식으로 저장할때 보안상 redis에 저장되면 안되는 정보이기 때문에 제외.
+    // 현재 USER entity를 redis를 사용해서 저장하진 않지만 일단 보류
+    @Column(nullable = true, length = 255)
+    @JsonIgnore
+    private String password;
+
+    @Column(nullable = false, length = 100, unique = true)
+    @JsonIgnore // 민감한 정보 제외
+    private String email;
+
+    @Column(name = "profile_image_url", nullable = true, length = 255)
+    private String profileImageUrl = DEFAULT_PROFILE_IMAGE_URL;
 
     @Column(nullable = false, length = 50, unique = true)
     private String blogId;
@@ -51,45 +59,16 @@ public class User extends BaseEntity implements UserDetails {
         this.blogName = this.username + "의 DevLog";
     }
 
-    // OAUTH2 사용자의 경우 비밀번호를 저장할 필요가 없기 때문에 nullable true 설정
-    @Column(nullable = true, length = 255)
-    @JsonIgnore // redis에 json형식으로 저장할때 보안상 redis에 저장되면 안되는 정보이기 때문에 제외. 현재 USER entity를 redis를 사용해서 저장하진 않지만 일단 보류
-    private String password;
-
-    @Column(nullable = false, length = 100, unique = true)
-    @JsonIgnore
-    private String email;
-
-    @Column(name = "profile_image_url", nullable = true, length = 255)
-    private String profileImageUrl = DEFAULT_PROFILE_IMAGE_URL;
-
-    @LastModifiedDate
-    @Column(name = "updated_at")
-    private LocalDateTime updatedAt;
-
-    // OnetoMany JSON으로 직렬화 시 양방향 순환 참조 막기 위해서 @JsonIgnore 사용
-    @OneToMany(mappedBy = "user", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
-    @JsonIgnore
-    private Set<Post> posts;
-
-    @OneToMany(mappedBy = "user", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
-    @JsonIgnore
-    private Set<Category> categories;
-
-    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
-    @JsonIgnore
-    private Set<File> files;
-
-    @OneToMany(mappedBy = "user", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
-    @JsonIgnore
-    private Set<PostTag> postTags;
-
     // 필드의 기본값 (UserRole.USER)은 객체가 기본 생성자를 통해 생성될 때 적용된다. 반면, 빌더 패턴을 사용하거나 파라미터화된
     // 생성자를 사용하는
     // 경우, 해당 기본값은 적용되지 않는다.
     @Enumerated(EnumType.STRING)
     @Column(length = 10, nullable = false)
     private UserRole role = UserRole.USER;
+
+    @LastModifiedDate
+    @Column(name = "updated_at")
+    private LocalDateTime updatedAt;
 
     // 권한 반환 SimpleGrantedAuthority는 GrantedAuthority의 구현체
     @Override

@@ -22,7 +22,7 @@ import java.util.Set;
 @Setter
 @Entity
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@Table(name = "Posts", indexes = {
+@Table(name = "posts", indexes = {
         @Index(name = "idx_posts_user_id", columnList = "user_id"),
         @Index(name = "idx_posts_category_id", columnList = "category_id"),
         @Index(name = "idx_posts_featured_image_id", columnList = "featured_image_id")
@@ -32,28 +32,12 @@ public class Post extends BaseEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id", nullable = false)
-    private User user;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "category_id")
-    private Category category;
-
     @Column(nullable = false, length = 255)
     private String title;
 
     @Lob
     @Column(nullable = false, columnDefinition = "TEXT")
     private String content;
-
-    @OneToMany(mappedBy = "post", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
-    private Set<File> files;
-
-    // 하나의 게시글이 여러 태그를 가질 수 있음
-    // 태그의 경우 글 작성시와 글 조회시 순서가 보장되어야 하기 때문에 List로 정의.
-    @OneToMany(mappedBy = "post", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<PostTag> postTags;
 
     @Enumerated(EnumType.STRING)
     @Column(length = 10, nullable = false)
@@ -62,25 +46,30 @@ public class Post extends BaseEntity {
     @Enumerated(EnumType.STRING)
     @Column(length = 10, nullable = false)
     private CommentsEnabled commentsEnabled = CommentsEnabled.ALLOW;
+ 
+    @Column(name = "featured_image_id", nullable = true) // 대표 이미지가 있을 수도, 없을 수도 있음
+    private Long featuredImageId;
 
-    @OneToOne
-    @JoinColumn(name = "featured_image_id", nullable = true) // 대표 이미지가 있을 수도, 없을 수도 있음
-    private FeaturedImage featuredImage;
+    @Column(name = "user_id", nullable = false)
+    private Long userId;
+
+    @Column(name = "category_id", nullable = true)
+    private String categoryId;
 
     @LastModifiedDate
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
     @Builder
-    public Post(User user, Category category, String title, String content,
-            PostStatus postStatus, CommentsEnabled commentsEnabled, FeaturedImage featuredImage) {
-        this.user = user;
-        this.category = category;
+    public Post(Long userId, String categoryId, String title, String content,
+            PostStatus postStatus, CommentsEnabled commentsEnabled, Long featuredImageId) {
+        this.userId = userId;
+        this.categoryId = categoryId;
         this.title = title;
         this.content = content;
         this.postStatus = postStatus;
         this.commentsEnabled = commentsEnabled;
-        this.featuredImage = featuredImage;
+        this.featuredImageId = featuredImageId;
     }
 
     public void update(Category category, String title, String content, Set<File> newFiles,

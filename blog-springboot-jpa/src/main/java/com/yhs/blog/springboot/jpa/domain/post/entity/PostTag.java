@@ -6,41 +6,30 @@ import com.yhs.blog.springboot.jpa.domain.user.entity.User;
 import jakarta.persistence.*;
 import lombok.*;
 
+// @IdClass(PostTagId.class) // 복합 키 관련 클래스는 엔티티간 연간관계 매핑 + 복합키 사용이 있을때만 사용하면 됨(+@IdClass 어노테이션 사용)
 @Builder
 @AllArgsConstructor
 @Getter
 @Setter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Entity
-@IdClass(PostTagId.class)  // 복합 키 클래스를
-@Table(name = "PostTags")
+@Table(name = "post_tags", uniqueConstraints = {
+        @UniqueConstraint(name = "uk_post_tag", columnNames = { "post_id", "tag_id" })
+})
 public class PostTag {
-
-    // 여러개의 태그가 하나의 포스트에 쓰일 수 있음
     @Id
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "post_id")
-    private Post post;
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
 
-    // 여러개의 포스트가 하나의 태그를 가질 수 있음
-    @Id
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "tag_id")
-    private Tag tag;
+    @Column(name = "post_id", nullable = false)
+    private Long postId;
 
-    @Id
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id")
-    private User user;
+    @Column(name = "tag_id", nullable = false)
+    private Long tagId;
 
-
-    public static PostTag create(Post post, Tag tag, User user) {
-        PostTag postTag = new PostTag();
-        postTag.setPost(post);
-        postTag.setTag(tag);
-        postTag.setUser(user);
-        return postTag;
-
-    }
+    
+    public PostTag(Long postId, Long tagId) {
+        this.postId = postId;
+        this.tagId = tagId;
+    } 
 }
-

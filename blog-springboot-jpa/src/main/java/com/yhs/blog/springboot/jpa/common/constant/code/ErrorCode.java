@@ -54,7 +54,8 @@ public enum ErrorCode {
     OAUTH2_EMAIL_EMPTY(500, "SO002", "OAuth2 인증 실패"),
 
     // querydsl 관련 오류
-    QUERY_DSL_ERROR(500, "SQS001", "QueryDSL 검색 중 오류 발생"),
+    QUERY_DSL_POSTS_ERROR(500, "SQS001", "QueryDSL 게시글 관련 오류 발생"),
+    QUERY_DSL_CATEGORIES_ERROR(500, "SQS002", "QueryDSL 카테고리 조회 오류 발생"),
 
     // clientIp를 가져올때 RequestContextHolder가 없을 때
     REQUEST_CONTEXT_NOT_FOUND(500, "SR001", "웹 요청 컨텍스트를 찾을 수 없음");

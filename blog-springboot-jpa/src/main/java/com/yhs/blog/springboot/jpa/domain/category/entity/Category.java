@@ -1,19 +1,14 @@
 package com.yhs.blog.springboot.jpa.domain.category.entity;
 
-import com.yhs.blog.springboot.jpa.domain.post.entity.Post;
-import com.yhs.blog.springboot.jpa.domain.user.entity.User;
 import com.yhs.blog.springboot.jpa.common.entity.BaseEntity;
 import jakarta.persistence.*;
 import lombok.*;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
-
 import java.time.LocalDateTime;
-import java.util.List;
-import java.util.Set;
 
 @Entity
-@Table(name = "Categories", uniqueConstraints = { @UniqueConstraint(columnNames = { "name", "user_id" }),
+@Table(name = "categories", uniqueConstraints = { @UniqueConstraint(columnNames = { "name", "user_id" }),
 }, indexes = { @Index(name = "idx_user_id_name", columnList = "name, user_id") })
 @EntityListeners(AuditingEntityListener.class)
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
@@ -22,36 +17,31 @@ import java.util.Set;
 @Getter
 @Setter
 @ToString
+// 부모 카테고리 - 자식 카테고리 단방향 매핑: 객체 그래프 탐색을 자주 사용하며(연관 엔티티인 자식 엔티티가 자주 조회됨. 즉 카테고리
+// 페이지에 접근하면 카테고리 자식이 필요 ) + 카테고리의 자식의 데이터가 많지 않음. 이러한 이유로 인해 단방향 매핑 사용
 public class Category extends BaseEntity {
 
     @Id
     @Column(nullable = false, length = 36, unique = true)
     private String id;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id", nullable = false)
-    private User user;
-
     // 여러 사용자가 동일한 카테고리명을 가질 순 있지만, 한 사용자가 동일한 카테고리를 가질 수 없게 위에서 unique 제약조건을 걸음.
     @Column(nullable = false, length = 100)
     private String name;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "parent_id", nullable = true)
-    // 여러 자식이 동일한 부모 id값을 가질 수 있기 때문에 unique = true 제약조건을 걸지 않음.
-    private Category parent;
-
-    @OneToMany(mappedBy = "parent", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
-    private List<Category> children;
-
-    @OneToMany(mappedBy = "category", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
-    private Set<Post> posts;
+    @Column(name = "order_index", nullable = false)
+    private Long orderIndex;
 
     @LastModifiedDate
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
-    @Column(name = "order_index", nullable = false)
-    private Long orderIndex;
+    // 여러 자식이 동일한 부모 id값을 가질 수 있기 때문에 unique = true 제약조건을 걸지 않음.
+    // JPA에서 별로도 참조하는 컬럼을 명시하지 않으면 자동으로 해당 테이블의 id 컬럼 참조. 즉 여기에서 id 컬럼 참조
+    @Column(name = "parent_id", nullable = true, unique = false)
+    private String parentId;
+
+    @Column(name = "user_id", nullable = false)
+    private Long userId;
 
 }

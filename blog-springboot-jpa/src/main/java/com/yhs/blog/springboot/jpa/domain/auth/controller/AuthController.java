@@ -5,9 +5,13 @@ import java.io.IOException;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.AuthenticationException;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.web.authentication.SimpleUrlAuthenticationSuccessHandler;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -22,10 +26,12 @@ import com.yhs.blog.springboot.jpa.domain.auth.dto.request.LoginRequest;
 import com.yhs.blog.springboot.jpa.domain.auth.dto.response.LoginResultToken;
 import com.yhs.blog.springboot.jpa.domain.auth.service.LoginProcessService;
 import com.yhs.blog.springboot.jpa.domain.auth.service.LogoutProcessService;
+import com.yhs.blog.springboot.jpa.domain.auth.token.provider.user.BlogUser;
 import com.yhs.blog.springboot.jpa.web.cookie.TokenCookieManager;
 
 import io.jsonwebtoken.ExpiredJwtException;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -151,6 +157,31 @@ public class AuthController extends SimpleUrlAuthenticationSuccessHandler {
                     .body(new ErrorResponse("토큰이 유효하지 않습니다. 재 로그인 해주세요.", HttpStatus.UNAUTHORIZED.value()));
         }
 
+    }
+
+    @Operation(summary = "특정 사용자의 작성자 여부 확인", description = "특정 사용자의 작성자 여부 요청을 처리")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "작성자 여부 응답 성공(True Or False)", content = @Content(schema = @Schema(implementation = SuccessResponse.class))),
+
+    })
+    @Parameter(name = "blogId", description = "사용자 블로그 아이디", required = true)
+    @PreAuthorize("isAuthenticated()") // 없어도 tokenAuthenticationFilter에 의해 검증되긴 하지만, 가독성을 위해 추가
+    @GetMapping("/{blogId}/verify-author")
+    public ResponseEntity<BaseResponse> verifyAuthor(
+            // @AuthenticationPrincipal org.springframework.security.core.userdetails.User
+            // user,
+            @AuthenticationPrincipal BlogUser blogUser,
+            @PathVariable("blogId") String blogId) {
+
+        log.info("[PostFindController] verifyAuthor() 요청");
+
+        String blogIdFromToken = blogUser.getBlogIdFromToken();
+
+        // 로그인한 사용자와 실제 게시글 작성자가 같은지 최종적으로 확인. 아래 두 방식 둘다 가능 근데 내가 확장시킨 BlogUser사용
+        // boolean isAuthor = blogId.equals(user.getUsername());
+        boolean isAuthor = blogId.equals(blogIdFromToken);
+
+        return ResponseEntity.ok().body(new SuccessResponse<>(isAuthor, "작성자 여부 응답에 성공하였습니다."));
     }
 
     // 테스트 코드에서 검증을 위해 추가

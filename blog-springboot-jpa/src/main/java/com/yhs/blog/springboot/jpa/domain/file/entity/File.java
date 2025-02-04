@@ -1,8 +1,8 @@
 package com.yhs.blog.springboot.jpa.domain.file.entity;
 
-import com.yhs.blog.springboot.jpa.domain.post.entity.Post;
-import com.yhs.blog.springboot.jpa.domain.user.entity.User;
 import com.yhs.blog.springboot.jpa.common.entity.BaseEntity;
+import com.yhs.blog.springboot.jpa.domain.post.entity.Post;
+
 import jakarta.persistence.*;
 import lombok.*;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
@@ -10,8 +10,8 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 @EntityListeners(AuditingEntityListener.class)
 @Getter
 @Entity
-@Table(name = "Files", indexes = {
-        @Index(name = "idx_files_post_id", columnList = "post_id")  // post_id에 인덱스 추가
+@Table(name = "files", indexes = {
+        @Index(name = "idx_files_post_id", columnList = "post_id") // post_id에 인덱스 추가
 })
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
@@ -24,10 +24,13 @@ public class File extends BaseEntity {
 
     @Column(nullable = false)
     private String fileName;
+
     @Column(nullable = false)
-    private String filetType;
+    private String fileType;
+
     @Column(nullable = false)
     private String fileUrl;
+
     @Column(nullable = false)
     private Long fileSize;
 
@@ -37,12 +40,19 @@ public class File extends BaseEntity {
     @Column(nullable = true)
     private Integer height;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "post_id", nullable = false)
-    private Post post;
+    @Column(nullable = false)
+    private Long postId;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id")
-    private User user;
+    @Builder
+    public File(String fileName, String fileType, String fileUrl, Long fileSize, Integer width, Integer height,
+            Long postId) {
+        this.fileName = fileName;
+        this.fileType = fileType;
+        this.fileUrl = fileUrl;
+        this.fileSize = fileSize;
+        this.width = width;
+        this.height = height;
+        this.postId = postId;
+    }
 
 }

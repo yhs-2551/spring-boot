@@ -16,4 +16,5 @@ public class CategoryRequest {
     private String categoryUuid;
     private String categoryUuidParent; 
     private List<CategoryRequest> children;
+    private int postCount;
 }

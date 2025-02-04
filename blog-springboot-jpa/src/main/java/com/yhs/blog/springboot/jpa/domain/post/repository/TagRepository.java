@@ -11,8 +11,7 @@ import org.springframework.stereotype.Repository;
 
 import java.util.List;
 import java.util.Optional;
-
-@Repository
+ 
 public interface TagRepository extends JpaRepository<Tag, Long> {
 
     // 다른 트랜잭션이 데이터를 읽거나 수정할 수 없도록 완전히 잠금을 거는 비관적 잠금.

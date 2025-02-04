@@ -7,7 +7,6 @@ import com.querydsl.core.types.dsl.*;
 import com.querydsl.core.types.PathMetadata;
 import javax.annotation.processing.Generated;
 import com.querydsl.core.types.Path;
-import com.querydsl.core.types.dsl.PathInits;
 
 
 /**
@@ -18,13 +17,11 @@ public class QPost extends EntityPathBase<Post> {
 
     private static final long serialVersionUID = -1518758598L;
 
-    private static final PathInits INITS = PathInits.DIRECT2;
-
     public static final QPost post = new QPost("post");
 
     public final com.yhs.blog.springboot.jpa.common.entity.QBaseEntity _super = new com.yhs.blog.springboot.jpa.common.entity.QBaseEntity(this);
 
-    public final com.yhs.blog.springboot.jpa.domain.category.entity.QCategory category;
+    public final NumberPath<Long> categoryId = createNumber("categoryId", Long.class);
 
     public final EnumPath<com.yhs.blog.springboot.jpa.domain.post.entity.enums.CommentsEnabled> commentsEnabled = createEnum("commentsEnabled", com.yhs.blog.springboot.jpa.domain.post.entity.enums.CommentsEnabled.class);
 
@@ -33,43 +30,28 @@ public class QPost extends EntityPathBase<Post> {
     //inherited
     public final DateTimePath<java.time.LocalDateTime> createdAt = _super.createdAt;
 
-    public final QFeaturedImage featuredImage;
-
-    public final SetPath<com.yhs.blog.springboot.jpa.domain.file.entity.File, com.yhs.blog.springboot.jpa.domain.file.entity.QFile> files = this.<com.yhs.blog.springboot.jpa.domain.file.entity.File, com.yhs.blog.springboot.jpa.domain.file.entity.QFile>createSet("files", com.yhs.blog.springboot.jpa.domain.file.entity.File.class, com.yhs.blog.springboot.jpa.domain.file.entity.QFile.class, PathInits.DIRECT2);
+    public final NumberPath<Long> featuredImageId = createNumber("featuredImageId", Long.class);
 
     public final NumberPath<Long> id = createNumber("id", Long.class);
 
     public final EnumPath<com.yhs.blog.springboot.jpa.domain.post.entity.enums.PostStatus> postStatus = createEnum("postStatus", com.yhs.blog.springboot.jpa.domain.post.entity.enums.PostStatus.class);
 
-    public final ListPath<PostTag, QPostTag> postTags = this.<PostTag, QPostTag>createList("postTags", PostTag.class, QPostTag.class, PathInits.DIRECT2);
-
     public final StringPath title = createString("title");
 
     public final DateTimePath<java.time.LocalDateTime> updatedAt = createDateTime("updatedAt", java.time.LocalDateTime.class);
 
-    public final com.yhs.blog.springboot.jpa.domain.user.entity.QUser user;
+    public final NumberPath<Long> userId = createNumber("userId", Long.class);
 
     public QPost(String variable) {
-        this(Post.class, forVariable(variable), INITS);
+        super(Post.class, forVariable(variable));
     }
 
     public QPost(Path<? extends Post> path) {
-        this(path.getType(), path.getMetadata(), PathInits.getFor(path.getMetadata(), INITS));
+        super(path.getType(), path.getMetadata());
     }
 
     public QPost(PathMetadata metadata) {
-        this(metadata, PathInits.getFor(metadata, INITS));
-    }
-
-    public QPost(PathMetadata metadata, PathInits inits) {
-        this(Post.class, metadata, inits);
-    }
-
-    public QPost(Class<? extends Post> type, PathMetadata metadata, PathInits inits) {
-        super(type, metadata, inits);
-        this.category = inits.isInitialized("category") ? new com.yhs.blog.springboot.jpa.domain.category.entity.QCategory(forProperty("category"), inits.get("category")) : null;
-        this.featuredImage = inits.isInitialized("featuredImage") ? new QFeaturedImage(forProperty("featuredImage")) : null;
-        this.user = inits.isInitialized("user") ? new com.yhs.blog.springboot.jpa.domain.user.entity.QUser(forProperty("user")) : null;
+        super(Post.class, metadata);
     }
 
 }

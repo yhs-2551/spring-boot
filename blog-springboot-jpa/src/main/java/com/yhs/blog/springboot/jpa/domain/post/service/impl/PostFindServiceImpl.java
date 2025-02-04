@@ -1,5 +1,7 @@
 package com.yhs.blog.springboot.jpa.domain.post.service.impl;
 
+import java.util.Optional;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -8,12 +10,11 @@ import org.springframework.transaction.annotation.Transactional;
 import com.yhs.blog.springboot.jpa.aop.log.Loggable;
 import com.yhs.blog.springboot.jpa.common.constant.code.ErrorCode;
 import com.yhs.blog.springboot.jpa.domain.category.service.CategoryService;
-import com.yhs.blog.springboot.jpa.domain.post.dto.response.PostResponse;
-import com.yhs.blog.springboot.jpa.domain.post.entity.Post;
+import com.yhs.blog.springboot.jpa.domain.post.dto.response.PostResponse; 
 import com.yhs.blog.springboot.jpa.domain.post.repository.PostRepository;
 import com.yhs.blog.springboot.jpa.domain.post.repository.search.SearchType;
 import com.yhs.blog.springboot.jpa.domain.post.service.PostFindService;
-import com.yhs.blog.springboot.jpa.domain.user.service.UserFindService; 
+import com.yhs.blog.springboot.jpa.domain.user.service.UserFindService;
 import com.yhs.blog.springboot.jpa.exception.custom.BusinessException;
 
 import lombok.RequiredArgsConstructor;
@@ -67,18 +68,37 @@ public class PostFindServiceImpl implements PostFindService {
     @Loggable
     @Override
     @Transactional(readOnly = true)
-    public PostResponse getPostByPostId(Long postId) {
+    public PostResponse getPostByPostIdForDetailPage(Long postId) {
 
         log.info("[PostFindServiceImpl] getPostByPostId 메서드 시작: postId: {}", postId);
 
-        Post post = postRepository.findByIdWithDetails(postId) // 연관된 엔티티도 한번에 가져와서 이후 연관 엔티티 조회 시 DB 추가 조회 없이 영속성 컨텍스트
-                                                               // 1차 캐시에서 바로 반환
+        PostResponse postResponse = Optional.ofNullable(postRepository.findByIdNotWithFeaturedImage(postId))
+                .orElseThrow(() -> new BusinessException(
+                        ErrorCode.POST_NOT_FOUND,
+                        postId + "번 게시글을 찾을 수 없습니다.",
+                        "PostFindServiceImpl",
+                        "getPostByPostIdForDetailPage"));
+
+        return postResponse;
+
+    }
+
+    @Loggable
+    @Override
+    @Transactional(readOnly = true)
+    public PostResponse getPostByPostIdForEditPage(Long postId) {
+
+        log.info("[PostFindServiceImpl] getPostByPostId 메서드 시작: postId: {}", postId);
+
+        PostResponse postResponse = Optional.ofNullable(postRepository.findByIdWithFeaturedImage(postId))
                 .orElseThrow(() -> new BusinessException(
                         ErrorCode.POST_NOT_FOUND,
                         postId + "번 게시글을 찾을 수 없습니다.",
                         "PostFindServiceImpl",
                         "getPostByPostId"));
 
-        return PostResponse.from(post);
+        return postResponse;
+
     }
+
 }

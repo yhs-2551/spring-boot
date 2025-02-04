@@ -45,6 +45,15 @@ public class ClaimsExtractor {
         return claims.get("blogId", String.class);
     }
 
+    public String getUsername(String token) {
+
+        log.info("[ClaimsExtractor] getUsername() 메서드 시작");
+
+        Claims claims = getClaims(token);
+        return claims.get("username", String.class);
+    }
+
+
     public List<String> getRoles(String token) {
 
         log.info("[ClaimsExtractor] getRoles() 메서드 시작");

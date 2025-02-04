@@ -14,4 +14,8 @@ public interface PostRepositoryCustom {
 
     Page<PostResponse> findPostsAllUser(String keyword, SearchType searchType, Pageable pageable);
 
+    PostResponse findByIdNotWithFeaturedImage(Long postId);
+
+    PostResponse findByIdWithFeaturedImage(Long postId);
+
 }

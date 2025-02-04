@@ -7,7 +7,6 @@ import com.querydsl.core.types.dsl.*;
 import com.querydsl.core.types.PathMetadata;
 import javax.annotation.processing.Generated;
 import com.querydsl.core.types.Path;
-import com.querydsl.core.types.dsl.PathInits;
 
 
 /**
@@ -23,8 +22,6 @@ public class QTag extends EntityPathBase<Tag> {
     public final NumberPath<Long> id = createNumber("id", Long.class);
 
     public final StringPath name = createString("name");
-
-    public final SetPath<PostTag, QPostTag> postTags = this.<PostTag, QPostTag>createSet("postTags", PostTag.class, QPostTag.class, PathInits.DIRECT2);
 
     public QTag(String variable) {
         super(Tag.class, forVariable(variable));

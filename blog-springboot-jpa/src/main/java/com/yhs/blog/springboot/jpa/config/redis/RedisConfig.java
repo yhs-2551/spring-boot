@@ -14,7 +14,8 @@ import org.springframework.data.redis.serializer.StringRedisSerializer;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.type.CollectionType;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import com.yhs.blog.springboot.jpa.domain.category.dto.response.CategoryResponse; 
+import com.yhs.blog.springboot.jpa.domain.category.dto.response.CategoryResponse;
+import com.yhs.blog.springboot.jpa.domain.category.dto.response.CategoryWithChildrenResponse;
 import com.yhs.blog.springboot.jpa.domain.user.dto.response.UserPublicProfileResponse;
  
 @Configuration
@@ -63,9 +64,9 @@ public class RedisConfig {
     }
 
     @Bean
-    public RedisTemplate<String, List<CategoryResponse>> userCategoriesRedisTemplate(
+    public RedisTemplate<String, List<CategoryWithChildrenResponse>> userCategoriesRedisTemplate(
             RedisConnectionFactory connectionFactory) {
-        RedisTemplate<String, List<CategoryResponse>> redisTemplate = new RedisTemplate<>();
+        RedisTemplate<String, List<CategoryWithChildrenResponse>> redisTemplate = new RedisTemplate<>();
         redisTemplate.setConnectionFactory(connectionFactory);
 
         ObjectMapper objectMapper = new ObjectMapper();
@@ -73,9 +74,9 @@ public class RedisConfig {
 
         // CollectionType 사용하여 List 타입 지정
         CollectionType listType = objectMapper.getTypeFactory()
-                .constructCollectionType(List.class, CategoryResponse.class);
+                .constructCollectionType(List.class, CategoryWithChildrenResponse.class);
 
-        Jackson2JsonRedisSerializer<List<CategoryResponse>> serializer = new Jackson2JsonRedisSerializer<>(
+        Jackson2JsonRedisSerializer<List<CategoryWithChildrenResponse>> serializer = new Jackson2JsonRedisSerializer<>(
                 objectMapper,
                 listType);
 

@@ -7,7 +7,6 @@ import com.querydsl.core.types.dsl.*;
 import com.querydsl.core.types.PathMetadata;
 import javax.annotation.processing.Generated;
 import com.querydsl.core.types.Path;
-import com.querydsl.core.types.dsl.PathInits;
 
 
 /**
@@ -26,22 +25,14 @@ public class QUser extends EntityPathBase<User> {
 
     public final StringPath blogName = createString("blogName");
 
-    public final SetPath<com.yhs.blog.springboot.jpa.domain.category.entity.Category, com.yhs.blog.springboot.jpa.domain.category.entity.QCategory> categories = this.<com.yhs.blog.springboot.jpa.domain.category.entity.Category, com.yhs.blog.springboot.jpa.domain.category.entity.QCategory>createSet("categories", com.yhs.blog.springboot.jpa.domain.category.entity.Category.class, com.yhs.blog.springboot.jpa.domain.category.entity.QCategory.class, PathInits.DIRECT2);
-
     //inherited
     public final DateTimePath<java.time.LocalDateTime> createdAt = _super.createdAt;
 
     public final StringPath email = createString("email");
 
-    public final SetPath<com.yhs.blog.springboot.jpa.domain.file.entity.File, com.yhs.blog.springboot.jpa.domain.file.entity.QFile> files = this.<com.yhs.blog.springboot.jpa.domain.file.entity.File, com.yhs.blog.springboot.jpa.domain.file.entity.QFile>createSet("files", com.yhs.blog.springboot.jpa.domain.file.entity.File.class, com.yhs.blog.springboot.jpa.domain.file.entity.QFile.class, PathInits.DIRECT2);
-
     public final NumberPath<Long> id = createNumber("id", Long.class);
 
     public final StringPath password = createString("password");
-
-    public final SetPath<com.yhs.blog.springboot.jpa.domain.post.entity.Post, com.yhs.blog.springboot.jpa.domain.post.entity.QPost> posts = this.<com.yhs.blog.springboot.jpa.domain.post.entity.Post, com.yhs.blog.springboot.jpa.domain.post.entity.QPost>createSet("posts", com.yhs.blog.springboot.jpa.domain.post.entity.Post.class, com.yhs.blog.springboot.jpa.domain.post.entity.QPost.class, PathInits.DIRECT2);
-
-    public final SetPath<com.yhs.blog.springboot.jpa.domain.post.entity.PostTag, com.yhs.blog.springboot.jpa.domain.post.entity.QPostTag> postTags = this.<com.yhs.blog.springboot.jpa.domain.post.entity.PostTag, com.yhs.blog.springboot.jpa.domain.post.entity.QPostTag>createSet("postTags", com.yhs.blog.springboot.jpa.domain.post.entity.PostTag.class, com.yhs.blog.springboot.jpa.domain.post.entity.QPostTag.class, PathInits.DIRECT2);
 
     public final StringPath profileImageUrl = createString("profileImageUrl");
 

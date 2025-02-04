@@ -1,7 +1,7 @@
 package com.yhs.blog.springboot.jpa.domain.category.controller;
 
-import com.yhs.blog.springboot.jpa.domain.category.dto.request.CategoryRequestPayLoad;
-import com.yhs.blog.springboot.jpa.domain.category.dto.response.CategoryResponse;
+import com.yhs.blog.springboot.jpa.domain.category.dto.request.CategoryRequestPayLoad; 
+import com.yhs.blog.springboot.jpa.domain.category.dto.response.CategoryWithChildrenResponse;
 import com.yhs.blog.springboot.jpa.aop.performance.MeasurePerformance;
 import com.yhs.blog.springboot.jpa.common.response.BaseResponse;
 import com.yhs.blog.springboot.jpa.common.response.ErrorResponse;
@@ -31,7 +31,7 @@ import java.util.List;
 @RequestMapping("/api/{blogId}/categories")
 public class CategoryController {
 
-        private final CategoryService categoryService; 
+        private final CategoryService categoryService;
 
         // 서비스단에서 userRepository 불필요한 조회 제거, 부모 카테고리 조회 필요할때만 진행. 즉 불필요한 쿼리를 줄임으로써 성능 향상
         // 카테고리 생성, 수정, 삭제시 불필요한 N+1 제거 후 성능 향상 및 DB 네트워크 요청 감소
@@ -76,10 +76,12 @@ public class CategoryController {
 
                 log.info("[CategoryController] getAllCategoriesWithChildrenByUserId() 요청");
 
-                List<CategoryResponse> categories = categoryService.getAllCategoriesWithChildrenByUserId(blogId);
+                List<CategoryWithChildrenResponse> categories = categoryService
+                                .getAllCategoriesWithChildrenByUserId(blogId);
 
                 return ResponseEntity.status(HttpStatus.OK)
-                                .body(new SuccessResponse<List<CategoryResponse>>(categories, "카테고리 조회에 성공하였습니다."));
+                                .body(new SuccessResponse<List<CategoryWithChildrenResponse>>(categories,
+                                                "카테고리 조회에 성공하였습니다."));
         }
 
 }

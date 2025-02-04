@@ -3,7 +3,7 @@ package com.yhs.blog.springboot.jpa.domain.post.service.impl;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Set; 
+import java.util.Set;
 import org.springframework.dao.DataAccessException;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
@@ -13,12 +13,14 @@ import org.springframework.transaction.support.TransactionSynchronizationManager
 
 import com.yhs.blog.springboot.jpa.aop.log.Loggable;
 import com.yhs.blog.springboot.jpa.common.constant.code.ErrorCode;
+import com.yhs.blog.springboot.jpa.domain.auth.token.claims.ClaimsExtractor;
+import com.yhs.blog.springboot.jpa.domain.auth.token.provider.user.BlogUser;
 import com.yhs.blog.springboot.jpa.domain.category.dto.response.CategoryResponse;
 import com.yhs.blog.springboot.jpa.domain.category.entity.Category;
 import com.yhs.blog.springboot.jpa.domain.category.service.CategoryService;
 import com.yhs.blog.springboot.jpa.domain.file.dto.request.FileRequest;
 import com.yhs.blog.springboot.jpa.domain.file.entity.File;
-import com.yhs.blog.springboot.jpa.domain.file.mapper.FileMapper;
+import com.yhs.blog.springboot.jpa.domain.file.service.FileService;
 import com.yhs.blog.springboot.jpa.domain.file.service.infrastructure.s3.S3Service;
 import com.yhs.blog.springboot.jpa.domain.post.dto.request.FeaturedImageRequest;
 import com.yhs.blog.springboot.jpa.domain.post.dto.request.PostRequest;
@@ -48,52 +50,60 @@ import lombok.extern.log4j.Log4j2;
 @Log4j2
 public class PostOperationServiceImpl implements PostOperationService {
 
-    private final UserFindService userFindService;
     private final CategoryService categoryService;
     private final PostRepository postRepository;
+    private final S3Service s3Service;
+    private final FileService fileService;
+
     private final FeaturedImageRepository featuredImageRepository;
     private final TagRepository tagRepository;
     private final PostTagRepository postTagRepository;
-    private final S3Service s3Service;
+
     private final RedisTemplate<String, List<CategoryResponse>> categoryResponseRedisTemplate;
 
     @Loggable
     @Transactional
     @Override
-    public void createNewPost(PostRequest postRequest, String blogId) {
+    public void createNewPost(PostRequest postRequest, BlogUser blogUser) {
 
-        log.info("[PostOperationServiceImpl] createNewPost 메서드 시작:  blogId: {}", blogId);
+        log.info("[PostOperationServiceImpl] createNewPost 메서드 시작");
+
+        // 여기까지 토큰이 통과했다는건 해당 사용자라는 뜻. jwt필터 및 컨트롤러에서 토큰 검증
+        String blogId = blogUser.getBlogIdFromToken();
+        Long userId = blogUser.getUserIdFromToken();
 
         try {
 
-            User user = userFindService.findUserByBlogId(blogId);
-
-            Category category;
+            String categoryId;
             if (postRequest.getCategoryName() != null) {
 
                 log.info("[PostOperationServiceImpl] createNewPost 카테고리 존재 분기 시작");
 
-                category = categoryService.findCategoryByNameAndUserId(postRequest.getCategoryName(), user.getId());
+                categoryId = categoryService.findCategoryByNameAndUserId(postRequest.getCategoryName(), userId).getId();
             } else {
 
                 log.info("[PostOperationServiceImpl] createNewPost 카테고리 미존재 분기 시작");
 
-                category = null;
+                categoryId = null;
             }
 
-            FeaturedImage featuredImage = processFeaturedImage(postRequest.getFeaturedImage());
+            Long featuredImageId = processFeaturedImage(postRequest.getFeaturedImage()).getId();
 
             // temp -> final로 변환
             String convertedContent = postRequest.getContent().replace(blogId + "/temp/",
                     blogId + "/final/");
 
-            // 포스트 생성 시 user를 넘겨주면 외래키 연관관계 설정으로 인해 posts테이블에 user_id 값이 자동으로 들어간다.
-            // category, featuredImage또한 마찬가지.
-            Post post = PostMapper.create(user, category, postRequest.getTitle(), convertedContent,
-                    postRequest.getPostStatus(), postRequest.getCommentsEnabled(), featuredImage);
-            post.setFiles(processFiles(post, postRequest.getFiles(), user));
-            post.setPostTags(processTags(post, postRequest.getTags(), user));
-            postRepository.save(post);
+            Post post = Post.builder().userId(userId).categoryId(categoryId).title(postRequest.getTitle())
+                    .content(convertedContent)
+                    .postStatus(PostStatus.valueOf(postRequest.getPostStatus().toUpperCase()))
+                    .commentsEnabled(CommentsEnabled.valueOf(postRequest.getCommentsEnabled().toUpperCase()))
+                    .featuredImageId(featuredImageId).build();
+
+            Post savedPost = postRepository.save(post);
+
+            // 아래 파일과 PostTag엔티티는 외래키에 postId가 있기 때문에 save로 저장한 뒤에 영속성 컨텍스트에 저장된 postId의 값을 전달해야 함
+            processFiles(post, postRequest.getFiles(), savedPost.getId());
+            processPostTagsAndTags(post, postRequest.getTags(), savedPost.getId());
 
             log.info("[PostOperationServiceImpl] createNewPost S3 메인 스레드 시작: {}", Thread.currentThread().getName());
 
@@ -102,11 +112,17 @@ public class PostOperationServiceImpl implements PostOperationService {
                     new TransactionSynchronization() {
                         @Override
                         public void afterCommit() {
-                            // 카테고리 작업 캐시 무효화. 트랜잭션이 성공적으로 커밋되어야만 redis 캐시 무효화
+
+                            // 카테고리 작업 캐시 무효화. 트랜잭션이 성공적으로 커밋되어야만 redis 캐시 무효화. 비동기 작업이 실패하든 성공하든 얘는 무조건 실행
                             categoryResponseRedisTemplate.delete("categories:" + blogId);
                             // s3 Temp 파일 관련 작업은 비동기로 처리. 사용자에게 빠르게 응답하기 위함
+                            // DB 작업 성공 후 S3관련 작업이 실패한다면: AWSS3 서버가 마비 되는거 아닌 이상 발생할 이유 없지만, 만약 발생한다면 삭제될 파일
+                            // 제외하고 실제 DB에 저장된 요청온 파일을 따로
+                            // DB 테이블에 저장하고 이후 temp -> final로 옮기는 배치 작업을 추가하면 됨. or 비동기 작업이 실패하면 요청 DTO를 활용해
+                            // DB에서 DTO와 일치하는 엔티티 가져온 후 업데이트 하면 됨. 나중에 추가 고려
                             s3Service.processCreatePostS3TempOperation(postRequest,
                                     blogId);
+
                         }
 
                     });
@@ -179,10 +195,12 @@ public class PostOperationServiceImpl implements PostOperationService {
                 new TransactionSynchronization() {
                     @Override
                     public void afterCommit() {
-                        // 카테고리 작업 캐시 무효화. 트랜잭션이 성공적으로 커밋되어야만 redis 캐시 무효화
+
+                        // 카테고리 작업 캐시 무효화. 트랜잭션이 성공적으로 커밋되어야만 redis 캐시 무효화. 비동기 작업이 실패하든 성공하든 얘는 무조건 실행
                         categoryResponseRedisTemplate.delete("categories:" + blogId);
                         // s3 Temp 파일 관련 작업은 비동기로 처리. 사용자에게 빠르게 응답하기 위함
                         s3Service.processUpdatePostS3TempOperation(postUpdateRequest, user.getBlogId());
+
                     }
 
                 });
@@ -236,14 +254,15 @@ public class PostOperationServiceImpl implements PostOperationService {
     }
 
     // 아래쪽은 헬퍼 메서드
-    private Set<File> processFiles(Post post, List<FileRequest> fileRequests, User user) {
+    private void processFiles(Post post, List<FileRequest> fileRequests, Long postId) {
 
         log.info("[PostOperationServiceImpl] processFiles 메서드 시작");
 
-        Set<File> files = new HashSet<>();
         if (fileRequests != null && !fileRequests.isEmpty()) {
 
             log.info("[PostOperationServiceImpl] processFiles !fileRequests.isEmpty() 분기 시작");
+
+            Set<File> files = new HashSet<>();
 
             for (FileRequest fileRequest : fileRequests) {
 
@@ -251,28 +270,51 @@ public class PostOperationServiceImpl implements PostOperationService {
                 // 따라서 db에 final 경로로 저장한다.
                 String updatedFileUrl = fileRequest.getFileUrl().replace("/temp/", "/final/");
 
-                File file = FileMapper.create(fileRequest, post, user, updatedFileUrl);
+                Integer width;
+                Integer height;
+
+                if (fileRequest.getFileType().startsWith("image/") && fileRequest.getWidth() != null) {
+                    width = fileRequest.getWidth();
+                } else {
+                    width = null;
+                }
+
+                if (fileRequest.getFileType().startsWith("image/") && fileRequest.getHeight() != null) {
+                    height = fileRequest.getHeight();
+                } else {
+                    height = null;
+                }
+
+                File file = File.builder().fileName(fileRequest.getFileName()).fileType(fileRequest.getFileType())
+                        .fileUrl(updatedFileUrl).fileSize(fileRequest.getFileSize()).width(width).height(height)
+                        .postId(postId).build();
+
                 files.add(file);
             }
+
+            fileService.saveFiles(files);
         }
-        return files;
     }
 
-    private List<PostTag> processTags(Post post, List<String> tagNames, User user) {
+    private void processPostTagsAndTags(Post post, List<String> tagNames, Long postId) {
 
         log.info("[PostOperationServiceImpl] processTags 메서드 시작");
 
-        List<PostTag> postTags = new ArrayList<>();
         if (tagNames != null && !tagNames.isEmpty()) {
+
             log.info("[PostOperationServiceImpl] processTags !tagNames.isEmpty() 분기 시작");
+
+            List<PostTag> postTags = new ArrayList<>();
+
             for (String tagName : tagNames) {
-                Tag tag = tagRepository.findByName(tagName).orElseGet(() -> Tag.create(tagName));
-                tagRepository.save(tag);
-                PostTag postTag = PostTag.create(post, tag, user);
+                Tag tag = tagRepository.findByName(tagName).orElseGet(() -> new Tag(tagName)); // 없으면 새롭게 생성
+                tagRepository.save(tag); // 새롭게 생성된 태그를 영속성 컨텍스트에 저장
+                PostTag postTag = new PostTag(postId, tag.getId());
                 postTags.add(postTag);
             }
+
+            postTagRepository.saveAll(postTags);
         }
-        return postTags;
     }
 
     private FeaturedImage processFeaturedImage(FeaturedImageRequest featuredImageRequest) {

@@ -9,8 +9,7 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @ToString
-public class CategoryResponse {
-//    private Long id;
+public class CategoryResponse { 
     private String categoryUuid;
     private String name;
     private String categoryUuidParent;
