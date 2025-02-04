@@ -18,18 +18,28 @@ public class FileResponse {
     @Nullable
     private Integer height;
 
+    public FileResponse(String fileName, String fileType, String fileUrl, Long fileSize, Integer width,
+            Integer height) {
+        this.fileName = fileName;
+        this.fileType = fileType;
+        this.fileUrl = fileUrl;
+        this.fileSize = fileSize;
+        this.width = width;
+        this.height = height;
+    }
+
     public FileResponse(String fileUrl, Integer width, Integer height) {
         this.fileUrl = fileUrl;
         this.width = width;
         this.height = height;
     }
 
-    public FileResponse(File file) {
-        this.fileName = file.getFileName();
-        this.fileType = file.getFiletType();
-        this.fileUrl = file.getFileUrl();
-        this.fileSize = file.getFileSize();
-        this.width = file.getWidth();
-        this.height = file.getHeight();
-    }
+    // public FileResponse(File file) {
+    // this.fileName = file.getFileName();
+    // this.fileType = file.getFiletType();
+    // this.fileUrl = file.getFileUrl();
+    // this.fileSize = file.getFileSize();
+    // this.width = file.getWidth();
+    // this.height = file.getHeight();
+    // }
 }

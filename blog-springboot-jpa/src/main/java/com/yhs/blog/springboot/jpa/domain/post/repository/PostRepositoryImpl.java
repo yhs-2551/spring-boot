@@ -28,7 +28,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Repository;
 import org.springframework.util.StringUtils;
 
-import java.util.List; 
+import java.util.List;
 
 @RequiredArgsConstructor
 @Repository // 구현체 repository 어노테이션 추가 필요
@@ -249,7 +249,6 @@ public class PostRepositoryImpl implements PostRepositoryCustom {
                 QPostTag postTag = QPostTag.postTag;
                 QTag tag = QTag.tag;
                 QFile file = QFile.file;
-                QFeaturedImage featuredImage = QFeaturedImage.featuredImage;
 
                 try {
 
@@ -275,11 +274,6 @@ public class PostRepositoryImpl implements PostRepositoryCustom {
                                                                         // 쿼리의
                                                                         // post 엔티티 참조
                                                                         .where(file.postId.eq(post.id)),
-                                                        Projections.constructor(FeaturedImageResponse.class,
-                                                                        featuredImage.fileName,
-                                                                        featuredImage.fileUrl,
-                                                                        featuredImage.fileType,
-                                                                        featuredImage.fileSize),
                                                         post.postStatus,
                                                         user.username,
                                                         category.name,
@@ -307,7 +301,7 @@ public class PostRepositoryImpl implements PostRepositoryCustom {
                 QPostTag postTag = QPostTag.postTag;
                 QTag tag = QTag.tag;
                 QFile file = QFile.file;
-
+                QFeaturedImage featuredImage = QFeaturedImage.featuredImage;
                 try {
 
                         return queryFactory
@@ -324,9 +318,18 @@ public class PostRepositoryImpl implements PostRepositoryCustom {
                                                                         .select(Projections.list(
                                                                                         Projections.constructor(
                                                                                                         FileResponse.class,
+                                                                                                        file.fileName,
+                                                                                                        file.fileType,
                                                                                                         file.fileUrl,
+                                                                                                        file.fileSize,
                                                                                                         file.width,
-                                                                                                        file.height)))
+                                                                                                        file.height),
+                                                                                        Projections.constructor(
+                                                                                                        FeaturedImageResponse.class,
+                                                                                                        featuredImage.fileName,
+                                                                                                        featuredImage.fileUrl,
+                                                                                                        featuredImage.fileType,
+                                                                                                        featuredImage.fileSize)))
                                                                         .from(file)
                                                                         // 여기 post.id는 아래 전체 where절에서 가져온post를 의미함. 즉 외부
                                                                         // 쿼리의

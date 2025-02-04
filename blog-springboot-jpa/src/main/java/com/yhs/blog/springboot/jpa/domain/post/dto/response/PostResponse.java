@@ -94,6 +94,7 @@ public class PostResponse {
                 this.content = content;
                 this.tags = tags;
                 this.files = files;
+                this.featuredImage = featuredImage;
                 this.postStatus = postStatus.name();
                 this.username = username;
                 this.categoryName = categoryName;
