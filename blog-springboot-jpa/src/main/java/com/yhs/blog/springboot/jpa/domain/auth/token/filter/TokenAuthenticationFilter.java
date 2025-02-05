@@ -131,6 +131,16 @@ public class TokenAuthenticationFilter extends OncePerRequestFilter {
 
                 Authentication authentication = authenticationProvider.getAuthentication(accessToken);
 
+
+
+                log.info("=== Authentication 상세 정보 ===");
+                log.info("Principal: {}", authentication.getPrincipal());
+                log.info("Credentials: {}", authentication.getCredentials());
+                log.info("Name: {}", authentication.getName());
+                log.info("Authorities: {}", authentication.getAuthorities());
+                log.info("Details: {}", authentication.getDetails());
+                log.info("========================");
+
                 SecurityContextHolder.getContext().setAuthentication(authentication);
 
                 filterChain.doFilter(request, response);

@@ -13,8 +13,7 @@ import org.springframework.data.redis.serializer.Jackson2JsonRedisSerializer;
 import org.springframework.data.redis.serializer.StringRedisSerializer;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.type.CollectionType;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import com.yhs.blog.springboot.jpa.domain.category.dto.response.CategoryResponse;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule; 
 import com.yhs.blog.springboot.jpa.domain.category.dto.response.CategoryWithChildrenResponse;
 import com.yhs.blog.springboot.jpa.domain.user.dto.response.UserPublicProfileResponse;
  

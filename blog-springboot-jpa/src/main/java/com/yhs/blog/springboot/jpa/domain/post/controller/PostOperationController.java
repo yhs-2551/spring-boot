@@ -31,7 +31,7 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
-import io.swagger.v3.oas.annotations.tags.Tag; 
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 
@@ -84,11 +84,12 @@ public class PostOperationController {
         @PreAuthorize("#userBlogId == authentication.name")
         @DeleteMapping("/{blogId}/posts/{postId}")
         public ResponseEntity<BaseResponse> deletePostById(@PathVariable("postId") Long postId,
-                        @P("userBlogId") @PathVariable("blogId") String blogId) {
+                        @P("userBlogId") @PathVariable("blogId") String blogId,
+                        @AuthenticationPrincipal BlogUser blogUser) {
 
                 log.info("[PostOperationController] deletePostById() 요청");
 
-                postOperationService.deletePostByPostId(postId, blogId);
+                postOperationService.deletePostByPostId(postId, blogUser);
 
                 return ResponseEntity.ok(new SuccessResponse<>("게시글이 성공적으로 삭제되었습니다."));
         }

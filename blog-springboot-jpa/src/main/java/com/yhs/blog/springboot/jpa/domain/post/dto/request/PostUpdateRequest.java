@@ -26,7 +26,8 @@ public class PostUpdateRequest {
 
     private List<FileRequest> files; // 첨부파일
 
-    private List<String> deletedImageUrlsInFuture; // 최종 발행 시 클라우드 저장소에 저장되어 있는 사용되지 않는 이미지 및 파일 삭제하는 URL
+     // 최종 발행 시 클라우드 저장소에 저장되어 있는 사용되지 않는 이미지 및 파일 삭제하는 URL 및 DB에 저장되어 있는 대표 이미지/파일(이미지) 삭제하는 URL
+    private List<String> deletedImageUrlsInFuture;
 
     private String postStatus; // 게시글 상태 (PUBLIC, PRIVATE)
 

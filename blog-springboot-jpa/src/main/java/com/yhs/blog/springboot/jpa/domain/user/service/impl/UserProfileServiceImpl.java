@@ -13,6 +13,7 @@ import org.springframework.transaction.support.TransactionSynchronizationManager
 import com.yhs.blog.springboot.jpa.aop.log.Loggable;
 import com.yhs.blog.springboot.jpa.common.constant.cache.CacheConstants;
 import com.yhs.blog.springboot.jpa.common.constant.code.ErrorCode;
+import com.yhs.blog.springboot.jpa.domain.auth.token.provider.user.BlogUser;
 import com.yhs.blog.springboot.jpa.domain.file.service.infrastructure.s3.S3Service;
 import com.yhs.blog.springboot.jpa.domain.user.dto.request.UserSettingsRequest;
 import com.yhs.blog.springboot.jpa.domain.user.dto.response.UserPrivateProfileResponse;
@@ -88,17 +89,17 @@ public class UserProfileServiceImpl implements UserProfileService {
     @Loggable
     @Transactional(readOnly = true)
     @Override
-    public UserPrivateProfileResponse getUserPrivateProfile(String blogId) { // email 민감한 정보는 개인정보 보호를 위해 캐시 삭제
+    public UserPrivateProfileResponse getUserPrivateProfile(BlogUser blogUser) { // email 민감한 정보는 개인정보 보호를 위해 캐시 삭제
 
-        log.info("[UserProfileServiceImpl] findUserByTokenAndByBlogId 메서드 시작");
+        log.info("[UserProfileServiceImpl] getUserPrivateProfile 메서드 시작");
 
-        Optional<User> optionalUser = userRepository.findByBlogId(blogId);
+        Optional<User> optionalUser = userRepository.findById(blogUser.getUserIdFromToken());
         if (optionalUser.isEmpty()) {
             throw new BusinessException(
                     ErrorCode.USER_NOT_FOUND,
-                    blogId + "를 가지고 있는 사용자를 찾지 못하였습니다.",
+                    blogUser.getUserIdFromToken() + "번 사용자를 찾지 못하였습니다.",
                     "UserProfileServiceImpl",
-                    "findUserByTokenAndByBlogId");
+                    "getUserPrivateProfile");
         }
 
         User findUser = optionalUser.get();

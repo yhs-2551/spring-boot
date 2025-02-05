@@ -8,7 +8,7 @@ public interface PostOperationService {
 
     void createNewPost(PostRequest postRequest, BlogUser blogUser);
 
-    void deletePostByPostId(Long postId, String blogId);
+    void deletePostByPostId(Long postId, BlogUser blogUser);
 
     void updatePostByPostId(Long postI, BlogUser blogUser,
             PostUpdateRequest postUpdateRequest);

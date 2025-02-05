@@ -3,13 +3,24 @@ package com.yhs.blog.springboot.jpa.domain.category.entity;
 import com.yhs.blog.springboot.jpa.common.entity.BaseEntity;
 import jakarta.persistence.*;
 import lombok.*;
+
+import org.hibernate.annotations.GenericGenerator;
+import org.hibernate.annotations.IdGeneratorType;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 @Entity
 @Table(name = "categories", uniqueConstraints = { @UniqueConstraint(columnNames = { "name", "user_id" }),
-}, indexes = { @Index(name = "idx_user_id_name", columnList = "name, user_id") })
+}, indexes = {
+        @Index(name = "idx_user_id_parent_id_order_index", columnList = "user_id, parent_id, order_index"), // where절에서
+                                                                                                            // orderBy와
+                                                                                                            // 같이 사용
+        @Index(name = "idx_parent_id_order_index", columnList = "parent_id, order_index") // 자식의 join시 parentId와
+                                                                                          // orderIndex를 같이 사용
+
+})
 @EntityListeners(AuditingEntityListener.class)
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
@@ -24,6 +35,13 @@ public class Category extends BaseEntity {
     @Id
     @Column(nullable = false, length = 36, unique = true)
     private String id;
+
+    @PrePersist
+    public void generateId() {
+        if (id == null) {
+            this.id = UUID.randomUUID().toString();
+        }
+    }
 
     // 여러 사용자가 동일한 카테고리명을 가질 순 있지만, 한 사용자가 동일한 카테고리를 가질 수 없게 위에서 unique 제약조건을 걸음.
     @Column(nullable = false, length = 100)

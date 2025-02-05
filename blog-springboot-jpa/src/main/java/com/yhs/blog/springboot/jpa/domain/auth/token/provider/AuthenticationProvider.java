@@ -8,7 +8,6 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.stereotype.Component;
-
 import com.yhs.blog.springboot.jpa.domain.auth.token.claims.ClaimsExtractor;
 import com.yhs.blog.springboot.jpa.domain.auth.token.provider.user.BlogUser;
 
@@ -50,7 +49,7 @@ public class AuthenticationProvider {
         // JWT 토큰 자체가 사용자 인증 정보를 포함하고 있기 때문에 JWT 토큰이 발급된 이후에는 패스워드가 더 이상 필요하지 않아서 빈 문자열
         // 처리.
         // UserDetails user = new User(
-        //         blogId, null, authorities); // 패스워드 "" 대신 null
+        // blogId, "", authorities);
 
         UserDetails user = new BlogUser(BlogIdFromToken, usernameFromToken, userIdFromToken, authorities);
 

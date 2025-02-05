@@ -6,8 +6,10 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.User;
 
 import lombok.Getter;
+import lombok.extern.log4j.Log4j2;
 
 @Getter
+@Log4j2
 public class BlogUser extends User {
 
     private final String BlogIdFromToken;
@@ -15,8 +17,11 @@ public class BlogUser extends User {
     private final Long userIdFromToken;
 
     // super(blogId, null, authorities);로 부모를 호출하고, userId 필드를 추가하여 확장
-    public BlogUser(String BlogIdFromToken, String usernameFromToken, Long userIdFromToken, Collection<? extends GrantedAuthority> authorities) {
-        super(BlogIdFromToken, null, authorities); // 컨트롤러에서 authentication.name의 값이 super(BlogIdFromToken)값이 반영.
+    public BlogUser(String BlogIdFromToken, String usernameFromToken, Long userIdFromToken,
+            Collection<? extends GrantedAuthority> authorities) {
+
+        super(BlogIdFromToken, "", authorities); // 컨트롤러에서 authentication.name의 값이 super(BlogIdFromToken)값이 반영.
+        log.info("[BlogUser] BlogUser() 메서드 시작");
         this.BlogIdFromToken = BlogIdFromToken;
         this.usernameFromToken = usernameFromToken;
         this.userIdFromToken = userIdFromToken;

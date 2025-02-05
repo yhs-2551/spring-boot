@@ -11,10 +11,11 @@ import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
- 
+
 import com.yhs.blog.springboot.jpa.common.response.BaseResponse;
 import com.yhs.blog.springboot.jpa.common.response.ErrorResponse;
 import com.yhs.blog.springboot.jpa.common.response.SuccessResponse;
+import com.yhs.blog.springboot.jpa.domain.auth.token.provider.user.BlogUser;
 import com.yhs.blog.springboot.jpa.domain.user.dto.request.UserSettingsRequest;
 import com.yhs.blog.springboot.jpa.domain.user.dto.response.UserPrivateProfileResponse;
 import com.yhs.blog.springboot.jpa.domain.user.dto.response.UserPublicProfileResponse;
@@ -69,7 +70,7 @@ public class UserProfileController {
         }
 
     }
- 
+
     @Operation(summary = "사용자 민감하지 않은 정보 조회", description = "블로그Id, 블로그명, 사용자명, 프로필 이미지 url, 소개글을 조회")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "사용자 민감하지 않은 프로필 정보 조회 성공", content = @Content(schema = @Schema(implementation = SuccessResponse.class))),
@@ -94,13 +95,11 @@ public class UserProfileController {
     // 토큰 필터에서 인증 검사 끝나서 여기서 isAuthenticaed()필요x
     @GetMapping("/profile/private")
     public ResponseEntity<BaseResponse> getUserProfilePrivate(HttpServletRequest request,
-            @AuthenticationPrincipal org.springframework.security.core.userdetails.User user) {
+            @AuthenticationPrincipal BlogUser blogUser) {
 
         log.info("[UserProfileController] getUserProfilePrivate() 요청");
 
-        String blogId = user.getUsername();
-
-        UserPrivateProfileResponse privateUserProfile = userProfileService.getUserPrivateProfile(blogId);
+        UserPrivateProfileResponse privateUserProfile = userProfileService.getUserPrivateProfile(blogUser);
 
         return ResponseEntity.ok().body(new SuccessResponse<>(privateUserProfile, "비공개 사용자 정보 조회를 성공하였습니다."));
     }

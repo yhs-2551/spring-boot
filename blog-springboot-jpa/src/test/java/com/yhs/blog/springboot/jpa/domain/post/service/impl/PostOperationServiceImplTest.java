@@ -32,6 +32,7 @@ import org.springframework.transaction.support.TransactionSynchronizationManager
 
 import com.yhs.blog.springboot.jpa.domain.category.dto.response.CategoryResponse;
 import com.yhs.blog.springboot.jpa.domain.category.service.CategoryService;
+import com.yhs.blog.springboot.jpa.domain.featured_image.repository.FeaturedImageRepository;
 import com.yhs.blog.springboot.jpa.domain.file.dto.request.FileRequest;
 import com.yhs.blog.springboot.jpa.domain.file.service.infrastructure.s3.S3Service;
 import com.yhs.blog.springboot.jpa.domain.post.dto.request.FeaturedImageRequest;
@@ -39,7 +40,6 @@ import com.yhs.blog.springboot.jpa.domain.post.dto.request.PostRequest;
 import com.yhs.blog.springboot.jpa.domain.post.dto.request.PostUpdateRequest;
 import com.yhs.blog.springboot.jpa.domain.post.entity.Post;
 import com.yhs.blog.springboot.jpa.domain.post.factory.TestPostFactory;
-import com.yhs.blog.springboot.jpa.domain.post.repository.FeaturedImageRepository;
 import com.yhs.blog.springboot.jpa.domain.post.repository.PostRepository;
 import com.yhs.blog.springboot.jpa.domain.post.repository.PostTagRepository;
 import com.yhs.blog.springboot.jpa.domain.post.repository.TagRepository;

@@ -3,15 +3,15 @@ package com.yhs.blog.springboot.jpa.domain.category.service.impl;
 import com.yhs.blog.springboot.jpa.aop.log.Loggable;
 import com.yhs.blog.springboot.jpa.common.constant.cache.CacheConstants;
 import com.yhs.blog.springboot.jpa.common.constant.code.ErrorCode;
+import com.yhs.blog.springboot.jpa.domain.auth.token.provider.user.BlogUser;
 import com.yhs.blog.springboot.jpa.domain.category.dto.request.CategoryRequest;
-import com.yhs.blog.springboot.jpa.domain.category.dto.request.CategoryRequestPayLoad; 
+import com.yhs.blog.springboot.jpa.domain.category.dto.request.CategoryRequestPayLoad;
 import com.yhs.blog.springboot.jpa.domain.category.dto.response.CategoryWithChildrenResponse;
 import com.yhs.blog.springboot.jpa.domain.category.entity.Category;
-import com.yhs.blog.springboot.jpa.domain.user.entity.User;
 import com.yhs.blog.springboot.jpa.exception.custom.BusinessException;
 import com.yhs.blog.springboot.jpa.domain.category.repository.CategoryRepository;
-import com.yhs.blog.springboot.jpa.domain.category.service.CategoryService; 
-import com.yhs.blog.springboot.jpa.domain.user.service.UserFindService; 
+import com.yhs.blog.springboot.jpa.domain.category.service.CategoryService;
+import com.yhs.blog.springboot.jpa.domain.user.service.UserFindService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 
@@ -32,12 +32,12 @@ public class CategoryServiceImpl implements CategoryService {
     private final CategoryRepository categoryRepository;
     private final UserFindService userFindService;
     private final RedisTemplate<String, List<CategoryWithChildrenResponse>> categoryResponseRedisTemplate;
-    private User user;
-    private List<Category> allCategories = new ArrayList<>();
+    private final ThreadLocal<List<Category>> toBeSavedAllCategories = ThreadLocal.withInitial(ArrayList::new);
+    private final ThreadLocal<List<String>> toBeDeletedAllCategories = ThreadLocal.withInitial(ArrayList::new);
 
     @Override
     @Transactional
-    public void createCategory(CategoryRequestPayLoad categoryRequestPayLoad, String blogId) {
+    public void createCategory(CategoryRequestPayLoad categoryRequestPayLoad, BlogUser blogUser) {
 
         log.info("[CategoryServiceImpl] createCategory 메서드 시작");
 
@@ -48,31 +48,49 @@ public class CategoryServiceImpl implements CategoryService {
             log.info("[CategoryServiceImpl] createCategory 메서드 - 삭제할 카테고리가 있을 경우 삭제할 카테고리 분기 진행");
 
             categoryRequestPayLoad.getCategoryToDelete().forEach(this::deleteCategory);
+            List<String> deletedCategories = toBeDeletedAllCategories.get();
+            categoryRepository.deleteAllById(deletedCategories);
+
             // 삭제된 엔티티들 즉 영속성 컨텍스트 변경 사항을 즉시 DB에 반영. 이게 없으면, 프론트에서 부모에서 자식 카테고리를 없애고 해당 부모
             // 카테고리를 제거할 때 duplicate key 에러 발생
             // 만약 동일한 트랜잭션 내에서 이후에 작업이 실패하면 트랜잭션 완료가 아니기 때문에 flush로 작업한 내용도 롤백됨. 트랜잭션의 원자성
             // 보장
-            categoryRepository.flush();
+            // categoryRepository.flush();
         }
 
-        user = userFindService.findUserByBlogId(blogId);
+        if (categoryRequestPayLoad.getCategories() == null || categoryRequestPayLoad.getCategories().isEmpty()) {
 
+            log.info("[CategoryServiceImpl] createCategory 메서드 - 새롭게 생성 및 수정할 카테고리가 없는 경우 분기 진행");
+
+            return;
+        }
+
+        // 그냥 userId는 메서드 파라미터를 통해 넘기기. 전역 필드를 사용하면 싱글톤에서 공유, 동시성 이슈 등 여러 문제가 발생할 수 있음
+        Long userId = blogUser.getUserIdFromToken();
+
+        // List<Category> savedCategories = new ArrayList<>();
         long orderIndex = 0L; // 프론트측에서 요청이 오는 순서대로 orderIndex 값을 설정한다.
         // 최종적으로 프론트에서 설정한 카테고리 구조를 그대로 화면에 보여주기 위함.
         for (CategoryRequest categoryRequest : categoryRequestPayLoad.getCategories()) {
 
-            allCategories.add(saveCategoryHierarchy(categoryRequest, orderIndex));
+            // savedCategories.add(saveCategoryHierarchy(categoryRequest, orderIndex,
+            // userId));
+            toBeSavedAllCategories.get().add(saveCategoryHierarchy(categoryRequest, orderIndex, userId));
             orderIndex++;
         }
 
-        categoryRepository.saveAll(allCategories);
+        List<Category> categories = toBeSavedAllCategories.get();
+        categoryRepository.saveAll(categories);
+        toBeSavedAllCategories.remove();
+
+        // categoryRepository.saveAll(savedCategories);
 
         TransactionSynchronizationManager.registerSynchronization(
                 new TransactionSynchronization() {
                     @Override
                     public void afterCommit() {
                         // 카테고리 작업 시 캐시 무효화. 트랜잭션이 성공적으로 커밋되어야만 redis 캐시 무효화
-                        categoryResponseRedisTemplate.delete("categories:" + blogId);
+                        categoryResponseRedisTemplate.delete("categories:" + blogUser.getBlogIdFromToken());
                     }
 
                 });
@@ -81,7 +99,8 @@ public class CategoryServiceImpl implements CategoryService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<CategoryWithChildrenResponse> getAllCategoriesWithChildrenByUserId(String blogId) {
+    public List<CategoryWithChildrenResponse> getAllCategoriesWithChildrenByUserId(String blogId,
+            Long userIdFromToken) {
 
         log.info("[CategoryServiceImpl] getAllCategoriesWithChildrenByUserId 메서드 시작");
 
@@ -98,10 +117,22 @@ public class CategoryServiceImpl implements CategoryService {
 
         log.info("[CategoryServiceImpl] getAllCategoriesWithChildrenByUserId 메서드 Redis 캐시에 존재하지 않는 경우 분기 시작");
 
-        Long userId = userFindService.findUserByBlogId(blogId).getId();
+        List<CategoryWithChildrenResponse> responseCategories;
 
-        List<CategoryWithChildrenResponse> responseCategories = categoryRepository
-                .findAllWithChildrenAndPostsByUserId(userId);
+        if (userIdFromToken != null) {
+            log.info(
+                    "[CategoryServiceImpl] getAllCategoriesWithChildrenByUserId 메서드 토큰에서 추출한 userId를 통해 DB에 사용자 추가 쿼리 없이 카테고리 조회 분기 진행");
+
+            responseCategories = categoryRepository
+                    .findAllWithChildrenAndPostsByUserId(userIdFromToken);
+        } else {
+            log.info(
+                    "[CategoryServiceImpl] getAllCategoriesWithChildrenByUserId 메서드 토큰에서 추출한 userId가 null인 경우 DB에 사용자 추가 쿼리를 통해 카테고리 조회 분기 진행");
+
+            Long userIdFromDB = userFindService.findUserByBlogId(blogId).getId();
+            responseCategories = categoryRepository
+                    .findAllWithChildrenAndPostsByUserId(userIdFromDB);
+        }
 
         if (responseCategories == null || responseCategories.isEmpty()) {
 
@@ -136,6 +167,7 @@ public class CategoryServiceImpl implements CategoryService {
 
     }
 
+    // 아예 새로운 카테고리는 백엔드에 삭제 요청 안오도록 프론트에서 isNew로 구분해놨음
     @Loggable
     private void deleteCategory(CategoryRequest categoryRequest) {
 
@@ -163,29 +195,35 @@ public class CategoryServiceImpl implements CategoryService {
 
         log.info("[CategoryServiceImpl] deleteCategory 메서드 - 유효성 검사 통과 후 카테고리 삭제 진행");
 
+        toBeDeletedAllCategories.get().add(categoryRequest.getCategoryUuid());
+
         categoryRepository.deleteById(categoryRequest.getCategoryUuid());
 
     }
 
-    private void saveChildrenCategories(List<CategoryRequest> childrenRequests) {
+    private void saveChildrenCategories(List<CategoryRequest> childrenRequests, Long userId) {
 
         log.info("[CategoryServiceImpl] saveChildrenCategories 메서드 시작");
 
         long childOrderIndex = 0;
-        // List<Category> childCategories = new ArrayList<>();
+        List<Category> childCategories = new ArrayList<>();
         for (CategoryRequest childRequest : childrenRequests) {
 
-            allCategories.add(saveCategoryHierarchy(childRequest,
-                    childOrderIndex));
+            // childCategories.add(saveCategoryHierarchy(childRequest,
+            // childOrderIndex, userId));
+
+            toBeSavedAllCategories.get().add(saveCategoryHierarchy(childRequest, childOrderIndex, userId));
+
             childOrderIndex++;
 
         }
+        // categoryRepository.saveAll(childCategories);
     }
 
     // 부모 카테고리가 DB에 없는 경우 및 그 외 기타 상황 처리
     // 새롭게 요청으로 추가된 최상위 카테고리 저장 및 자식은 재귀적으로 저장.
     private Category createSingleCategory(CategoryRequest categoryRequest,
-            long orderIndex, String parentCategoryId) {
+            long orderIndex, String parentCategoryId, Long userId) {
 
         log.info("[CategoryServiceImpl] createSingleCategory 메서드 시작");
 
@@ -201,18 +239,21 @@ public class CategoryServiceImpl implements CategoryService {
         } else {
 
             log.info(
-                    "[CategoryServiceImpl] createSingleCategory 메서드: parentCategoryId가 null일 때때 분기 진행");
+                    "[CategoryServiceImpl] createSingleCategory 메서드: parentCategoryId가 null일 때 분기 진행");
 
             parentCategoryUuid = null;
         }
 
         Category category = Category.builder()
-                .id(categoryRequest.getCategoryUuid())
-                .userId(user.getId())
+                // .id(categoryRequest.getCategoryUuid()) // id값을 지정했기 때문에(jpa에서 이미 DB에 존재하는
+                // 엔티티라고 판단 isNew가 x) save 전에 추가
+                // 조회 쿼리 발생 ㅠㅠ
+                .userId(userId)
                 .name(categoryRequest.getName())
                 .parentId(parentCategoryUuid)
                 .orderIndex(orderIndex)
                 .build();
+        // category.setId(categoryRequest.getCategoryUuid());
 
         // 자식 카테고리 생성 및 저장
         if (categoryRequest.getChildren() != null && !categoryRequest.getChildren().isEmpty()) {
@@ -222,14 +263,20 @@ public class CategoryServiceImpl implements CategoryService {
 
             long childOrderIndex = 0;
 
+            // List<Category> childCategories = new ArrayList<>();
+
             for (CategoryRequest childRequest : categoryRequest.getChildren()) {
                 Category childCategory = createSingleCategory(childRequest, childOrderIndex,
-                        categoryRequest.getCategoryUuidParent());
+                        categoryRequest.getCategoryUuidParent(), userId);
 
-                allCategories.add(childCategory);
+                // childCategories.add(childCategory);
+
+                toBeSavedAllCategories.get().add(childCategory);
+
                 childOrderIndex++;
 
             }
+            // categoryRepository.saveAll(childCategories);
 
         }
 
@@ -237,7 +284,7 @@ public class CategoryServiceImpl implements CategoryService {
     }
 
     private Category saveCategoryHierarchy(CategoryRequest categoryRequest,
-            long orderIndex) {
+            long orderIndex, Long userId) {
         log.info("[CategoryServiceImpl] saveCategoryHierarchy 메서드 시작");
 
         // 부모까지 한번에 가져올 수 없는 이유는, 프론트측에서 자식까지 한번에 설정하기 때문에(즉 프론트에서 먼저 설정) 아직 DB에는 부모가
@@ -275,7 +322,7 @@ public class CategoryServiceImpl implements CategoryService {
             category.setParentId(parentCategoryUuid);
 
             if (categoryRequest.getChildren() != null && !categoryRequest.getChildren().isEmpty()) {
-                saveChildrenCategories(categoryRequest.getChildren());
+                saveChildrenCategories(categoryRequest.getChildren(), userId);
             }
 
         } else {
@@ -286,14 +333,15 @@ public class CategoryServiceImpl implements CategoryService {
 
                 log.info("[CategoryServiceImpl] saveCategoryHierarchy 메서드 DB에 카테고리가 존재하지 않는 경우 및 자식 카테고리인 경우 분기 진행");
 
-                category = createSingleCategory(categoryRequest, orderIndex, categoryRequest.getCategoryUuidParent());
+                category = createSingleCategory(categoryRequest, orderIndex, categoryRequest.getCategoryUuidParent(),
+                        userId);
             } else {
 
                 log.info(
                         "[CategoryServiceImpl] saveCategoryHierarchy 메서드 DB에 카테고리가 존재하지 않는 경우 및 최상위(부모) 카테고리인 경우 분기 진행");
 
                 // 새로운 부모 카테고리 생성
-                category = createSingleCategory(categoryRequest, orderIndex, null);
+                category = createSingleCategory(categoryRequest, orderIndex, null, userId);
             }
 
         }

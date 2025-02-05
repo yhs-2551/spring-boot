@@ -1,4 +1,4 @@
-package com.yhs.blog.springboot.jpa.domain.post.entity;
+package com.yhs.blog.springboot.jpa.domain.featured_image.entity;
 
 import com.yhs.blog.springboot.jpa.common.entity.BaseEntity;
 import jakarta.persistence.*;
@@ -18,16 +18,19 @@ public class FeaturedImage extends BaseEntity {
     private Long id;
 
     @Column(nullable = false)
-    private String fileName;   // 파일명
+    private String fileName; // 파일명
 
     @Column(nullable = false)
-    private String fileUrl;    // 파일 URL
+    private String fileUrl; // 파일 URL
 
     @Column(nullable = false)
-    private String fileType;   // 파일 타입
+    private String fileType; // 파일 타입
 
     @Column(nullable = false)
-    private Long fileSize;     // 파일 사이즈 (바이트 단위)
+    private Long fileSize; // 파일 사이즈 (바이트 단위)
+
+    @Column(name = "post_id", nullable = false)
+    private Long postId;
 
     @Builder
     public FeaturedImage(String fileName, String fileUrl, String fileType, Long fileSize) {

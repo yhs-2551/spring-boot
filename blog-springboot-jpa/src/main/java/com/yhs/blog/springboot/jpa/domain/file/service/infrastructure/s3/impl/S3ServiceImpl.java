@@ -152,13 +152,14 @@ public class S3ServiceImpl implements S3Service {
                 log.info("[S3ServiceImpl] processCreatePostS3TempOperation() - temp 이미지 삭제 분기 진행");
 
                 for (String tempFileUrl : postRequest.getDeletedImageUrlsInFuture()) {
-                    tempDeleteFile(tempFileUrl, blogId);
+                    deleteFile(tempFileUrl, blogId);
                 }
             }
 
         } catch (Exception ex) {
             // AWSS3 서버가 마비 되는거 아닌 이상 발생할 이유 없지만. 만약 발생한다면 삭제될 파일 제외하고 실제 DB에 저장된 요청온 파일을 따로
-            // DB 테이블에 저장하고 이후 temp -> final로 옮기는 배치 작업을 추가하면 됨. or 비동기 작업이 실패하면 요청 DTO를 활용해 DB에서 DTO와 일치하는 엔티티 가져온 후 업데이트 하면 됨. 나중에 추가 고려
+            // DB 테이블에 저장하고 이후 temp -> final로 옮기는 배치 작업을 추가하면 됨. or 비동기 작업이 실패하면 요청 DTO를 활용해
+            // DB에서 DTO와 일치하는 엔티티 가져온 후 업데이트 하면 됨. 나중에 추가 고려
             log.error("[S3ServiceImpl] processCreatePostS3TempOperation() - AwSS3 실패 에러", ex);
 
         }
@@ -204,7 +205,7 @@ public class S3ServiceImpl implements S3Service {
                 log.info("[S3ServiceImpl] processUpdatePostS3TempOperation() - temp 이미지 삭제 분기 진행");
 
                 for (String tempFileUrl : postUpdateRequest.getDeletedImageUrlsInFuture()) {
-                    tempDeleteFile(tempFileUrl, blogId);
+                    deleteFile(tempFileUrl, blogId);
                 }
 
             }
@@ -213,6 +214,23 @@ public class S3ServiceImpl implements S3Service {
 
             log.error("[S3ServiceImpl] processUpdatePostS3TempOperation() - AwSS3 실패 에러", ex);
 
+        }
+
+        return CompletableFuture.completedFuture(null);
+
+    }
+
+    @Override
+    public CompletableFuture<Void> processDeletePostS3Operation(List<String> toBeDeletedFileUrls, String blogId) {
+
+        try {
+            for (String toBeDeletedFileUrl : toBeDeletedFileUrls) {
+                deleteFile(toBeDeletedFileUrl, blogId);
+            }
+
+        } catch (Exception e) {
+            log.error("[S3ServiceImpl] processDeletePostS3Operation() - AwSS3 실패 에러", e);
+            
         }
 
         return CompletableFuture.completedFuture(null);
@@ -272,7 +290,7 @@ public class S3ServiceImpl implements S3Service {
 
     }
 
-    private void tempDeleteFile(String fileUrl, String blogId) {
+    private void deleteFile(String fileUrl, String blogId) {
 
         log.info("[S3ServiceImpl] tempDeleteFile() 메서드 시작");
 

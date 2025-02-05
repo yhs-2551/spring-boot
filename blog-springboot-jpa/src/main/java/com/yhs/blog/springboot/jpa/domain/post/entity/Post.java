@@ -1,10 +1,7 @@
 package com.yhs.blog.springboot.jpa.domain.post.entity;
 
-import com.yhs.blog.springboot.jpa.domain.category.entity.Category;
-import com.yhs.blog.springboot.jpa.domain.file.entity.File;
 import com.yhs.blog.springboot.jpa.domain.post.entity.enums.CommentsEnabled;
 import com.yhs.blog.springboot.jpa.domain.post.entity.enums.PostStatus;
-import com.yhs.blog.springboot.jpa.domain.user.entity.User;
 import com.yhs.blog.springboot.jpa.common.entity.BaseEntity;
 import jakarta.persistence.*;
 import lombok.*;
@@ -12,8 +9,6 @@ import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.time.LocalDateTime;
-import java.util.List;
-import java.util.Set;
 
 //나중에 첨부파일 컬럼도 추가해야 한다.
 @ToString
@@ -24,7 +19,7 @@ import java.util.Set;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Table(name = "posts", indexes = {
         @Index(name = "idx_posts_user_id", columnList = "user_id"),
-        @Index(name = "idx_posts_category_id", columnList = "category_id"),
+        @Index(name = "idx_posts_category_id", columnList = "category_id"), // 카테고리 조회시 필요해서 필수. 
         @Index(name = "idx_posts_featured_image_id", columnList = "featured_image_id")
 })
 public class Post extends BaseEntity {
@@ -46,7 +41,7 @@ public class Post extends BaseEntity {
     @Enumerated(EnumType.STRING)
     @Column(length = 10, nullable = false)
     private CommentsEnabled commentsEnabled = CommentsEnabled.ALLOW;
- 
+
     @Column(name = "featured_image_id", nullable = true) // 대표 이미지가 있을 수도, 없을 수도 있음
     private Long featuredImageId;
 
@@ -72,21 +67,15 @@ public class Post extends BaseEntity {
         this.featuredImageId = featuredImageId;
     }
 
-    public void update(Category category, String title, String content, Set<File> newFiles,
-            List<PostTag> newPostTags,
+    public void update(String categoryId, Long featuredImageId, String title, String content,
             PostStatus postStatus,
-            CommentsEnabled commentsEnabled,
-            FeaturedImage featuredImage) {
-        this.category = category;
+            CommentsEnabled commentsEnabled) {
+        this.categoryId = categoryId;
+        this.featuredImageId = featuredImageId;
         this.title = title;
         this.content = content;
-        this.files.clear();
-        this.files.addAll(newFiles);
-        this.postTags.clear();
-        this.postTags.addAll(newPostTags);
         this.postStatus = postStatus;
         this.commentsEnabled = commentsEnabled;
-        this.featuredImage = featuredImage;
     }
 
 }

@@ -1,9 +1,6 @@
 package com.yhs.blog.springboot.jpa.domain.post.dto.response;
 
-import com.yhs.blog.springboot.jpa.domain.post.entity.FeaturedImage;
-import com.yhs.blog.springboot.jpa.domain.category.entity.Category;
 import com.yhs.blog.springboot.jpa.domain.file.dto.response.FileResponse;
-import com.yhs.blog.springboot.jpa.domain.post.entity.Post;
 import com.yhs.blog.springboot.jpa.domain.post.entity.enums.PostStatus;
 
 import lombok.Getter;
@@ -11,8 +8,6 @@ import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Optional;
-import java.util.stream.Collectors;
 
 import org.springframework.lang.Nullable;
 
@@ -85,7 +80,7 @@ public class PostResponse {
                 this.createdAt = createdAt;
         }
 
-        // 게시글 수정 페이지에서 해당 게시글에 관한 정보 응답 
+        // 게시글 수정 페이지에서 해당 게시글에 관한 정보 응답
         public PostResponse(String title, String content, List<String> tags,
                         List<FileResponse> files,
                         FeaturedImageResponse featuredImage,
@@ -102,65 +97,66 @@ public class PostResponse {
         }
 
         // public static PostResponse fromForDetail(Post post) {
-        //         PostResponse response = new PostResponse();
+        // PostResponse response = new PostResponse();
 
-        //         response.title = post.getTitle();
-        //         response.content = post.getContent().replace("/temp/", "/final/");
+        // response.title = post.getTitle();
+        // response.content = post.getContent().replace("/temp/", "/final/");
 
-        //         response.tags = Optional.ofNullable(post.getPostTags())
-        //                         .map(postTags -> postTags.stream()
-        //                                         .map(postTag -> postTag.getTag().getName())
-        //                                         .collect(Collectors.toList()))
-        //                         .orElse(null);
+        // response.tags = Optional.ofNullable(post.getPostTags())
+        // .map(postTags -> postTags.stream()
+        // .map(postTag -> postTag.getTag().getName())
+        // .collect(Collectors.toList()))
+        // .orElse(null);
 
-        //         response.files = Optional.ofNullable(post.getFiles())
-        //                         .map(files -> files.stream()
-        //                                         .map(FileResponse::new)
-        //                                         .collect(Collectors.toList()))
-        //                         .orElse(null);
+        // response.files = Optional.ofNullable(post.getFiles())
+        // .map(files -> files.stream()
+        // .map(FileResponse::new)
+        // .collect(Collectors.toList()))
+        // .orElse(null);
 
-        //         response.postStatus = post.getPostStatus().name();
+        // response.postStatus = post.getPostStatus().name();
 
-        //         response.username = post.getUser().getUsername();
-        //         response.categoryName = Optional.ofNullable(post.getCategory())
-        //                         .map(Category::getName)
-        //                         .orElse(null);
+        // response.username = post.getUser().getUsername();
+        // response.categoryName = Optional.ofNullable(post.getCategory())
+        // .map(Category::getName)
+        // .orElse(null);
 
-        //         response.createdAt = post.getCreatedAt();
+        // response.createdAt = post.getCreatedAt();
 
-        //         return response;
+        // return response;
         // }
 
         // public static PostResponse fromForEdit(Post post) {
-        //         PostResponse response = new PostResponse();
+        // PostResponse response = new PostResponse();
 
-        //         response.tags = Optional.ofNullable(post.getPostTags())
-        //                         .map(postTags -> postTags.stream()
-        //                                         .map(postTag -> postTag.getTag().getName())
-        //                                         .collect(Collectors.toList()))
-        //                         .orElse(null);
+        // response.tags = Optional.ofNullable(post.getPostTags())
+        // .map(postTags -> postTags.stream()
+        // .map(postTag -> postTag.getTag().getName())
+        // .collect(Collectors.toList()))
+        // .orElse(null);
 
-        //         response.files = Optional.ofNullable(post.getFiles())
-        //                         .map(files -> files.stream()
-        //                                         .map(FileResponse::new)
-        //                                         .collect(Collectors.toList()))
-        //                         .orElse(null);
+        // response.files = Optional.ofNullable(post.getFiles())
+        // .map(files -> files.stream()
+        // .map(FileResponse::new)
+        // .collect(Collectors.toList()))
+        // .orElse(null);
 
-        //         response.postStatus = post.getPostStatus().name();
-        //         response.username = post.getUser().getUsername();
-        //         response.categoryName = Optional.ofNullable(post.getCategory())
-        //                         .map(Category::getName)
-        //                         .orElse(null);
-        //         response.title = post.getTitle();
-        //         response.content = post.getContent().replace("/temp/", "/final/");
-        //         response.featuredImage = Optional.ofNullable(post.getFeaturedImage()) // 프론트에서 수정페이지에 접근할때 대표 이미지의 정보가
-        //                                                                               // 필요함
-        //                         .map(FeaturedImageResponse::from)
-        //                         .orElse(null);
+        // response.postStatus = post.getPostStatus().name();
+        // response.username = post.getUser().getUsername();
+        // response.categoryName = Optional.ofNullable(post.getCategory())
+        // .map(Category::getName)
+        // .orElse(null);
+        // response.title = post.getTitle();
+        // response.content = post.getContent().replace("/temp/", "/final/");
+        // response.featuredImage = Optional.ofNullable(post.getFeaturedImage()) //
+        // 프론트에서 수정페이지에 접근할때 대표 이미지의 정보가
+        // // 필요함
+        // .map(FeaturedImageResponse::from)
+        // .orElse(null);
 
-        //         response.createdAt = post.getCreatedAt();
+        // response.createdAt = post.getCreatedAt();
 
-        //         return response;
+        // return response;
         // }
 
 }

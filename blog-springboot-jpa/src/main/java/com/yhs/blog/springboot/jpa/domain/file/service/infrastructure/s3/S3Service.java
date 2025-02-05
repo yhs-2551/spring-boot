@@ -6,6 +6,7 @@ import org.springframework.scheduling.annotation.Async;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
 public interface S3Service {
@@ -24,6 +25,10 @@ public interface S3Service {
 
     @Async
     CompletableFuture<Void> processUpdatePostS3TempOperation(PostUpdateRequest postUpdateRequest,
+            String blogId);
+
+    @Async
+    CompletableFuture<Void> processDeletePostS3Operation(List<String> toBeDeletedFileUrls,
             String blogId);
 
 }
