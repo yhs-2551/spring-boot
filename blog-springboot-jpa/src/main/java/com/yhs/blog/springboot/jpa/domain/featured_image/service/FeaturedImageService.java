@@ -10,6 +10,6 @@ public interface FeaturedImageService {
 
     void processDeleteFeaturedImageForUpdatePostRequest(String featuredImageFileUrl);
 
-    void processDeleteFeaturedImageForDeletePostRequest(Long postId);
+    void processDeleteFeaturedImageForDeletePostRequest(Long FeaturedImageId);
 
 }

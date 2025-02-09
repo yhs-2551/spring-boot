@@ -10,7 +10,10 @@ import org.springframework.transaction.annotation.Transactional;
 import com.yhs.blog.springboot.jpa.aop.log.Loggable;
 import com.yhs.blog.springboot.jpa.common.constant.code.ErrorCode;
 import com.yhs.blog.springboot.jpa.domain.category.service.CategoryService;
-import com.yhs.blog.springboot.jpa.domain.post.dto.response.PostResponse; 
+import com.yhs.blog.springboot.jpa.domain.post.dto.response.PostIndexAndIndexSearchResponse; 
+import com.yhs.blog.springboot.jpa.domain.post.dto.response.PostResponseForDetailPage;
+import com.yhs.blog.springboot.jpa.domain.post.dto.response.PostResponseForEditPage;
+import com.yhs.blog.springboot.jpa.domain.post.dto.response.PostUserPageResponse;
 import com.yhs.blog.springboot.jpa.domain.post.repository.PostRepository;
 import com.yhs.blog.springboot.jpa.domain.post.repository.search.SearchType;
 import com.yhs.blog.springboot.jpa.domain.post.service.PostFindService;
@@ -31,7 +34,7 @@ public class PostFindServiceImpl implements PostFindService {
 
     @Override
     @Transactional(readOnly = true)
-    public Page<PostResponse> getAllPostsSpecificUser(String blogId, String keyword, SearchType searchType,
+    public Page<PostUserPageResponse> getAllPostsSpecificUser(String blogId, String keyword, SearchType searchType,
             String categoryName,
             Pageable pageable) {
 
@@ -57,7 +60,7 @@ public class PostFindServiceImpl implements PostFindService {
 
     @Override
     @Transactional(readOnly = true)
-    public Page<PostResponse> getAllPostsAllUser(String keyword, SearchType searchType, Pageable pageable) {
+    public Page<PostIndexAndIndexSearchResponse> getAllPostsAllUser(String keyword, SearchType searchType, Pageable pageable) {
 
         log.info("[PostFindServiceImpl] getAllPostsAllUser 메서드 시작: keyword: {}, searchType: {}, pageable: {}", keyword,
                 searchType, pageable);
@@ -68,36 +71,36 @@ public class PostFindServiceImpl implements PostFindService {
     @Loggable
     @Override
     @Transactional(readOnly = true)
-    public PostResponse getPostByPostIdForDetailPage(Long postId) {
+    public PostResponseForDetailPage getPostByPostIdForDetailPage(Long postId) {
 
         log.info("[PostFindServiceImpl] getPostByPostId 메서드 시작: postId: {}", postId);
 
-        PostResponse postResponse = Optional.ofNullable(postRepository.findByIdNotWithFeaturedImage(postId))
+        PostResponseForDetailPage postResponseForDetailPage = Optional.ofNullable(postRepository.findByIdNotWithFeaturedImage(postId))
                 .orElseThrow(() -> new BusinessException(
                         ErrorCode.POST_NOT_FOUND,
                         postId + "번 게시글을 찾을 수 없습니다.",
                         "PostFindServiceImpl",
                         "getPostByPostIdForDetailPage"));
 
-        return postResponse;
+        return postResponseForDetailPage;
 
     }
 
     @Loggable
     @Override
     @Transactional(readOnly = true)
-    public PostResponse getPostByPostIdForEditPage(Long postId) {
+    public PostResponseForEditPage getPostByPostIdForEditPage(Long postId) {
 
         log.info("[PostFindServiceImpl] getPostByPostId 메서드 시작: postId: {}", postId);
 
-        PostResponse postResponse = Optional.ofNullable(postRepository.findByIdWithFeaturedImage(postId))
+        PostResponseForEditPage postResponseFroEditPage = Optional.ofNullable(postRepository.findByIdWithFeaturedImage(postId))
                 .orElseThrow(() -> new BusinessException(
                         ErrorCode.POST_NOT_FOUND,
                         postId + "번 게시글을 찾을 수 없습니다.",
                         "PostFindServiceImpl",
                         "getPostByPostId"));
 
-        return postResponse;
+        return postResponseFroEditPage;
 
     }
 

@@ -32,6 +32,7 @@ public class CategoryServiceImpl implements CategoryService {
     private final CategoryRepository categoryRepository;
     private final UserFindService userFindService;
     private final RedisTemplate<String, List<CategoryWithChildrenResponse>> categoryResponseRedisTemplate;
+    // 전역 멤버 변수를 사용하면 동시성 문제가 있을 수 있기 때문에, 메모리를 조금 더 사용하지만 안전하게 ThreadLocal 사용
     private final ThreadLocal<List<Category>> toBeSavedAllCategories = ThreadLocal.withInitial(ArrayList::new);
     private final ThreadLocal<List<String>> toBeDeletedAllCategories = ThreadLocal.withInitial(ArrayList::new);
 
@@ -49,7 +50,7 @@ public class CategoryServiceImpl implements CategoryService {
 
             categoryRequestPayLoad.getCategoryToDelete().forEach(this::deleteCategory);
             List<String> deletedCategories = toBeDeletedAllCategories.get();
-            categoryRepository.deleteAllById(deletedCategories);
+            categoryRepository.deleteAllByCategoryId(deletedCategories);
 
             // 삭제된 엔티티들 즉 영속성 컨텍스트 변경 사항을 즉시 DB에 반영. 이게 없으면, 프론트에서 부모에서 자식 카테고리를 없애고 해당 부모
             // 카테고리를 제거할 때 duplicate key 에러 발생
@@ -99,8 +100,7 @@ public class CategoryServiceImpl implements CategoryService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<CategoryWithChildrenResponse> getAllCategoriesWithChildrenByUserId(String blogId,
-            Long userIdFromToken) {
+    public List<CategoryWithChildrenResponse> getAllCategoriesWithChildrenByUserId(String blogId) {
 
         log.info("[CategoryServiceImpl] getAllCategoriesWithChildrenByUserId 메서드 시작");
 
@@ -119,20 +119,9 @@ public class CategoryServiceImpl implements CategoryService {
 
         List<CategoryWithChildrenResponse> responseCategories;
 
-        if (userIdFromToken != null) {
-            log.info(
-                    "[CategoryServiceImpl] getAllCategoriesWithChildrenByUserId 메서드 토큰에서 추출한 userId를 통해 DB에 사용자 추가 쿼리 없이 카테고리 조회 분기 진행");
-
-            responseCategories = categoryRepository
-                    .findAllWithChildrenAndPostsByUserId(userIdFromToken);
-        } else {
-            log.info(
-                    "[CategoryServiceImpl] getAllCategoriesWithChildrenByUserId 메서드 토큰에서 추출한 userId가 null인 경우 DB에 사용자 추가 쿼리를 통해 카테고리 조회 분기 진행");
-
-            Long userIdFromDB = userFindService.findUserByBlogId(blogId).getId();
-            responseCategories = categoryRepository
-                    .findAllWithChildrenAndPostsByUserId(userIdFromDB);
-        }
+        Long userId = userFindService.findUserByBlogId(blogId).getId();
+        responseCategories = categoryRepository
+                .findAllWithChildrenAndPostsByUserId(userId);
 
         if (responseCategories == null || responseCategories.isEmpty()) {
 
@@ -197,8 +186,6 @@ public class CategoryServiceImpl implements CategoryService {
 
         toBeDeletedAllCategories.get().add(categoryRequest.getCategoryUuid());
 
-        categoryRepository.deleteById(categoryRequest.getCategoryUuid());
-
     }
 
     private void saveChildrenCategories(List<CategoryRequest> childrenRequests, Long userId) {
@@ -244,10 +231,9 @@ public class CategoryServiceImpl implements CategoryService {
             parentCategoryUuid = null;
         }
 
+        // .id(categoryRequest.getCategoryUuid()) // id값을 먼저 지정하면 (jpa에서 이미 DB에 존재하는
+        // 엔티티라고 판단 isNew가 x). 따라서 save 전에 추가 조회 쿼리 발생 ㅠㅠ
         Category category = Category.builder()
-                // .id(categoryRequest.getCategoryUuid()) // id값을 지정했기 때문에(jpa에서 이미 DB에 존재하는
-                // 엔티티라고 판단 isNew가 x) save 전에 추가
-                // 조회 쿼리 발생 ㅠㅠ
                 .userId(userId)
                 .name(categoryRequest.getName())
                 .parentId(parentCategoryUuid)

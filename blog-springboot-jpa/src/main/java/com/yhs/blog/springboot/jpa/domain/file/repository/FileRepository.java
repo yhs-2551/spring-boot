@@ -16,16 +16,18 @@ public interface FileRepository extends JpaRepository<File, Long> {
     void deleteByFileUrl(@Param("fileUrl") String fileUrl);
 
     @Modifying
-    @Query("DELETE FROM File f WHERE f.postId = :postId")
-    void deleteFilesByPostId(@Param("postId") Long postId);
+    @Query("DELETE FROM File f WHERE f.fileUrl IN :fileUrls")
+    void deleteByFileUrlInBatch(List<String> fileUrls);
 
-    // 한번에 postId 게시글에 관련된 모든 파일 삭제
     @Modifying
     @Query("DELETE FROM File f WHERE f.postId = :postId")
-    void deleteByPostId(@Param("postId") Long postId);
+    void deleteFilesByPostId(@Param("postId") Long postId);
 
     // 업데이트에서 전체 fileUrl 목록 불러올 때 필요, 삭제할 때 url을 조회하고, s3에서 삭제될 수 있도록 함
     @Query("SELECT f.fileUrl FROM File f WHERE f.postId = :postId")
     List<String> findFileUrlsByPostId(@Param("postId") Long postId);
+
+    // 한번에 postId 게시글에 관련된 모든 파일 조회 -> 이후 삭제. 게시글에 파일이 없을수도 있기 때문에 조회해야함
+    List<File> findAllByPostId(Long postId);
 
 }

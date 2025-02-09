@@ -10,7 +10,7 @@ import java.util.List;
 public interface CategoryService {
     void createCategory(CategoryRequestPayLoad categoryRequestPayLoad, BlogUser blogUser);
 
-    List<CategoryWithChildrenResponse> getAllCategoriesWithChildrenByUserId(String blogId, Long userId);
+    List<CategoryWithChildrenResponse> getAllCategoriesWithChildrenByUserId(String blogId);
 
     Category findCategoryByNameAndUserId(String categoryName, Long userId);
 

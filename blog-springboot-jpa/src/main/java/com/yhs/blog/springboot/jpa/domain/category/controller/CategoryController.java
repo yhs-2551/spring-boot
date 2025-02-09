@@ -1,7 +1,6 @@
 package com.yhs.blog.springboot.jpa.domain.category.controller;
 
-import com.yhs.blog.springboot.jpa.domain.auth.token.provider.user.BlogUser;
-import com.yhs.blog.springboot.jpa.domain.auth.token.util.TokenUtil;
+import com.yhs.blog.springboot.jpa.domain.auth.token.provider.user.BlogUser; 
 import com.yhs.blog.springboot.jpa.domain.category.dto.request.CategoryRequestPayLoad;
 import com.yhs.blog.springboot.jpa.domain.category.dto.response.CategoryWithChildrenResponse;
 import com.yhs.blog.springboot.jpa.aop.performance.MeasurePerformance;
@@ -35,10 +34,8 @@ import java.util.List;
 public class CategoryController {
 
         private final CategoryService categoryService;
-        private final TokenUtil tokenUtil;
 
- 
-        // 카테고리 1000개 기준 Redis로 캐시 평균 속도 10ms이내, Redis캐시 미사용시 25ms(인덱스, 연관관계 매핑 제거후 등 여기에 정리 필요)
+        // CUD작업시 jpa 내부 구현 동작인 조회 후 업데이트(조회후 변경되지 않았으면 업데이트 추가 쿼리x), 새롭게 데이터 insert쿼리, 삭제시 jpa 원래 기능: 조회 후 삭제 -> 조회 없이 바로 삭제하도록 JPQL로 구현. 
         @Operation(summary = "카테고리 생성, 수정, 삭제 요청 처리", description = "사용자가 카테고리를 (생성, 수정, 삭제) 요청을 보내면 해당 요청을 처리")
         @ApiResponses(value = {
                         @ApiResponse(responseCode = "201", description = "카테고리 작업 성공", content = @Content(schema = @Schema(implementation = SuccessResponse.class))),
@@ -68,7 +65,7 @@ public class CategoryController {
         // 특정 사용자의 모든 카테고리 조회. 모든 사용자가 볼 수 있어야 해서 preauthorize 제거
         // 상대적으로 자주 조회되며, 변경이 적은 데이터 redis사용 미세한 속도 개선 및 DB 부하 감소
         // Cateogry를 가져올때 자식 및 연관된 게시글을 LEFT JOIN FETCH로 가져옴으로써 N+1 문제 해결 및 네트워크
-        // 요청감소, 성능 향상.
+        // 요청감소, 성능 향상. -> 관계 매핑 제거 변경 후, 카테고리 1000개 기준 Redis로 캐시 평균 속도 10ms이내, Redis캐시 미사용시 25ms. 조회 시 한번의 쿼리안에 서브쿼리까지 포함, 필요한 컬럼(필드)만 조회해서 최적화, 조회시 필요한 인덱스 사용. 데이터 양이 많지 않아 인덱스를 위한 공간이 부담스럽지 않다고 판단  
         @Operation(summary = "카테고리 조회 요청 처리", description = "사용자가 카테고리 조회 요청을 보내면 해당 요청을 처리")
         @ApiResponses(value = {
                         @ApiResponse(responseCode = "200", description = "카테고리 조회 성공", content = @Content(schema = @Schema(implementation = SuccessResponse.class))),
@@ -81,28 +78,8 @@ public class CategoryController {
 
                 log.info("[CategoryController] getAllCategoriesWithChildrenByUserId() 요청");
 
-                log.info("blogId>>>>> {}", blogId);
-
-                String blogIdFromToken = tokenUtil.extractBlogIdFromRequestToken(request);
-
-                log.info("blogIdFromToken>>>>> {}", blogIdFromToken);
-
-                if (blogId.equals(blogIdFromToken)) { // 경로 blogId와 토큰에서 추출한 blogId값이 같으면 토큰에서 추출한 userId를 서비스단으로 넘겨주어 DB 추가 쿼리 없이 해당 userId로 바로 조회
-
-                        Long userIdFromToken = tokenUtil.extractUserIdFromRequestToken(request);
-
-                        log.info("userIdFromToken>>>>> {}", userIdFromToken);
-
-                        List<CategoryWithChildrenResponse> categories = categoryService
-                                        .getAllCategoriesWithChildrenByUserId(blogId, userIdFromToken);
-
-                        return ResponseEntity.status(HttpStatus.OK)
-                                        .body(new SuccessResponse<List<CategoryWithChildrenResponse>>(categories,
-                                                        "카테고리 조회에 성공하였습니다."));
-                }
-
                 List<CategoryWithChildrenResponse> categories = categoryService
-                                .getAllCategoriesWithChildrenByUserId(blogId, null);
+                                .getAllCategoriesWithChildrenByUserId(blogId);
 
                 return ResponseEntity.status(HttpStatus.OK)
                                 .body(new SuccessResponse<List<CategoryWithChildrenResponse>>(categories,

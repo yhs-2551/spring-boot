@@ -50,6 +50,7 @@ public class TokenAuthenticationFilter extends OncePerRequestFilter {
                                                 requestURI.matches("/api/[^/]+/posts") ||
                                                 requestURI.matches("/api/[^/]+/posts/page/[^/]+") ||
                                                 requestURI.matches("/api/[^/]+/posts/[^/]+") ||
+                                                requestURI.matches("/api/[^/]+/posts/[^/]+/edit") ||
                                                 requestURI.matches("/api/[^/]+/categories") ||
                                                 requestURI.matches("/api/[^/]+/categories/[^/]+/posts") ||
                                                 requestURI.matches("/api/[^/]+/categories/[^/]+/posts/page/[^/]+") ||

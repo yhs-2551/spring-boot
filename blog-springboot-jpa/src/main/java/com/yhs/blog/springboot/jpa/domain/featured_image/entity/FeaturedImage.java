@@ -29,9 +29,6 @@ public class FeaturedImage extends BaseEntity {
     @Column(nullable = false)
     private Long fileSize; // 파일 사이즈 (바이트 단위)
 
-    @Column(name = "post_id", nullable = false)
-    private Long postId;
-
     @Builder
     public FeaturedImage(String fileName, String fileUrl, String fileType, Long fileSize) {
         this.fileName = fileName;

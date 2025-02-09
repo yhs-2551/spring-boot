@@ -16,8 +16,10 @@ import com.yhs.blog.springboot.jpa.aop.performance.MeasurePerformance;
 import com.yhs.blog.springboot.jpa.common.response.BaseResponse;
 import com.yhs.blog.springboot.jpa.common.response.ErrorResponse;
 import com.yhs.blog.springboot.jpa.common.response.SuccessResponse;
-import com.yhs.blog.springboot.jpa.domain.post.dto.response.PageResponse;
-import com.yhs.blog.springboot.jpa.domain.post.dto.response.PostResponse;
+import com.yhs.blog.springboot.jpa.domain.post.dto.response.PageResponse; 
+import com.yhs.blog.springboot.jpa.domain.post.dto.response.PostResponseForDetailPage;
+import com.yhs.blog.springboot.jpa.domain.post.dto.response.PostResponseForEditPage;
+import com.yhs.blog.springboot.jpa.domain.post.dto.response.PostUserPageResponse;
 import com.yhs.blog.springboot.jpa.domain.post.repository.search.SearchType;
 import com.yhs.blog.springboot.jpa.domain.post.service.PostFindService;
 
@@ -44,8 +46,8 @@ public class PostFindController {
         // 응답 DTO 필요한 데이터만 남겨서 1000건 데이터 기준 평균 4000ms -> 1800ms로 성능 개선
         // Projections.constructor을 사용하여 Entity전체가 아닌 필요한 컬럼만 조회, 연관 엔티티 추가 조회 없음(N+1문제
         // 해결), 조인으로 한 번에 데이터 조회로 성능 개선
-        // 이에 따라 1800ms -> 600ms로 성능 개선
-        // featuredImage 응답 DTO구조 featuredImage의 fileUrl만 리턴할 수 있도록 하면 좋음
+        // 이에 따라 1800ms -> 600ms로 성능 개선 
+        // 연관관계 매핑 제거, 필요한 필드만 조회, 인덱스 설정으로 응답 시간 5ms~10ms로 성능 개선(1000건 데이터 기준)
         @Operation(summary = "모든 사용자의 게시글 조회 요청 처리", description = "사용자가 모든 사용자의 게시글을 조회 요청을 보내면 해당 요청을 처리")
         @ApiResponses(value = {
                         @ApiResponse(responseCode = "200", description = "모든 사용자 게시글 조회 응답 성공", content = @Content(schema = @Schema(implementation = SuccessResponse.class))),
@@ -69,7 +71,7 @@ public class PostFindController {
 
                 log.info("[PostFindController] findAllPosts() 요청");
 
-                Page<PostResponse> postResponses;
+                Page<?> postResponses;
 
                 if (blogId != null) {
 
@@ -77,12 +79,14 @@ public class PostFindController {
                         // 특정 사용자 즉 정확한 해당 사용자의 게시글만 조회 가능하도록 구현(blogId 사용)
                         if (category != null) {
 
-                                postResponses = postFindService.getAllPostsSpecificUser(blogId, keyword, searchType,
+                                postResponses = postFindService.getAllPostsSpecificUser(blogId, keyword,
+                                                searchType,
                                                 category,
                                                 pageable);
                         } else {
 
-                                postResponses = postFindService.getAllPostsSpecificUser(blogId, keyword, searchType,
+                                postResponses = postFindService.getAllPostsSpecificUser(blogId, keyword,
+                                                searchType,
                                                 null,
                                                 pageable);
                         }
@@ -93,7 +97,7 @@ public class PostFindController {
 
                 }
 
-                PageResponse<PostResponse> pageResponse = new PageResponse<>(postResponses);
+                PageResponse<?> pageResponse = new PageResponse<>(postResponses);
 
                 return ResponseEntity.ok(new SuccessResponse<>(pageResponse, "게시글 응답에 성공하였습니다."));
         }
@@ -127,11 +131,11 @@ public class PostFindController {
                                 pageable.getPageSize(),
                                 pageable.getSort());
 
-                Page<PostResponse> postResponses = postFindService.getAllPostsSpecificUser(blogId, null, null,
+                Page<PostUserPageResponse> postResponses = postFindService.getAllPostsSpecificUser(blogId, null, null,
                                 null,
                                 pageRequest);
 
-                PageResponse<PostResponse> pageResponse = new PageResponse<>(postResponses);
+                PageResponse<PostUserPageResponse> pageResponse = new PageResponse<>(postResponses);
 
                 return ResponseEntity.ok(new SuccessResponse<>(pageResponse, page + "번 페이지 게시글 응답에 성공하였습니다."));
         }
@@ -156,10 +160,11 @@ public class PostFindController {
 
                 log.info("[PostFindController] getPostsByCategoryAndUser() 요청");
 
-                Page<PostResponse> postResponses = postFindService.getAllPostsSpecificUser(blogId, null, null, category,
+                Page<PostUserPageResponse> postResponses = postFindService.getAllPostsSpecificUser(blogId, null, null,
+                                category,
                                 pageable);
 
-                PageResponse<PostResponse> pageResponse = new PageResponse<>(postResponses);
+                PageResponse<PostUserPageResponse> pageResponse = new PageResponse<>(postResponses);
 
                 return ResponseEntity.ok(new SuccessResponse<>(pageResponse, "특정 카테고리별 게시글 응답에 성공하였습니다."));
         }
@@ -193,11 +198,11 @@ public class PostFindController {
                                 pageable.getPageSize(),
                                 pageable.getSort());
 
-                Page<PostResponse> postResponses = postFindService.getAllPostsSpecificUser(blogId, null, null,
+                Page<PostUserPageResponse> postResponses = postFindService.getAllPostsSpecificUser(blogId, null, null,
                                 category,
                                 pageRequest);
 
-                PageResponse<PostResponse> pageResponse = new PageResponse<>(postResponses);
+                PageResponse<PostUserPageResponse> pageResponse = new PageResponse<>(postResponses);
 
                 return ResponseEntity.ok(new SuccessResponse<>(pageResponse,
                                 String.format("%s 카테고리 %d번 페이지 게시글 응답에 성공하였습니다.", category, page)));
@@ -215,9 +220,11 @@ public class PostFindController {
 
                 log.info("[PostFindController] findPostByPostIdForDetailPage() 요청");
 
-                PostResponse postResponse = postFindService.getPostByPostIdForDetailPage(postId);
+                PostResponseForDetailPage postResponseForDetailPage = postFindService
+                                .getPostByPostIdForDetailPage(postId);
 
-                return ResponseEntity.ok().body(new SuccessResponse<>(postResponse, "상세 페이지 게시글 조회 응답에 성공하였습니다."));
+                return ResponseEntity.ok()
+                                .body(new SuccessResponse<>(postResponseForDetailPage, "상세 페이지 게시글 조회 응답에 성공하였습니다."));
         }
 
         @Operation(summary = "특정 사용자의 수정 페이지에 대한 단일 게시글 정보 조회 요청 처리", description = "사용자가 수정 페이지의 게시글 정보 조회 요청을 보내면 해당 요청을 처리")
@@ -232,9 +239,10 @@ public class PostFindController {
 
                 log.info("[PostFindController] findPostByPostIdForEditPage() 요청");
 
-                PostResponse postResponse = postFindService.getPostByPostIdForEditPage(postId);
+                PostResponseForEditPage postResponseForEditPage = postFindService.getPostByPostIdForEditPage(postId);
 
-                return ResponseEntity.ok().body(new SuccessResponse<>(postResponse, "수정 페이지 게시글 조회 응답에 성공하였습니다."));
+                return ResponseEntity.ok()
+                                .body(new SuccessResponse<>(postResponseForEditPage, "수정 페이지 게시글 조회 응답에 성공하였습니다."));
         }
 
 }

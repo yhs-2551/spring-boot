@@ -20,8 +20,7 @@ import com.yhs.blog.springboot.jpa.common.response.ErrorResponse;
 import com.yhs.blog.springboot.jpa.common.response.SuccessResponse;
 import com.yhs.blog.springboot.jpa.domain.auth.token.provider.user.BlogUser;
 import com.yhs.blog.springboot.jpa.domain.post.dto.request.PostRequest;
-import com.yhs.blog.springboot.jpa.domain.post.dto.request.PostUpdateRequest;
-import com.yhs.blog.springboot.jpa.domain.post.dto.response.PostResponse;
+import com.yhs.blog.springboot.jpa.domain.post.dto.request.PostUpdateRequest; 
 import com.yhs.blog.springboot.jpa.domain.post.service.PostOperationService;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -66,7 +65,7 @@ public class PostOperationController {
 
                 // 아래 응답에서 일단 responseDTO를 사용하고 있지만, 나중에는 그냥 문자열로만 응답하도록 수정할수도 있음.
                 return ResponseEntity.status(HttpStatus.CREATED)
-                                .body(new SuccessResponse<PostResponse>("게시글 생성에 성공 하였습니다."));
+                                .body(new SuccessResponse<>("게시글 생성에 성공 하였습니다."));
         }
 
         @Operation(summary = "특정 사용자의 단일 게시글 삭제 요청 처리", description = "특정 사용자의 단일 게시글 삭제 요청 처리")

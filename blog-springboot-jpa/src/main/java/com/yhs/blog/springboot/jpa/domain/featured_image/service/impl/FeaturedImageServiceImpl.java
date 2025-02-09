@@ -92,11 +92,12 @@ public class FeaturedImageServiceImpl implements FeaturedImageService {
     }
 
     @Override
-    public void processDeleteFeaturedImageForDeletePostRequest(Long postId) {
+    public void processDeleteFeaturedImageForDeletePostRequest(Long featuredImageId) {
         
         log.info("[FeaturedImageServiceImpl] processDeleteFeaturedImageForDeletePostRequest 시작");
 
-        featuredImageRepository.deleteFeaturedImageByPostId(postId);
+        // 단일 삭제 시 조회 이후 삭제하기 때문에 불필요한 조회 쿼리 발생. 따라서 추가 조회 없는 벌크 삭제 사용 
+        featuredImageRepository.deleteByIdInBatch(featuredImageId);
     }
 
     private FeaturedImage processFeaturedImage(FeaturedImageRequest featuredImageRequest) {

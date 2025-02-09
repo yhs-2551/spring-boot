@@ -9,6 +9,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
@@ -21,9 +22,8 @@ public interface TagRepository extends JpaRepository<Tag, Long> {
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     Optional<Tag> findByName(String tagName);
 
-    @Modifying
     @Query("""
-                DELETE FROM Tag t
+                SELECT t FROM Tag t
                 WHERE t.name IN :tagNames
                 AND NOT EXISTS (
                     SELECT 1 FROM PostTag pt
@@ -31,18 +31,25 @@ public interface TagRepository extends JpaRepository<Tag, Long> {
                     AND (pt.postId <> :postId)
                 )
             """)
-    List<Tag> deleteUnusedTagsByTagNames(@Param("tagNames") List<String> tagNames, @Param("postId") Long postId);
+    List<Tag> findUnusedTagsByTagNames(@Param("tagNames") List<String> tagNames, @Param("postId") Long postId);
 
-    @Modifying
     @Query("""
-                DELETE FROM Tag t
+                SELECT t FROM Tag t
                 WHERE NOT EXISTS (
                     SELECT 1 FROM PostTag pt
                     WHERE pt.tagId = t.id
                     AND pt.postId != :postId
                 )
             """)
-    void deleteUnusedTagsByPostId(@Param("postId") Long postId);
+    List<Tag> findUnusedTagsByPostId(@Param("postId") Long postId);
+
+    @Modifying
+    @Query("DELETE FROM Tag t WHERE t.name IN :tagNames")
+    void deleteByTagNames(@Param("tagNames") List<String> tagNames);
+
+    @Query("DELETE FROM Tag t WHERE t IN :tags")
+    @Modifying
+    void deleteAllTags(@Param("tags") Collection<Tag> tags);
 
     // Select다음에 1은 존재 유무만 판단, AND NOT EXIST뒤에 있는 서브쿼리가 결과를 찾지 못하면(false 반환) AND NOT
     // EXIST가 true. 쉽게 찾지 못하면 AND NOT EXIST는 FALSE의 반대인 TRUE

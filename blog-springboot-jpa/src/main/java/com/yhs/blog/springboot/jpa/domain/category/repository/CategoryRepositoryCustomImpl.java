@@ -1,32 +1,20 @@
 package com.yhs.blog.springboot.jpa.domain.category.repository;
 
-import java.util.ArrayList;
-import java.util.Collection;
+import java.util.ArrayList; 
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.stream.Collectors;
-
-import org.springframework.stereotype.Repository;
-
-import com.querydsl.core.Tuple;
-import com.querydsl.core.group.GroupBy;
-import com.querydsl.core.types.Projections;
-import com.querydsl.core.types.dsl.Coalesce;
-import com.querydsl.core.types.dsl.Expressions;
-import com.querydsl.core.types.dsl.NumberTemplate;
-import com.querydsl.jpa.JPAExpressions;
-import com.querydsl.jpa.JPQLQuery;
+import java.util.Map;  
+import org.springframework.stereotype.Repository; 
+import com.querydsl.core.Tuple; 
+import com.querydsl.jpa.JPAExpressions; 
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import com.yhs.blog.springboot.jpa.common.constant.code.ErrorCode;
 import com.yhs.blog.springboot.jpa.domain.category.dto.response.CategoryChildResponse;
 import com.yhs.blog.springboot.jpa.domain.category.dto.response.CategoryWithChildrenResponse;
 import com.yhs.blog.springboot.jpa.domain.category.entity.QCategory;
 import com.yhs.blog.springboot.jpa.domain.post.entity.QPost;
-import com.yhs.blog.springboot.jpa.exception.custom.SystemException;
-
+import com.yhs.blog.springboot.jpa.exception.custom.SystemException; 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 
@@ -39,6 +27,7 @@ public class CategoryRepositoryCustomImpl implements CategoryRepositoryCustom {
 
     // 사용자의 모든 카테고리를 가져오며, 카테고리의 자식 카테고리와 포스트의 총 갯수도 함께 가져옴
     // 아래 querydsl의 groupy list를 사용하는 방식도 있는데, 오류가 자꾸 나서 JPAExpression + Tuple사용. 한번의 쿼리안에 서브쿼리(부모, 자식 총 게시글 개수)까지 포함하며 필요한 컬럼(필드)만 가져옴. 즉 최적화 완료
+    // 또한 아래 tuple 방식 일단 사용하는데, 나중에 @QueryProjection 방식 사용 고려. 아래 코드 적용한 후에 알게 되었음
     @Override
     public List<CategoryWithChildrenResponse> findAllWithChildrenAndPostsByUserId(Long userId) {
 

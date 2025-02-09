@@ -3,6 +3,7 @@ package com.yhs.blog.springboot.jpa.domain.file.service.impl;
 import java.io.IOException;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -207,12 +208,22 @@ public class FileServiceImpl implements FileService {
         }
     }
 
+    // 리턴값이 필요해서 조회 꼭 필요, 만약 리턴값이 필요 없었다면 바로 벌크로 삭제
     @Override
     public List<String> processDeleteFilesForDeletePostRequest(Long postId) {
         log.info("[FileServiceImpl] processDeleteFilesForDeletePostRequest() 메서드 시작");
-        fileRepository.deleteByPostId(postId);
-        return fileRepository.findFileUrlsByPostId(postId);
 
+        List<File> files = fileRepository.findAllByPostId(postId);
+
+        if (files == null || files.isEmpty()) {
+            return null;
+        }
+
+        List<String> fileUrls = files.stream().map(File::getFileUrl).collect(Collectors.toList());
+
+        fileRepository.deleteAll(files);
+
+        return fileUrls;
     }
 
     private String getKeyFromUrl(String url) {
@@ -229,6 +240,8 @@ public class FileServiceImpl implements FileService {
     private void processDeletedImages(List<String> deletedUrls) {
         log.info("[FileServiceImpl] processDeletedImages 메서드 시작");
 
+        List<String> toBeDeletedFileUrl = new ArrayList<>();
+
         for (String url : deletedUrls) {
             if (url.contains("/final/featured/")) {
 
@@ -238,16 +251,19 @@ public class FileServiceImpl implements FileService {
                 // JPQL로 직접 작성해야함. find류, exists류, count류만 필드명에 매핑시켜서 자동 생성 - find류도 기본 제공 외
                 // 메서드명은 repository에 정의되어 있어야함
                 featuredImageService.processDeleteFeaturedImageForUpdatePostRequest(url);
-            } else if (url.contains("/final/images/")) {
-                log.info("[FileServiceImpl] processDeletedImages - 이미지 파일 삭제 분기 진행");
-                // 이미지 파일 처리
-                fileRepository.deleteByFileUrl(url);
-            } else if (url.contains("/final/files/")) {
-                log.info("[FileServiceImpl] processDeletedImages - 일반 파일 삭제 분기 진행");
-                // 일반 파일 처리
-                fileRepository.deleteByFileUrl(url);
+            } else {
+                // 이미지 및 파일 처리
+                log.info("[FileServiceImpl] processDeletedImages - 이미지 및 파일 삭제 분기 진행");
+                toBeDeletedFileUrl.add(url);
             }
+
         }
+
+        if (toBeDeletedFileUrl.isEmpty() || toBeDeletedFileUrl == null) {
+            return;
+        }
+
+        fileRepository.deleteByFileUrlInBatch(toBeDeletedFileUrl);
     }
 
 }

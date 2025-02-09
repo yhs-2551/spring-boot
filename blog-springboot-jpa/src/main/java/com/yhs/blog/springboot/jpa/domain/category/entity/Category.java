@@ -3,9 +3,6 @@ package com.yhs.blog.springboot.jpa.domain.category.entity;
 import com.yhs.blog.springboot.jpa.common.entity.BaseEntity;
 import jakarta.persistence.*;
 import lombok.*;
-
-import org.hibernate.annotations.GenericGenerator;
-import org.hibernate.annotations.IdGeneratorType;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 import java.time.LocalDateTime;
@@ -33,7 +30,7 @@ import java.util.UUID;
 public class Category extends BaseEntity {
 
     @Id
-    @Column(nullable = false, length = 36, unique = true)
+    @Column(nullable = false, length = 36)
     private String id;
 
     @PrePersist

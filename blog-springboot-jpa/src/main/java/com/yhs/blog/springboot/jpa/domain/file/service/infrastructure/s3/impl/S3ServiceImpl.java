@@ -223,6 +223,10 @@ public class S3ServiceImpl implements S3Service {
     @Override
     public CompletableFuture<Void> processDeletePostS3Operation(List<String> toBeDeletedFileUrls, String blogId) {
 
+        if (toBeDeletedFileUrls == null || toBeDeletedFileUrls.isEmpty()) {
+            return CompletableFuture.completedFuture(null);
+        }
+
         try {
             for (String toBeDeletedFileUrl : toBeDeletedFileUrls) {
                 deleteFile(toBeDeletedFileUrl, blogId);
@@ -230,7 +234,7 @@ public class S3ServiceImpl implements S3Service {
 
         } catch (Exception e) {
             log.error("[S3ServiceImpl] processDeletePostS3Operation() - AwSS3 실패 에러", e);
-            
+
         }
 
         return CompletableFuture.completedFuture(null);

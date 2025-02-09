@@ -3,18 +3,21 @@ package com.yhs.blog.springboot.jpa.domain.post.service;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
-import com.yhs.blog.springboot.jpa.domain.post.dto.response.PostResponse;
+import com.yhs.blog.springboot.jpa.domain.post.dto.response.PostIndexAndIndexSearchResponse; 
+import com.yhs.blog.springboot.jpa.domain.post.dto.response.PostResponseForDetailPage;
+import com.yhs.blog.springboot.jpa.domain.post.dto.response.PostResponseForEditPage;
+import com.yhs.blog.springboot.jpa.domain.post.dto.response.PostUserPageResponse;
 import com.yhs.blog.springboot.jpa.domain.post.repository.search.SearchType;
 
 public interface PostFindService {
 
-    Page<PostResponse> getAllPostsSpecificUser(String blogId, String keyword, SearchType searchType,
+    Page<PostUserPageResponse> getAllPostsSpecificUser(String blogId, String keyword, SearchType searchType,
             String categoryName, Pageable pageable);
 
-    Page<PostResponse> getAllPostsAllUser(String keyword, SearchType searchType, Pageable pageable);
+    Page<PostIndexAndIndexSearchResponse> getAllPostsAllUser(String keyword, SearchType searchType, Pageable pageable);
 
-    PostResponse getPostByPostIdForDetailPage(Long postId);
+    PostResponseForDetailPage getPostByPostIdForDetailPage(Long postId);
 
-    PostResponse getPostByPostIdForEditPage(Long postId);
+    PostResponseForEditPage getPostByPostIdForEditPage(Long postId);
 
 }

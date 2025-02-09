@@ -10,7 +10,7 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.time.LocalDateTime;
 
-//나중에 첨부파일 컬럼도 추가해야 한다.
+// 연관관계 매핑을 사용하지 않아 직접 alter table을 통해 외래키 제약조건 설정해야하고,
 @ToString
 @EntityListeners(AuditingEntityListener.class)
 @Getter
@@ -18,9 +18,10 @@ import java.time.LocalDateTime;
 @Entity
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Table(name = "posts", indexes = {
+        @Index(name = "idx_post_created_at_id", columnList = "created_at DESC, id DESC"), // explain에서 사용되진 않았는데, 혹시 다른데서 사용될 수 있으니 보류 
         @Index(name = "idx_posts_user_id", columnList = "user_id"),
-        @Index(name = "idx_posts_category_id", columnList = "category_id"), // 카테고리 조회시 필요해서 필수. 
-        @Index(name = "idx_posts_featured_image_id", columnList = "featured_image_id")
+        @Index(name = "idx_posts_category_id", columnList = "category_id"), // 카테고리조회시 필요해서 필수.
+        @Index(name = "idx_posts_featured_image_id", columnList = "featured_image_id"),
 })
 public class Post extends BaseEntity {
     @Id
@@ -42,7 +43,7 @@ public class Post extends BaseEntity {
     @Column(length = 10, nullable = false)
     private CommentsEnabled commentsEnabled = CommentsEnabled.ALLOW;
 
-    @Column(name = "featured_image_id", nullable = true) // 대표 이미지가 있을 수도, 없을 수도 있음
+    @Column(name = "featured_image_id", nullable = true) // 대표 이미지가 있을 수도, 없을 수도 있음 
     private Long featuredImageId;
 
     @Column(name = "user_id", nullable = false)

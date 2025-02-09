@@ -2,6 +2,7 @@ package com.yhs.blog.springboot.jpa.domain.category.dto.response;
 
 import java.util.List;
 
+// 나중에 @QueryProjection 사용 고려. @QueryProjection이 더 나을 듯
 public record CategoryWithChildrenResponse(
                 String categoryUuid,
                 String name,

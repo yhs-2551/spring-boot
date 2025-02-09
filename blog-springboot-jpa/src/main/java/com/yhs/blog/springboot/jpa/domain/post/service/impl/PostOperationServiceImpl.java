@@ -2,6 +2,7 @@ package com.yhs.blog.springboot.jpa.domain.post.service.impl;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.dao.DataAccessException;
 import org.springframework.data.redis.core.RedisTemplate;
@@ -13,7 +14,6 @@ import org.springframework.transaction.support.TransactionSynchronizationManager
 import com.yhs.blog.springboot.jpa.aop.log.Loggable;
 import com.yhs.blog.springboot.jpa.common.constant.code.ErrorCode;
 import com.yhs.blog.springboot.jpa.domain.auth.token.provider.user.BlogUser;
-import com.yhs.blog.springboot.jpa.domain.category.dto.response.CategoryResponse;
 import com.yhs.blog.springboot.jpa.domain.category.dto.response.CategoryWithChildrenResponse;
 import com.yhs.blog.springboot.jpa.domain.category.service.CategoryService;
 import com.yhs.blog.springboot.jpa.domain.featured_image.service.FeaturedImageService;
@@ -165,7 +165,8 @@ public class PostOperationServiceImpl implements PostOperationService {
             }
 
             // 파일(이미지) 삭제 및 저장 처리
-            fileService.processUpdateFilesForUpdatePostRequest(postUpdateRequest.getFiles(), postId, postUpdateRequest.getDeletedImageUrlsInFuture());
+            fileService.processUpdateFilesForUpdatePostRequest(postUpdateRequest.getFiles(), postId,
+                    postUpdateRequest.getDeletedImageUrlsInFuture());
 
             // 태그 처리
             if (postUpdateRequest.getEditPageDeletedTags() != null
@@ -178,19 +179,18 @@ public class PostOperationServiceImpl implements PostOperationService {
                 postTagRepository.deleteByPostIdAndTagNames(postId, postUpdateRequest.getEditPageDeletedTags());
 
                 // TAG 삭제
-                List<Tag> unusedTags = tagRepository.deleteUnusedTagsByTagNames(
+                List<Tag> unusedTags = tagRepository.findUnusedTagsByTagNames(
                         postUpdateRequest.getEditPageDeletedTags(), postId);
-
                 tagRepository.deleteAll(unusedTags);
             }
 
             processPostTagsAndTags(post, postUpdateRequest.getTags(), postId);
 
-            // 대표 이미지 처리 
+            // 대표 이미지 처리
             Long featuredImageId = featuredImageService
                     .processFeaturedImageForUpdatePostRequest(postUpdateRequest.getFeaturedImage());
 
-            // content  temp -> final로 변환
+            // content temp -> final로 변환
             String convertedContent = postUpdateRequest.getContent().replace(blogId + "/temp/",
                     blogId + "/final/");
 
@@ -234,17 +234,19 @@ public class PostOperationServiceImpl implements PostOperationService {
             List<String> toBeDeletedFileUrls = fileService.processDeleteFilesForDeletePostRequest(postId);
 
             // 대표 이미지 삭제 처리
-            featuredImageService.processDeleteFeaturedImageForDeletePostRequest(postId);
+            Long featuredImageId = postRepository.findFeaturedImageIdByPostId(postId);
+            featuredImageService.processDeleteFeaturedImageForDeletePostRequest(featuredImageId);
 
-            // 태그 삭제 처리
+            // 태그 삭제 처리, PostTag는 무조건 삭제하면 됨
             postTagRepository.deletePostTagsByPostId(postId);
-            tagRepository.deleteUnusedTagsByPostId(postId);
+            List<Tag> toBeDeletedTags = tagRepository.findUnusedTagsByPostId(postId);
+            tagRepository.deleteAllInBatch(toBeDeletedTags);
 
             // 게시글 삭제 처리
-            postRepository.findById(postId)
+            Post foundPost = postRepository.findById(postId)
                     .orElseThrow(() -> new BusinessException(ErrorCode.POST_NOT_FOUND, postId + "번 게시글을 찾을 수 없습니다.",
                             "PostOperationServiceImpl", "deletePostByPostId"));
-            postRepository.deleteById(postId);
+            postRepository.delete(foundPost);
 
             // 트랜잭션이 성공되어야만 실행
             TransactionSynchronizationManager.registerSynchronization(
@@ -273,17 +275,22 @@ public class PostOperationServiceImpl implements PostOperationService {
             log.info("[PostOperationServiceImpl] processTags !tagNames.isEmpty() 분기 시작");
 
             List<PostTag> postTags = new ArrayList<>();
+            List<Tag> tags = new ArrayList<>();
 
             for (String tagName : tagNames) {
-                Tag tag = tagRepository.findByName(tagName).orElseGet(() -> new Tag(tagName)); // 없으면 새롭게 생성
-                tagRepository.save(tag); // 새롭게 생성된 태그를 영속성 컨텍스트에 저장
-                PostTag postTag = new PostTag(postId, tag.getId());
+                Optional<Tag> tag = tagRepository.findByName(tagName);
+
+                if (tag.isPresent()) {
+                    continue;
+                }
+
+                tags.add(tag.get()); // 새롭게 생성된 태그를 영속성 컨텍스트에 저장
+                PostTag postTag = new PostTag(postId, tag.get().getId());
                 postTags.add(postTag);
             }
-
+            tagRepository.saveAll(tags);
             postTagRepository.saveAll(postTags);
         }
     }
- 
 
 }

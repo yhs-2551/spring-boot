@@ -1,5 +1,6 @@
 package com.yhs.blog.springboot.jpa.domain.file.dto.response;
 
+import com.querydsl.core.annotations.QueryProjection;
 import com.yhs.blog.springboot.jpa.domain.file.entity.File;
 import lombok.*;
 
@@ -18,6 +19,8 @@ public class FileResponse {
     @Nullable
     private Integer height;
 
+    // 수정 페이지 응답용
+    @QueryProjection
     public FileResponse(String fileName, String fileType, String fileUrl, Long fileSize, Integer width,
             Integer height) {
         this.fileName = fileName;
@@ -28,6 +31,8 @@ public class FileResponse {
         this.height = height;
     }
 
+    // 상세 페이지 응답용
+    @QueryProjection
     public FileResponse(String fileUrl, Integer width, Integer height) {
         this.fileUrl = fileUrl;
         this.width = width;

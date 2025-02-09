@@ -1,8 +1,6 @@
 //다대다(Many-to-Many) 관계를 **중간 엔티티(PostTag)**를 통해 설정
 
-package com.yhs.blog.springboot.jpa.domain.post.entity;
-
-import com.yhs.blog.springboot.jpa.domain.user.entity.User;
+package com.yhs.blog.springboot.jpa.domain.post.entity; 
 import jakarta.persistence.*;
 import lombok.*;
 

@@ -15,9 +15,9 @@ public interface FeaturedImageRepository extends JpaRepository<FeaturedImage, Lo
     @Query("DELETE FROM FeaturedImage fi WHERE fi.fileUrl = :fileUrl")
     void deleteByFileUrl(@Param("fileUrl") String fileUrl);
 
-    @Modifying 
-    @Query("DELETE FROM FeaturedImage fi WHERE fi.postId = :postId")
-    void deleteFeaturedImageByPostId(@Param("postId") Long postId);
+    @Modifying
+    @Query("DELETE FROM FeaturedImage f WHERE f.id = :featuredImageId")
+    void deleteByIdInBatch(@Param("featuredImageId") Long featuredImageId);
 
     Optional<FeaturedImage> findByFileUrl(String fileUrl);
 
