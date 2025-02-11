@@ -48,7 +48,7 @@ public class PostFindController {
         // 해결), 조인으로 한 번에 데이터 조회로 성능 개선
         // 이에 따라 1800ms -> 600ms로 성능 개선
         // 연관관계 매핑 제거, 필요한 필드만 조회, 인덱스 설정으로 응답 시간 5ms~10ms로 성능 개선(1000건 데이터 기준)
-        @Operation(summary = "모든 사용자의 게시글 조회 요청 처리", description = "사용자가가가가 모든 사용자의 게시글을 조회 요청을 보내면 해당 요청을 처리")
+        @Operation(summary = "모든 사용자의 게시글 조회 요청 처리", description = "사용자가가ㄱㄱ가가 모든 사용자의 게시글을 조회 요청을 보내면 해당 요청을 처리")
         @ApiResponses(value = {
                         @ApiResponse(responseCode = "200", description = "모든 사용자 게시글 조회 응답 성공", content = @Content(schema = @Schema(implementation = SuccessResponse.class))),
                         @ApiResponse(responseCode = "500", description = "서버 내부 오류", content = @Content(schema = @Schema(implementation = ErrorResponse.class))),

@@ -3,12 +3,20 @@ name: Spring boot Blog CI/CD
 on:
   push:
     branches: ["main"]
+        paths:
+          - 'blog-springboot-jpa/**'  # 서브디렉토리 경로 추가
   pull_request:
     branches: ["main"]
+        paths:
+          - 'blog-springboot-jpa/**'
+
 
 jobs:
   build:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./blog-springboot-jpa  # 작업 디렉토리 설정
     
     steps:
       - uses: actions/checkout@v4
