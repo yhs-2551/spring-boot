@@ -6,6 +6,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -17,12 +18,12 @@ import org.springframework.web.client.RestTemplate;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.yhs.blog.springboot.jpa.domain.featured_image.service.FeaturedImageService;
+import com.yhs.blog.springboot.jpa.domain.file.dto.request.FilePropertiesForUpdateRequest;
 import com.yhs.blog.springboot.jpa.domain.file.dto.request.FileRequest;
 import com.yhs.blog.springboot.jpa.domain.file.entity.File;
 import com.yhs.blog.springboot.jpa.domain.file.repository.FileRepository;
 import com.yhs.blog.springboot.jpa.domain.file.service.FileService;
 import com.yhs.blog.springboot.jpa.domain.file.service.infrastructure.s3.S3Service;
-import com.yhs.blog.springboot.jpa.domain.post.entity.Post;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
@@ -162,19 +163,35 @@ public class FileServiceImpl implements FileService {
 
             log.info("[FileServiceImpl] processUpdateFilesForUpdateRequest 저장 할 파일이 있을 때 분기 시작");
 
-            Set<String> existingFileUrls = fileRepository.findFileUrlsByPostId(postId).stream()
-                    .collect(Collectors.toSet());
+            Map<String, FilePropertiesForUpdateRequest> existingFileProperties = fileRepository
+                    .findFilePropertiesByPostId(postId).stream()
+                    .collect(Collectors.toMap(
+                            FilePropertiesForUpdateRequest::fileUrl,
+                            FilePropertiesForUpdateRequest -> FilePropertiesForUpdateRequest));
 
             Set<File> newFiles = new HashSet<>();
 
             for (FileRequest fileRequest : fileRequests) {
 
-                if (existingFileUrls.contains(fileRequest.getFileUrl())) {
+                FilePropertiesForUpdateRequest existingFile = existingFileProperties.get(fileRequest.getFileUrl());
 
-                    log.info(
-                            "[FileServiceImpl] processUpdateFilesForUpdateRequest - 기존 파일이면 새로 저장하지 않고 continue 분기 시작");
+                if (existingFile != null) {
 
-                    // 기존 파일이면 continue
+                    if (fileRequest.getFileType().startsWith("image/") &&
+                            (isWidthChanged(fileRequest, existingFile) ||
+                                    isHeightChanged(fileRequest, existingFile))) {
+
+                        log.info("[FileServiceImpl] 저장할 파일이 DB에 이미 존재하면서, 새롭게 이미지 사이즈 변경해야 할 때 분기 진행");
+
+                        // width, height 업데이트할 파일 배치 작업으로 일괄 처리하려면 복잡해서 일단 하나씩 처리. 이렇게만해도 조회 -> 업데이트에서 조회 쿼리 생략 가능 
+                        fileRepository.updateImageProperties(
+                                existingFile.fileUrl(), // Record의 fileUrl() 메서드 사용
+                                fileRequest.getWidth(),
+                                fileRequest.getHeight());
+                    }
+
+                    log.info("[FileServiceImpl] 저장할 파일이 DB에 이미 존재하면서 이미지 사이즈 변경이 필요 없을때 continue 진행");
+
                     continue;
                 }
 
@@ -184,6 +201,9 @@ public class FileServiceImpl implements FileService {
 
                 Integer width;
                 Integer height;
+
+                log.info("fileRequest.getwdith()>>>", fileRequest.getWidth());
+                log.info("fileRequest.getHeight()>>>", fileRequest.getHeight());
 
                 if (fileRequest.getFileType().startsWith("image/") && fileRequest.getWidth() != null) {
                     width = fileRequest.getWidth();
@@ -242,8 +262,11 @@ public class FileServiceImpl implements FileService {
 
         List<String> toBeDeletedFileUrl = new ArrayList<>();
 
+        // temp는 무시하고 final만 db에서 삭제될 수 있도록 처리
         for (String url : deletedUrls) {
             if (url.contains("/final/featured/")) {
+
+                log.info("url>>>>>>>>>>>>>>>> {}", url);
 
                 log.info("[FileServiceImpl] processDeletedImages - 대표 이미지 삭제 분기 진행");
 
@@ -251,7 +274,7 @@ public class FileServiceImpl implements FileService {
                 // JPQL로 직접 작성해야함. find류, exists류, count류만 필드명에 매핑시켜서 자동 생성 - find류도 기본 제공 외
                 // 메서드명은 repository에 정의되어 있어야함
                 featuredImageService.processDeleteFeaturedImageForUpdatePostRequest(url);
-            } else {
+            } else if (url.contains("/final/images/") || url.contains("/final/files/")) {
                 // 이미지 및 파일 처리
                 log.info("[FileServiceImpl] processDeletedImages - 이미지 및 파일 삭제 분기 진행");
                 toBeDeletedFileUrl.add(url);
@@ -259,11 +282,21 @@ public class FileServiceImpl implements FileService {
 
         }
 
+        log.info("여기 추가 진행");
+
         if (toBeDeletedFileUrl.isEmpty() || toBeDeletedFileUrl == null) {
             return;
         }
 
         fileRepository.deleteByFileUrlInBatch(toBeDeletedFileUrl);
+    }
+
+    private boolean isWidthChanged(FileRequest request, FilePropertiesForUpdateRequest existing) {
+        return request.getWidth() != null && !request.getWidth().equals(existing.width());
+    }
+
+    private boolean isHeightChanged(FileRequest request, FilePropertiesForUpdateRequest existing) {
+        return request.getHeight() != null && !request.getHeight().equals(existing.height());
     }
 
 }

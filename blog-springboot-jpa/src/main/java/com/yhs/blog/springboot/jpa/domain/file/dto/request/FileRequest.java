@@ -2,9 +2,11 @@ package com.yhs.blog.springboot.jpa.domain.file.dto.request;
 
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 @Getter
 @NoArgsConstructor
+@Setter // 테스트 코드 작성시 필요
 public class FileRequest {
     private String fileName;
     private String fileType;

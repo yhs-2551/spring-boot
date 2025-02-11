@@ -6,8 +6,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
-import org.springframework.data.repository.query.Param;
-import org.springframework.stereotype.Repository;
+import org.springframework.data.repository.query.Param; 
 
 import java.util.Collection;
 import java.util.List;
@@ -41,7 +40,7 @@ public interface TagRepository extends JpaRepository<Tag, Long> {
                     AND pt.postId != :postId
                 )
             """)
-    List<Tag> findUnusedTagsByPostId(@Param("postId") Long postId);
+    List<Tag> findUnusedTagsByPostId(@Param("postId") Long postId); // 결과가 없을시 빈 리스트 반환
 
     @Modifying
     @Query("DELETE FROM Tag t WHERE t.name IN :tagNames")

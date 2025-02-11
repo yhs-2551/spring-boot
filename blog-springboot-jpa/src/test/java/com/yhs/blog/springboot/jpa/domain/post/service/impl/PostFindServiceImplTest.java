@@ -24,9 +24,8 @@ import org.springframework.data.domain.Pageable;
 import com.yhs.blog.springboot.jpa.common.constant.code.ErrorCode;
 import com.yhs.blog.springboot.jpa.domain.category.entity.Category;
 import com.yhs.blog.springboot.jpa.domain.category.service.CategoryService;
-import com.yhs.blog.springboot.jpa.domain.post.dto.response.PostResponse;
-import com.yhs.blog.springboot.jpa.domain.post.entity.Post;
-import com.yhs.blog.springboot.jpa.domain.post.factory.TestPostFactory;
+import com.yhs.blog.springboot.jpa.domain.post.dto.response.PostResponseForDetailPage;
+import com.yhs.blog.springboot.jpa.domain.post.entity.enums.PostStatus;
 import com.yhs.blog.springboot.jpa.domain.post.repository.PostRepository;
 import com.yhs.blog.springboot.jpa.domain.post.repository.search.SearchType;
 import com.yhs.blog.springboot.jpa.domain.user.entity.User;
@@ -51,14 +50,12 @@ public class PostFindServiceImplTest {
 
     private User user;
     private Category category;
-    private Post post;
     private Pageable pageable;
 
     @BeforeEach
     void setUp() {
         category = Category.builder().id("category1").name("Test Category").build();
         user = TestUserFactory.createTestUserWithId();
-        post = TestPostFactory.createTestPostWithId(user);
         pageable = PageRequest.of(0, 10);
     }
 
@@ -104,25 +101,28 @@ public class PostFindServiceImplTest {
     @DisplayName("게시글 ID로 단일 게시글 조회 성공")
     void 특정_사용자의_단일_게시글_조회() {
         // given
-        when(postRepository.findByIdWithDetails(anyLong())).thenReturn(Optional.of(post));
+        PostResponseForDetailPage postResponseForDetailPage = new PostResponseForDetailPage(null, null, null, null,
+                PostStatus.PUBLIC, null, null, null);
+
+        when(postRepository.findByIdNotWithFeaturedImage(anyLong())).thenReturn(Optional.of(postResponseForDetailPage));
 
         // when
-        PostResponse result = postFindService.getPostByPostId(1L);
+        PostResponseForDetailPage result = postFindService.getPostByPostIdForDetailPage(1L);
 
         // then
         assertNotNull(result);
-        verify(postRepository).findByIdWithDetails(1L);
+        verify(postRepository).findByIdNotWithFeaturedImage(1L);
     }
 
     @Test
     @DisplayName("게시글 ID로 단일 게시글 조회 실패 - 게시글 없음")
     void 특정_사용자의_단일_게시글_조회_실패() {
         // given
-        when(postRepository.findByIdWithDetails(anyLong())).thenReturn(Optional.empty());
+        when(postRepository.findByIdNotWithFeaturedImage(anyLong())).thenReturn(Optional.empty());
 
         // when & then
         BusinessException exception = assertThrows(BusinessException.class,
-                () -> postFindService.getPostByPostId(1L));
+                () -> postFindService.getPostByPostIdForDetailPage(1L));
         assertEquals(ErrorCode.POST_NOT_FOUND, exception.getErrorCode());
     }
 }

@@ -51,6 +51,7 @@ public class CategoryServiceImpl implements CategoryService {
             categoryRequestPayLoad.getCategoryToDelete().forEach(this::deleteCategory);
             List<String> deletedCategories = toBeDeletedAllCategories.get();
             categoryRepository.deleteAllByCategoryId(deletedCategories);
+            toBeDeletedAllCategories.remove();
 
             // 삭제된 엔티티들 즉 영속성 컨텍스트 변경 사항을 즉시 DB에 반영. 이게 없으면, 프론트에서 부모에서 자식 카테고리를 없애고 해당 부모
             // 카테고리를 제거할 때 duplicate key 에러 발생
@@ -117,18 +118,20 @@ public class CategoryServiceImpl implements CategoryService {
 
         log.info("[CategoryServiceImpl] getAllCategoriesWithChildrenByUserId 메서드 Redis 캐시에 존재하지 않는 경우 분기 시작");
 
-        List<CategoryWithChildrenResponse> responseCategories;
-
         Long userId = userFindService.findUserByBlogId(blogId).getId();
-        responseCategories = categoryRepository
-                .findAllWithChildrenAndPostsByUserId(userId);
 
-        if (responseCategories == null || responseCategories.isEmpty()) {
+        List<Category> CategoriesByUserId = categoryRepository.findByUserId(userId);
+
+        if (CategoriesByUserId == null || CategoriesByUserId.isEmpty()) {
 
             log.info("[CategoryServiceImpl] getAllCategoriesWithChildrenByUserId 메서드 DB에 카테고리가 존재하지 않는 경우 분기 진행");
 
-            return Collections.emptyList(); // 불변 빈 배열 반환
+            return Collections.emptyList();
         }
+
+        // 특정 사용자에 카테고리가 존재하는 경우에만 상세 쿼리 실행
+        List<CategoryWithChildrenResponse> responseCategories = categoryRepository
+                .findAllWithChildrenAndPostsByUserId(userId);
 
         log.info("[CategoryServiceImpl] getAllCategoriesWithChildrenByUserId 메서드 DB에 카테고리가 존재하는 경우 분기 진행");
 

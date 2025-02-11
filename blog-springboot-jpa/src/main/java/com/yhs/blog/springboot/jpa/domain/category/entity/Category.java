@@ -9,14 +9,14 @@ import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Entity
-@Table(name = "categories", uniqueConstraints = { @UniqueConstraint(columnNames = { "name", "user_id" }),
+@Table(name = "categories", uniqueConstraints = {
+        // unique제약조건으로 인해 인덱스 자동 생성됨
+        @UniqueConstraint(columnNames = { "name", "user_id" }),
 }, indexes = {
-        @Index(name = "idx_user_id_parent_id_order_index", columnList = "user_id, parent_id, order_index"), // where절에서
-                                                                                                            // orderBy와
-                                                                                                            // 같이 사용
-        @Index(name = "idx_parent_id_order_index", columnList = "parent_id, order_index") // 자식의 join시 parentId와
-                                                                                          // orderIndex를 같이 사용
-
+        // where절에서 orderBy와 같이 사용
+        @Index(name = "idx_categories_user_id_parent_id_order_index", columnList = "user_id, parent_id, order_index"),
+        // 자식의 join시 parentId와 orderIndex를 같이 사용
+        @Index(name = "idx_categories_parent_id_order_index", columnList = "parent_id, order_index"),
 })
 @EntityListeners(AuditingEntityListener.class)
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
@@ -53,7 +53,7 @@ public class Category extends BaseEntity {
 
     // 여러 자식이 동일한 부모 id값을 가질 수 있기 때문에 unique = true 제약조건을 걸지 않음.
     // JPA에서 별로도 참조하는 컬럼을 명시하지 않으면 자동으로 해당 테이블의 id 컬럼 참조. 즉 여기에서 id 컬럼 참조
-    @Column(name = "parent_id", nullable = true, unique = false)
+    @Column(name = "parent_id", nullable = true)
     private String parentId;
 
     @Column(name = "user_id", nullable = false)

@@ -9,6 +9,7 @@ import java.util.List;
 @NoArgsConstructor
 @Getter
 @ToString
+@Setter // 테스트 작성시 필요해서 setter 사용
 // 유효성 검사 프론트랑 맞추기 위해 추가 및 수정 필요
 public class PostRequest {
 

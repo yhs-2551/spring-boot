@@ -10,9 +10,9 @@ import com.querydsl.core.annotations.QueryProjection;
 import com.yhs.blog.springboot.jpa.domain.file.dto.response.FileResponse;
 import com.yhs.blog.springboot.jpa.domain.post.entity.enums.PostStatus;
 
-import lombok.Getter;
+import lombok.Getter; 
 
-@Getter
+@Getter 
 public class PostResponseForDetailPage { // 프론트에 DTO응답 전달되는 데이터는 생성자 기준이 아닌 클래스 필드 기준이라 파일 나눠야함..
 
     private final String username;

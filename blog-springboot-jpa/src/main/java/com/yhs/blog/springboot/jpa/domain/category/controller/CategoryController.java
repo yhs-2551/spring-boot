@@ -36,6 +36,7 @@ public class CategoryController {
         private final CategoryService categoryService;
 
         // CUD작업시 jpa 내부 구현 동작인 조회 후 업데이트(조회후 변경되지 않았으면 업데이트 추가 쿼리x), 새롭게 데이터 insert쿼리, 삭제시 jpa 원래 기능: 조회 후 삭제 -> 조회 없이 바로 삭제하도록 JPQL로 구현. 
+        // 1000개 카테고리 삽입/수정/삭제 작업 시 500~600ms
         @Operation(summary = "카테고리 생성, 수정, 삭제 요청 처리", description = "사용자가 카테고리를 (생성, 수정, 삭제) 요청을 보내면 해당 요청을 처리")
         @ApiResponses(value = {
                         @ApiResponse(responseCode = "201", description = "카테고리 작업 성공", content = @Content(schema = @Schema(implementation = SuccessResponse.class))),

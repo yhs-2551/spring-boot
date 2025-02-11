@@ -4,8 +4,6 @@ import com.querydsl.core.BooleanBuilder;
 import com.querydsl.core.group.GroupBy;
 import com.querydsl.core.types.Projections;
 import com.querydsl.core.types.dsl.BooleanExpression;
-import com.querydsl.core.types.dsl.Expressions;
-import com.querydsl.jpa.JPAExpressions;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import com.yhs.blog.springboot.jpa.aop.log.Loggable;
 import com.yhs.blog.springboot.jpa.common.constant.code.ErrorCode;
@@ -13,16 +11,12 @@ import com.yhs.blog.springboot.jpa.domain.category.entity.QCategory;
 import com.yhs.blog.springboot.jpa.domain.file.dto.response.FileResponse;
 import com.yhs.blog.springboot.jpa.domain.file.entity.QFile;
 import com.yhs.blog.springboot.jpa.domain.post.dto.response.FeaturedImageResponse;
-import com.yhs.blog.springboot.jpa.domain.post.dto.response.PostIndexAndIndexSearchResponseWithPostTotal;
 import com.yhs.blog.springboot.jpa.domain.post.dto.response.PostIndexAndIndexSearchResponse;
 import com.yhs.blog.springboot.jpa.domain.post.dto.response.PostResponseForDetailPage;
 import com.yhs.blog.springboot.jpa.domain.post.dto.response.PostResponseForEditPage;
 import com.yhs.blog.springboot.jpa.domain.post.dto.response.PostUserPageResponse;
-import com.yhs.blog.springboot.jpa.domain.post.dto.response.PostUserPageResponseWithPostTotal;
-import com.yhs.blog.springboot.jpa.domain.post.dto.response.QPostIndexAndIndexSearchResponseWithPostTotal;
 import com.yhs.blog.springboot.jpa.domain.post.dto.response.QPostResponseForDetailPage;
 import com.yhs.blog.springboot.jpa.domain.post.dto.response.QPostResponseForEditPage;
-import com.yhs.blog.springboot.jpa.domain.post.dto.response.QPostUserPageResponseWithPostTotal;
 import com.yhs.blog.springboot.jpa.domain.featured_image.entity.QFeaturedImage;
 import com.yhs.blog.springboot.jpa.domain.post.entity.QPost;
 import com.yhs.blog.springboot.jpa.domain.post.entity.QPostTag;
@@ -39,7 +33,9 @@ import org.springframework.stereotype.Repository;
 import org.springframework.util.StringUtils;
 
 import java.util.List;
+import java.util.Optional;
 
+// postStatus응답은 사용자 페이지에서 해당 사용자에게만 해주면 됨. 해당 사용자 아니면 where절에 poststatus public인것만 가져오게 처리하면 됨 나중에.
 @RequiredArgsConstructor
 @Repository // 구현체 repository 어노테이션 추가 필요
 @Log4j2
@@ -58,16 +54,36 @@ public class PostRepositoryCustomImpl implements PostRepositoryCustom {
                 try {
                         log.info("[PostRepositoryCustomImpl] findPostsAllUser() 메서드 시작");
                         if (StringUtils.hasText(keyword)) {
-
                                 log.info("[PostRepositoryCustomImpl] findPostsAllUser() 메서드 검색어가 있을때 분기 진행");
 
-                                // 아래는 일반 DB 조회
                                 QPost post = QPost.post;
                                 QUser user = QUser.user;
                                 QCategory category = QCategory.category;
                                 QFeaturedImage featuredImage = QFeaturedImage.featuredImage;
 
-                                List<PostIndexAndIndexSearchResponseWithPostTotal> results = queryFactory
+                                // 총 개수 쿼리 분리
+                                Long total = queryFactory
+                                                .select(post.count())
+                                                .from(post)
+                                                .where(searchByType(keyword, searchType))
+                                                .fetchOne();
+
+                                if (total == 0) {
+                                        log.info("[PostRepositoryCustomImpl] findPostsAllUser() - DB 조회 결과 total이 0일 때 분기 진행");
+                                        return new PageImpl<>(List.of(), pageable, 0);
+                                }
+
+                                // 데이터 조회 쿼리
+                                List<PostIndexAndIndexSearchResponse> content = queryFactory
+                                                .select(Projections.constructor(PostIndexAndIndexSearchResponse.class,
+                                                                post.id,
+                                                                post.title,
+                                                                post.content,
+                                                                user.username,
+                                                                user.blogId,
+                                                                category.name,
+                                                                featuredImage.fileUrl,
+                                                                post.createdAt))
                                                 .from(post)
                                                 .join(user).on(user.id.eq(post.userId))
                                                 .leftJoin(category).on(category.id.eq(post.categoryId))
@@ -76,42 +92,10 @@ public class PostRepositoryCustomImpl implements PostRepositoryCustom {
                                                 .orderBy(post.createdAt.desc(), post.id.desc())
                                                 .offset(pageable.getOffset())
                                                 .limit(pageable.getPageSize())
-                                                .transform(GroupBy.groupBy(Expressions.constant(1)).list(
-                                                                new QPostIndexAndIndexSearchResponseWithPostTotal(
-                                                                                GroupBy.list(
-                                                                                                Projections.constructor(
-                                                                                                                PostIndexAndIndexSearchResponse.class,
-                                                                                                                post.id,
-                                                                                                                post.title,
-                                                                                                                post.content,
-                                                                                                                user.username,
-                                                                                                                user.blogId,
-                                                                                                                category.name,
-                                                                                                                featuredImage.fileUrl,
-                                                                                                                post.createdAt)),
-                                                                                JPAExpressions
-                                                                                                .select(post.count())
-                                                                                                .from(post)
-                                                                                                .where(searchByType(
-                                                                                                                keyword,
-                                                                                                                searchType))))); // .get()으로
-                                                                                                                                 // 가져오면
-                                                                                                                                 // list안에
-                                                                                                                                 // 원소를
-                                                                                                                                 // 바로
-                                                                                                                                 // 추출
+                                                .fetch();
 
-                                if (results.isEmpty()) {
-
-                                        log.info("[PostRepositoryCustomImpl] findPostsAllUser() - DB 조회 결과가 없을때 분기 진행");
-
-                                        return new PageImpl<>(List.of(), pageable, 0);
-                                }
-
-                                log.info("[PostRepositoryCustomImpl] findPostsAllUser() - DB 조회 결과가 있을때 분기 진행");
-
-                                PostIndexAndIndexSearchResponseWithPostTotal result = results.get(0);
-                                return new PageImpl<>(result.getContent(), pageable, result.getTotal());
+                                log.info("[PostRepositoryCustomImpl] findPostsAllUser() - DB 조회 결과 total이 0이 아닐 때 분기 진행");
+                                return new PageImpl<>(content, pageable, total);
                         }
 
                         log.info("[PostRepositoryCustomImpl] findPostsAllUser() 메서드 검색어가 없을때 분기 진행");
@@ -134,59 +118,49 @@ public class PostRepositoryCustomImpl implements PostRepositoryCustom {
                         log.info("[PostRepositoryCustomImpl] findPostsByUserId() 메서드 시작");
 
                         if (StringUtils.hasText(keyword)) {
-
                                 log.info("[PostRepositoryCustomImpl] findPostsByUserId() 메서드 검색어가 있을때 분기 진행");
+
                                 QPost post = QPost.post;
                                 QUser user = QUser.user;
                                 QCategory category = QCategory.category;
                                 QFeaturedImage featuredImage = QFeaturedImage.featuredImage;
 
-                                List<PostUserPageResponseWithPostTotal> results = queryFactory
+                                Long total = queryFactory
+                                                .select(post.count())
+                                                .from(post)
+                                                .where(searchByType(keyword, searchType),
+                                                                userIdEq(userId))
+                                                .fetchOne();
+
+                                if (total == 0) {
+                                        log.info("[PostRepositoryCustomImpl] findPostsByUserId - DB 조회 결과 total이 0일 때 분기 진행");
+                                        return new PageImpl<>(List.of(), pageable, 0);
+                                }
+
+                                List<PostUserPageResponse> content = queryFactory
+                                                .select(Projections.constructor(PostUserPageResponse.class,
+                                                                post.id,
+                                                                post.title,
+                                                                post.content,
+                                                                post.postStatus,
+                                                                user.username,
+                                                                category.name,
+                                                                featuredImage.fileUrl,
+                                                                post.createdAt))
                                                 .from(post)
                                                 .join(user).on(user.id.eq(post.userId))
                                                 .leftJoin(category).on(category.id.eq(post.categoryId))
                                                 .leftJoin(featuredImage).on(featuredImage.id.eq(post.featuredImageId))
-                                                .where(searchByType(keyword, searchType), userIdEq(userId))
-
+                                                .where(searchByType(keyword, searchType),
+                                                                userIdEq(userId))
                                                 .orderBy(post.createdAt.desc(), post.id.desc())
                                                 .offset(pageable.getOffset())
                                                 .limit(pageable.getPageSize())
-                                                .transform(GroupBy.groupBy(Expressions.constant(1)).list( // Expressions.constant(1)은
-                                                                                                          // 하나로 그룹화
-                                                                new QPostUserPageResponseWithPostTotal(
-                                                                                GroupBy.list(
-                                                                                                Projections.constructor(
-                                                                                                                PostUserPageResponse.class,
-                                                                                                                post.id,
-                                                                                                                post.title,
-                                                                                                                post.content,
-                                                                                                                post.postStatus,
-                                                                                                                user.username,
-                                                                                                                category.name,
-                                                                                                                featuredImage.fileUrl,
-                                                                                                                post.createdAt)),
-                                                                                JPAExpressions
-                                                                                                .select(post.count())
-                                                                                                .from(post)
-                                                                                                .where(searchByType(
-                                                                                                                keyword,
-                                                                                                                searchType),
-                                                                                                                userIdEq(userId)))));
+                                                .fetch();
 
-                                if (results.isEmpty()) {
-
-                                        log.info("[PostRepositoryCustomImpl] findPostsByUserId - DB 조회 결과가 없을때 분기 진행");
-
-                                        return new PageImpl<>(List.of(), pageable, 0);
-                                }
-
-                                log.info("[PostRepositoryCustomImpl] findPostsByUserId() - DB 조회 결과가 있을때 분기 진행");
-
-                                PostUserPageResponseWithPostTotal result = results.get(0);
-                                return new PageImpl<>(result.getContent(), pageable, result.getTotal());
-
+                                log.info("[PostRepositoryCustomImpl] findPostsByUserId() - DB 조회 결과 total이 0이 아닐 때 분기 진행");
+                                return new PageImpl<>(content, pageable, total);
                         }
-
                         log.info("[PostRepositoryCustomImpl] findPostsByUserId() - 메서드 검색어가 없을때 분기 진행");
 
                         // 검색어가 없는 경우 기존 QueryDSL 사용
@@ -213,7 +187,6 @@ public class PostRepositoryCustomImpl implements PostRepositoryCustom {
                         log.info("[PostRepositoryCustomImpl] findPostsByUserIdAndCategoryId() 메서드 시작");
 
                         if (StringUtils.hasText(keyword)) {
-
                                 log.info("[PostRepositoryCustomImpl] findPostsByUserIdAndCategoryId() 메서드 검색어가 있을때 분기 진행");
 
                                 QPost post = QPost.post;
@@ -221,51 +194,45 @@ public class PostRepositoryCustomImpl implements PostRepositoryCustom {
                                 QCategory category = QCategory.category;
                                 QFeaturedImage featuredImage = QFeaturedImage.featuredImage;
 
-                                List<PostUserPageResponseWithPostTotal> results = queryFactory
+                                // 총 개수 쿼리
+                                Long total = queryFactory
+                                                .select(post.count())
+                                                .from(post)
+                                                .where(searchByType(keyword, searchType),
+                                                                userIdEq(userId),
+                                                                categoryIdEq(categoryId))
+                                                .fetchOne();
+
+                                if (total == 0) {
+                                        log.info("[PostRepositoryCustomImpl] findPostsByUserIdAndCategoryId - DB 조회 결과 total이 0일 때 분기 진행");
+                                        return new PageImpl<>(List.of(), pageable, 0);
+                                }
+
+                                // 데이터 조회 쿼리
+                                List<PostUserPageResponse> content = queryFactory
+                                                .select(Projections.constructor(PostUserPageResponse.class,
+                                                                post.id,
+                                                                post.title,
+                                                                post.content,
+                                                                post.postStatus,
+                                                                user.username,
+                                                                category.name,
+                                                                featuredImage.fileUrl,
+                                                                post.createdAt))
                                                 .from(post)
                                                 .join(user).on(user.id.eq(post.userId))
                                                 .leftJoin(category).on(category.id.eq(post.categoryId))
                                                 .leftJoin(featuredImage).on(featuredImage.id.eq(post.featuredImageId))
-                                                .where(searchByType(keyword, searchType), userIdEq(userId),
+                                                .where(searchByType(keyword, searchType),
+                                                                userIdEq(userId),
                                                                 categoryIdEq(categoryId))
                                                 .orderBy(post.createdAt.desc(), post.id.desc())
                                                 .offset(pageable.getOffset())
                                                 .limit(pageable.getPageSize())
-                                                .transform(GroupBy.groupBy(Expressions.constant(1)).list( // Expressions.constant(1)은
-                                                                                                          // 하나로 그룹화
-                                                                new QPostUserPageResponseWithPostTotal(
-                                                                                GroupBy.list(
-                                                                                                Projections.constructor(
-                                                                                                                PostUserPageResponse.class,
-                                                                                                                post.id,
-                                                                                                                post.title,
-                                                                                                                post.content,
-                                                                                                                post.postStatus,
-                                                                                                                user.username,
-                                                                                                                category.name,
-                                                                                                                featuredImage.fileUrl,
-                                                                                                                post.createdAt)),
-                                                                                JPAExpressions
-                                                                                                .select(post.count())
-                                                                                                .from(post)
-                                                                                                .where(searchByType(
-                                                                                                                keyword,
-                                                                                                                searchType),
-                                                                                                                userIdEq(userId),
-                                                                                                                categoryIdEq(categoryId)))));
+                                                .fetch();
 
-                                if (results.isEmpty()) {
-
-                                        log.info("[PostRepositoryCustomImpl] findPostsByUserIdAndCategoryId - DB 조회 결과가 없을때 분기 진행");
-
-                                        return new PageImpl<>(List.of(), pageable, 0);
-                                }
-
-                                log.info("[PostRepositoryCustomImpl] findPostsByUserIdAndCategoryId() - DB 조회 결과가 있을때 분기 진행");
-
-                                PostUserPageResponseWithPostTotal result = results.get(0);
-                                return new PageImpl<>(result.getContent(), pageable, result.getTotal());
-
+                                log.info("[PostRepositoryCustomImpl] findPostsByUserIdAndCategoryId() - DB 조회 결과 total이 0이 아닐 때 분기 진행");
+                                return new PageImpl<>(content, pageable, total);
                         }
 
                         log.info("[PostRepositoryCustomImpl] findPostsByUserIdAndCategoryId() 메서드 검색어가 없을때 분기 진행");
@@ -285,7 +252,7 @@ public class PostRepositoryCustomImpl implements PostRepositoryCustom {
 
         // 상세 페이지용
         @Override
-        public PostResponseForDetailPage findByIdNotWithFeaturedImage(Long postId) {
+        public Optional<PostResponseForDetailPage> findByIdNotWithFeaturedImage(Long postId) {
 
                 log.info("[PostRepositoryCustomImpl] findByIdNotWithFeaturedImage() 메서드 시작");
                 QPost post = QPost.post;
@@ -296,7 +263,7 @@ public class PostRepositoryCustomImpl implements PostRepositoryCustom {
                 QFile file = QFile.file;
 
                 try {
-                        return queryFactory
+                        List<PostResponseForDetailPage> result = queryFactory
                                         .from(post)
                                         .join(user).on(user.id.eq(post.userId))
                                         .leftJoin(category).on(category.id.eq(post.categoryId))
@@ -317,8 +284,9 @@ public class PostRepositoryCustomImpl implements PostRepositoryCustom {
                                                                         post.postStatus,
                                                                         user.username,
                                                                         category.name,
-                                                                        post.createdAt)))
-                                        .get(0);
+                                                                        post.createdAt)));
+
+                        return result.isEmpty() ? Optional.empty() : Optional.of(result.get(0));
 
                 } catch (Exception e) {
                         throw new SystemException(ErrorCode.QUERY_DSL_POSTS_ERROR, "게시글 목록 조회 중 오류가 발생 하였습니다.",
@@ -329,7 +297,7 @@ public class PostRepositoryCustomImpl implements PostRepositoryCustom {
 
         // 수정 페이지 게시글 정보용
         @Override
-        public PostResponseForEditPage findByIdWithFeaturedImage(Long postId) {
+        public Optional<PostResponseForEditPage> findByIdWithFeaturedImage(Long postId) {
 
                 log.info("[PostRepositoryCustomImpl] findByIdWithFeaturedImage() 메서드 시작");
                 QPost post = QPost.post;
@@ -341,7 +309,7 @@ public class PostRepositoryCustomImpl implements PostRepositoryCustom {
 
                 try {
 
-                        return queryFactory
+                        List<PostResponseForEditPage> result = queryFactory
                                         .from(post)
                                         .leftJoin(category).on(category.id.eq(post.categoryId))
                                         .leftJoin(featuredImage).on(featuredImage.id.eq(post.featuredImageId))
@@ -369,8 +337,10 @@ public class PostRepositoryCustomImpl implements PostRepositoryCustom {
                                                                                         featuredImage.fileType,
                                                                                         featuredImage.fileSize),
                                                                         post.postStatus,
-                                                                        category.name)))
-                                        .get(0);
+                                                                        category.name)));
+
+                        return result.isEmpty() ? Optional.empty() : Optional.of(result.get(0));
+
                 } catch (Exception e) {
                         throw new SystemException(ErrorCode.QUERY_DSL_POSTS_ERROR, "게시글 목록 조회 중 오류가 발생 하였습니다.",
                                         "PostRepositoryCustomImpl", "findByIdWithFeaturedImage", e);
@@ -383,47 +353,46 @@ public class PostRepositoryCustomImpl implements PostRepositoryCustom {
                         Pageable pageable) {
 
                 log.info("[PostRepositoryCustomImpl] commonQueryDSLQueryNotWithPostStatus() 메서드 시작");
-
                 QPost post = QPost.post;
                 QUser user = QUser.user;
                 QCategory category = QCategory.category;
                 QFeaturedImage featuredImage = QFeaturedImage.featuredImage;
 
-                List<PostIndexAndIndexSearchResponseWithPostTotal> results = queryFactory
+                // 전체 카운트 조회
+                Long total = queryFactory
+                                .select(post.count())
+                                .from(post)
+                                .where(builder)
+                                .fetchOne();
+
+                if (total == 0) {
+                        log.info("[PostRepositoryImpl] commonQueryDSLQueryNotWithPostStatus - DB 조회 결과 total 0일 때 분기 진행");
+                        return new PageImpl<>(List.of(), pageable, 0);
+                }
+
+                // 데이터 조회
+                List<PostIndexAndIndexSearchResponse> content = queryFactory
+                                .select(Projections.constructor(PostIndexAndIndexSearchResponse.class,
+                                                post.id,
+                                                post.title,
+                                                post.content,
+                                                user.username,
+                                                user.blogId,
+                                                category.name,
+                                                featuredImage.fileUrl,
+                                                post.createdAt))
                                 .from(post)
                                 .join(user).on(user.id.eq(post.userId))
                                 .leftJoin(category).on(category.id.eq(post.categoryId))
                                 .leftJoin(featuredImage).on(featuredImage.id.eq(post.featuredImageId))
                                 .where(builder)
-                                .orderBy(post.createdAt.desc(), post.id.desc()) // 생성 날짜가 같은 경우 id로 추가 정렬
+                                .orderBy(post.createdAt.desc(), post.id.desc())
                                 .offset(pageable.getOffset())
                                 .limit(pageable.getPageSize())
-                                .transform(GroupBy.groupBy(Expressions.constant(1)).list(
-                                                new QPostIndexAndIndexSearchResponseWithPostTotal(
-                                                                GroupBy.list(
-                                                                                Projections.constructor(
-                                                                                                PostIndexAndIndexSearchResponse.class,
-                                                                                                post.id,
-                                                                                                post.title,
-                                                                                                post.content,
-                                                                                                user.username,
-                                                                                                user.blogId,
-                                                                                                category.name,
-                                                                                                featuredImage.fileUrl,
-                                                                                                post.createdAt)),
-                                                                JPAExpressions
-                                                                                .select(post.count())
-                                                                                .from(post)
-                                                                                .where(builder))));
-                if (results.isEmpty()) {
+                                .fetch();
 
-                        log.info("[PostRepositoryCustomImpl] commonQueryDSLQueryNotWithPostStatus - DB 조회 결과가 없을때 분기 진행");
-                        return new PageImpl<>(List.of(), pageable, 0);
-                }
-
-                log.info("[PostRepositoryCustomImpl] commonQueryDSLQueryNotWithPostStatus() - DB 조회 결과가 있을때 분기 진행");
-                PostIndexAndIndexSearchResponseWithPostTotal result = results.get(0);
-                return new PageImpl<>(result.getContent(), pageable, result.getTotal());
+                log.info("[PostRepositoryImpl] commonQueryDSLQueryNotWithPostStatus() - DB 조회 결과 Total이 0이 아닐 때 분기 진행");
+                return new PageImpl<>(content, pageable, total);
         }
 
         // 사용자 페이지용
@@ -437,7 +406,29 @@ public class PostRepositoryCustomImpl implements PostRepositoryCustom {
                 QCategory category = QCategory.category;
                 QFeaturedImage featuredImage = QFeaturedImage.featuredImage;
 
-                List<PostUserPageResponseWithPostTotal> results = queryFactory
+                // 총 개수 쿼리
+                Long total = queryFactory
+                                .select(post.count())
+                                .from(post)
+                                .where(builder)
+                                .fetchOne();
+
+                if (total == 0) {
+                        log.info("[PostRepositoryCustomImpl] commonQueryDSLQueryWithPostStatus - DB 조회 결과 total이 0일 때 분기 진행");
+                        return new PageImpl<>(List.of(), pageable, 0);
+                }
+
+                // 데이터 조회 쿼리
+                List<PostUserPageResponse> content = queryFactory
+                                .select(Projections.constructor(PostUserPageResponse.class,
+                                                post.id,
+                                                post.title,
+                                                post.content,
+                                                post.postStatus,
+                                                user.username,
+                                                category.name,
+                                                featuredImage.fileUrl,
+                                                post.createdAt))
                                 .from(post)
                                 .join(user).on(user.id.eq(post.userId))
                                 .leftJoin(category).on(category.id.eq(post.categoryId))
@@ -446,32 +437,10 @@ public class PostRepositoryCustomImpl implements PostRepositoryCustom {
                                 .orderBy(post.createdAt.desc(), post.id.desc())
                                 .offset(pageable.getOffset())
                                 .limit(pageable.getPageSize())
-                                .transform(GroupBy.groupBy(Expressions.constant(1)).list(
-                                                new QPostUserPageResponseWithPostTotal(
-                                                                GroupBy.list(
-                                                                                Projections.constructor(
-                                                                                                PostUserPageResponse.class,
-                                                                                                post.id,
-                                                                                                post.title,
-                                                                                                post.content,
-                                                                                                post.postStatus,
-                                                                                                user.username,
-                                                                                                category.name,
-                                                                                                featuredImage.fileUrl,
-                                                                                                post.createdAt)),
-                                                                JPAExpressions
-                                                                                .select(post.count())
-                                                                                .from(post)
-                                                                                .where(builder))));
-                if (results.isEmpty()) {
+                                .fetch();
 
-                        log.info("[PostRepositoryCustomImpl] commonQueryDSLQueryWithPostStatus - DB 조회 결과가 없을때 분기 진행");
-                        return new PageImpl<>(List.of(), pageable, 0);
-                }
-
-                log.info("[PostRepositoryCustomImpl] commonQueryDSLQueryWithPostStatus() - DB 조회 결과가 있을때 분기 진행");
-                PostUserPageResponseWithPostTotal result = results.get(0);
-                return new PageImpl<>(result.getContent(), pageable, result.getTotal());
+                log.info("[PostRepositoryCustomImpl] commonQueryDSLQueryWithPostStatus() - DB 조회 결과 total이 0이 아닐 때 분기 진행");
+                return new PageImpl<>(content, pageable, total);
         }
 
         // BooleanExpression은 where절에서 사용되는 조건식. and(), or() 체이닝 가능, null 처리 가능

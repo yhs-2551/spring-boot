@@ -6,8 +6,7 @@ import org.springframework.stereotype.Component;
 
 import com.yhs.blog.springboot.jpa.domain.auth.token.config.JwtConfig;
 
-import io.jsonwebtoken.Claims;
-import io.jsonwebtoken.ExpiredJwtException;
+import io.jsonwebtoken.Claims; 
 import io.jsonwebtoken.Jwts;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;

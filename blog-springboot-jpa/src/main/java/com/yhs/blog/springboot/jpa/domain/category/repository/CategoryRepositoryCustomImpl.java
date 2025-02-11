@@ -25,6 +25,7 @@ public class CategoryRepositoryCustomImpl implements CategoryRepositoryCustom {
 
     private final JPAQueryFactory queryFactory;
 
+    // 이 부분은 카테고리에 속한 총 포스트 수 서브 쿼리/카테고리 데이터 가져오는 쿼리 분리x. 분리한다면 3개이상의 쿼리 발생. 카테고리와 게시글 수가 많지 않아서 한번의 쿼리로 해도 무방. 성능에 문제 생길경우 분리 고려 
     // 사용자의 모든 카테고리를 가져오며, 카테고리의 자식 카테고리와 포스트의 총 갯수도 함께 가져옴
     // 아래 querydsl의 groupy list를 사용하는 방식도 있는데, 오류가 자꾸 나서 JPAExpression + Tuple사용. 한번의 쿼리안에 서브쿼리(부모, 자식 총 게시글 개수)까지 포함하며 필요한 컬럼(필드)만 가져옴. 즉 최적화 완료
     // 또한 아래 tuple 방식 일단 사용하는데, 나중에 @QueryProjection 방식 사용 고려. 아래 코드 적용한 후에 알게 되었음

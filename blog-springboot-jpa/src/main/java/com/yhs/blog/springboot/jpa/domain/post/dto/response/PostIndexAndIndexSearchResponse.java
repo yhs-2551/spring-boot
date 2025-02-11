@@ -2,6 +2,8 @@ package com.yhs.blog.springboot.jpa.domain.post.dto.response;
 
 import java.time.LocalDateTime;
 
+import com.querydsl.core.annotations.QueryProjection;
+
 import lombok.Getter;
 
 @Getter
@@ -16,6 +18,7 @@ public class PostIndexAndIndexSearchResponse {
     // 생성 일시, LocalDateTime은 Spring Boot에서 자동으로 ISO-8601 형식으로 변환. Redis같은거만 설정해주면 됨
     private final LocalDateTime createdAt;
 
+    @QueryProjection
     public PostIndexAndIndexSearchResponse(Long id, String title, String content, String username, String blogId, String categoryName,
             String featuredImageUrl, LocalDateTime createdAt) {
         this.id = id;

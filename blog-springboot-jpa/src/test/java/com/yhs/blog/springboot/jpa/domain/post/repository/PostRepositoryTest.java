@@ -1,9 +1,7 @@
 package com.yhs.blog.springboot.jpa.domain.post.repository;
 
 import com.yhs.blog.springboot.jpa.config.TestQueryDslConfig;
-import com.yhs.blog.springboot.jpa.domain.post.entity.Post;
-import com.yhs.blog.springboot.jpa.domain.post.entity.enums.CommentsEnabled;
-import com.yhs.blog.springboot.jpa.domain.post.entity.enums.PostStatus;
+import com.yhs.blog.springboot.jpa.domain.post.entity.Post; 
 import com.yhs.blog.springboot.jpa.domain.post.factory.TestPostFactory;
 import com.yhs.blog.springboot.jpa.domain.user.entity.User;
 import com.yhs.blog.springboot.jpa.domain.user.factory.TestUserFactory;
@@ -33,33 +31,32 @@ class PostRepositoryTest {
     private UserRepository userRepository;
 
     @Test
-    @DisplayName("PostRepository의 커스텀 findByIdWithUser 메서드 테스트")
-    public void findByIdWithUser_메서드_테스트() {
-
+    @DisplayName("PostRepository의 대표 이미지 ID 조회 메서드 테스트")
+    public void findFeaturedImageIdByPostId_메서드_테스트() {
         // given
         List<User> users = TestUserFactory.createMultipleTestUsers(2);
         userRepository.saveAll(users);
 
         List<Post> posts = new ArrayList<>();
+        Long featuredImageId1 = 1L;
+        Long featuredImageId2 = 2L;
 
-        for (int i = 0; i < 2; i++) {
-            Post post = TestPostFactory.createTestPost(users.get(i));
-            posts.add(post);
-        }
+        Post post1 = TestPostFactory.createTestPost(users.get(0).getId());
+        post1.setFeaturedImageId(featuredImageId1);
+        posts.add(post1);
+
+        Post post2 = TestPostFactory.createTestPost(users.get(1).getId());
+        post2.setFeaturedImageId(featuredImageId2);
+        posts.add(post2);
 
         postRepository.saveAll(posts);
 
         // when
-        Optional<Post> postsWithFirstUser = postRepository.findByIdWithUser(posts.get(0).getId());
-        Optional<Post> postsWithSecondUser = postRepository.findByIdWithUser(posts.get(1).getId());
+        Long foundFeaturedImageId1 = postRepository.findFeaturedImageIdByPostId(posts.get(0).getId());
+        Long foundFeaturedImageId2 = postRepository.findFeaturedImageIdByPostId(posts.get(1).getId());
 
         // then
-        assertThat(postsWithFirstUser).isNotEmpty();
-        assertThat(postsWithFirstUser.get().getUser().getUsername()).isEqualTo("testUser0");
-
-        assertThat(postsWithSecondUser).isNotEmpty();
-        assertThat(postsWithSecondUser.get().getUser().getUsername()).isEqualTo("testUser1");
-
+        assertThat(foundFeaturedImageId1).isEqualTo(featuredImageId1);
+        assertThat(foundFeaturedImageId2).isEqualTo(featuredImageId2);
     }
-
 }

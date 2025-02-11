@@ -5,38 +5,37 @@ import org.springframework.test.util.ReflectionTestUtils;
 
 import com.yhs.blog.springboot.jpa.domain.post.entity.Post;
 import com.yhs.blog.springboot.jpa.domain.post.entity.enums.CommentsEnabled;
-import com.yhs.blog.springboot.jpa.domain.post.entity.enums.PostStatus;
-import com.yhs.blog.springboot.jpa.domain.user.entity.User;
+import com.yhs.blog.springboot.jpa.domain.post.entity.enums.PostStatus; 
 
 @TestComponent
 public class TestPostFactory {
 
     // 테스트용 기본 게시글 생성
 
-    public static Post createTestPost(User user) {
+    public static Post createTestPost(Long userid) {
         Post post = Post.builder()
-                .user(user)
-                .category(null)
+                .userId(userid)
+                .categoryId(null)
                 .title("testTitle")
                 .content("testContent")
                 .postStatus(PostStatus.PUBLIC)
                 .commentsEnabled(CommentsEnabled.ALLOW)
-                .featuredImage(null)
+                .featuredImageId(null)
                 .build();
 
         return post;
 
     }
 
-    public static Post createTestPostWithId(User user) {
+    public static Post createTestPostWithId(Long userid) {
         Post post = Post.builder()
-                .user(user)
-                .category(null)
+                .userId(userid)
+                .categoryId(null)
                 .title("testTitle")
                 .content("testContent")
                 .postStatus(PostStatus.PUBLIC)
                 .commentsEnabled(CommentsEnabled.ALLOW)
-                .featuredImage(null)
+                .featuredImageId(null)
                 .build();
 
         ReflectionTestUtils.setField(post, "id", 1L);

@@ -10,7 +10,9 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 @AllArgsConstructor
 @Getter
 @Entity
-@Table(name = "featured_images")
+@Table(name = "featured_images", indexes = {
+    @Index(name = "idx_featured_images_file_url", columnList = "file_url")
+})
 public class FeaturedImage extends BaseEntity {
 
     @Id

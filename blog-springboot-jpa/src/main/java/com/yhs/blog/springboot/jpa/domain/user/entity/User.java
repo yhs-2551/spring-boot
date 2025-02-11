@@ -51,6 +51,7 @@ public class User extends BaseEntity implements UserDetails {
     @Column(nullable = false, length = 50, unique = true)
     private String blogId;
 
+    // 이것도 프론트 측이랑 백엔드 측에서 중복확인 처리 나중에 해야할 듯
     @Column(nullable = false, length = 32, unique = true)
     private String blogName;
 

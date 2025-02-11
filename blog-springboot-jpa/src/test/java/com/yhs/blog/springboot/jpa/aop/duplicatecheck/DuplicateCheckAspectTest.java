@@ -2,18 +2,15 @@ package com.yhs.blog.springboot.jpa.aop.duplicatecheck;
 
 import com.yhs.blog.springboot.jpa.common.constant.code.ErrorCode;
 import com.yhs.blog.springboot.jpa.domain.user.dto.response.DuplicateCheckResponse;
-import com.yhs.blog.springboot.jpa.exception.custom.BusinessException;
-import com.yhs.blog.springboot.jpa.exception.custom.SystemException;
+import com.yhs.blog.springboot.jpa.exception.custom.BusinessException; 
 
 import jakarta.servlet.http.HttpServletRequest;
-import org.aspectj.lang.ProceedingJoinPoint;
-import org.junit.jupiter.api.AfterAll;
+import org.aspectj.lang.ProceedingJoinPoint; 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.api.Test; 
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;

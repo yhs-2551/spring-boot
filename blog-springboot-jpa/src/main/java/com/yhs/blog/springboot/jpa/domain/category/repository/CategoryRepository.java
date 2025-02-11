@@ -19,4 +19,5 @@ public interface CategoryRepository extends JpaRepository<Category, String>, Cat
         @Modifying
         void deleteAllByCategoryId(@Param("uuids") List<String> uuids);
 
+        List<Category> findByUserId(Long userid);
 }

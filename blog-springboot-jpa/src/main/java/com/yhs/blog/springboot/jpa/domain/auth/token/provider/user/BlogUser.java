@@ -6,9 +6,9 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.User;
 
 import lombok.Getter;
-import lombok.extern.log4j.Log4j2;
+import lombok.extern.log4j.Log4j2; 
 
-@Getter
+@Getter 
 @Log4j2
 public class BlogUser extends User {
 
@@ -20,7 +20,8 @@ public class BlogUser extends User {
     public BlogUser(String BlogIdFromToken, String usernameFromToken, Long userIdFromToken,
             Collection<? extends GrantedAuthority> authorities) {
 
-        super(BlogIdFromToken, "", authorities); // 컨트롤러에서 authentication.name의 값이 super(BlogIdFromToken)값이 반영.
+        // 컨트롤러에서 authentication.name의 값이 super(BlogIdFromToken)값이 반영. 패스워드를 null로 하면 오류남. ""로 해야함
+        super(BlogIdFromToken, "", authorities);
         log.info("[BlogUser] BlogUser() 메서드 시작");
         this.BlogIdFromToken = BlogIdFromToken;
         this.usernameFromToken = usernameFromToken;

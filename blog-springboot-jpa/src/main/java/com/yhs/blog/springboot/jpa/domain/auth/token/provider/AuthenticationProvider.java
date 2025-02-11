@@ -10,8 +10,6 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.stereotype.Component;
 import com.yhs.blog.springboot.jpa.domain.auth.token.claims.ClaimsExtractor;
 import com.yhs.blog.springboot.jpa.domain.auth.token.provider.user.BlogUser;
-
-import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 
 import lombok.RequiredArgsConstructor;

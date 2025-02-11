@@ -18,8 +18,9 @@ public enum ErrorCode {
 
     // 인증 및 토큰 관련
     // AUTHENTICATION_FAILED(401, "BA001", "로그인 인증 실패"),
-    ACCESS_TOKEN_EMPTY(401, "BA002", "토큰 헤더가 비어있거나 Bearer 로 시작하지 않음"),
-    REFRESH_TOKEN_EXPIRED(401, "BA003", "리프레시 토큰 만료"),
+    // ACCESS_TOKEN_EXPIRED(401, "BA001", "액세스 토큰 만료 및 유효하지 않은 액세스 토큰"),
+    // ACCESS_TOKEN_EMPTY(401, "BA002", "토큰 헤더가 비어있거나 Bearer 로 시작하지 않음"),
+    REFRESH_TOKEN_EXPIRED(401, "BA001", "리프레시 토큰 만료"),
 
     // 횟수 제한 초과
     RATE_LIMIT_EXCEEDED(429, "BR001", "1분 3회 초과 요청"),

@@ -1,7 +1,6 @@
 package com.yhs.blog.springboot.jpa.domain.auth.token.filter;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.yhs.blog.springboot.jpa.common.constant.code.StatusCode;
 import com.yhs.blog.springboot.jpa.common.response.ErrorResponse;
 import com.yhs.blog.springboot.jpa.domain.auth.token.provider.AuthenticationProvider;
 import com.yhs.blog.springboot.jpa.domain.auth.token.validation.TokenValidator;
@@ -13,7 +12,6 @@ import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 
-import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.filter.OncePerRequestFilter;
@@ -38,51 +36,11 @@ public class TokenAuthenticationFilter extends OncePerRequestFilter {
 
                 log.info("[TokenAuthenticationFilter] doFilterInternal 메서드 시작");
 
-                String requestURI = request.getRequestURI();
                 String method = request.getMethod();
+                String requestURI = request.getRequestURI();
 
-                // GET 요청에 대한 예외 처리
-                // 초기 토큰을 가져오는 GET 요청의 경우 검증 필요 없음
-                if (method.equals("GET") &&
-                                (requestURI.equals("/api/token/initial-token") ||
-                                                requestURI.equals("/api/token/new-token") ||
-                                                // 특정 게시글 조회 (GET /api/posts/{id}) 및 게시글 목록 조회는 토큰 검증이 필요 없음
-                                                requestURI.matches("/api/[^/]+/posts") ||
-                                                requestURI.matches("/api/[^/]+/posts/page/[^/]+") ||
-                                                requestURI.matches("/api/[^/]+/posts/[^/]+") ||
-                                                requestURI.matches("/api/[^/]+/posts/[^/]+/edit") ||
-                                                requestURI.matches("/api/[^/]+/categories") ||
-                                                requestURI.matches("/api/[^/]+/categories/[^/]+/posts") ||
-                                                requestURI.matches("/api/[^/]+/categories/[^/]+/posts/page/[^/]+") ||
-                                                requestURI.matches("/api/users/[^/]+/profile") ||
-                                                requestURI.startsWith("/api/posts") ||
-                                                // username, Email, BlogId 체크는 토큰 검증이 필요 없음
-                                                requestURI.startsWith("/api/check/") ||
-                                                // Swagger UI 관련 요청은 토큰 검증이 필요 없음
-                                                requestURI.equals("/swagger-ui.html") ||
-                                                requestURI.startsWith("/swagger-ui/") ||
-                                                requestURI.startsWith("/v3/api-docs") ||
-                                                requestURI.startsWith("/swagger-resources/"))) {
-
-                        log.info("[TokenAuthenticationFilter] GET 요청 토큰 검증 수행하지 않는 분기 진행");
-
-                        // 이 경로에 대해서는 필터를 적용하지 않고 다음 필터로 넘김
-                        filterChain.doFilter(request, response);
-                        return;
-                }
-
-                // POST 요청에 대한 예외 처리
-                // 로그아웃은 필터에서는 통과 시키고 컨트롤러에서 따로 처리.
-                if (method.equals("POST") &&
-                                (requestURI.equals("/api/users/signup") ||
-                                                requestURI.equals("/api/auth/login") ||
-                                                requestURI.equals("/api/auth/logout") ||
-                                                requestURI.equals("/api/users/verify-code") ||
-                                                requestURI.equals("/api/oauth2/users") ||
-                                                requestURI.equals("/api/admin/batch/cleanup") // 배치 테스트용으로 추가
-                                )) {
-
-                        log.info("[TokenAuthenticationFilter] POST 요청 토큰 검증 수행하지 않는 분기 진행");
+                if (isPermitAllGetRequest(method, requestURI) || isPermitAllPostRequest(method, requestURI)) {
+                        log.info("[TokenAuthenticationFilter] 토큰 검증 수행하지 않는 분기 진행");
                         filterChain.doFilter(request, response);
                         return;
                 }
@@ -91,19 +49,12 @@ public class TokenAuthenticationFilter extends OncePerRequestFilter {
 
                 if (authorizationHeader == null || !authorizationHeader.startsWith("Bearer ")) {
 
-                        log.info("[TokenAuthenticationFilter] authorizationHeader 오류 분기 진행");
+                        log.info("[TokenAuthenticationFilter] authorizationHeader Bearer 누락 분기 진행");
 
-                        ErrorResponse errorResponse = new ErrorResponse(
+                        handleAuthenticationException(response,
                                         "액세스 토큰이 누락되었습니다.",
-                                        HttpStatus.UNAUTHORIZED.value());
+                                        HttpServletResponse.SC_UNAUTHORIZED);
 
-                        // Content-Type 설정
-                        response.setContentType("application/json;charset=UTF-8");
-                        response.setCharacterEncoding("UTF-8");
-                        response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-
-                        // 응답 메시지 작성
-                        response.getWriter().write(new ObjectMapper().writeValueAsString(errorResponse));
                         return; // 요청 헤더에서 액세스 토큰을 찾을 수 없으면 필터 체인 종료, 다음 필터로 넘어가지 않음
                 }
 
@@ -111,19 +62,12 @@ public class TokenAuthenticationFilter extends OncePerRequestFilter {
 
                 if (!tokenValidator.validateAccessToken(accessToken)) {
 
-                        log.info("[TokenAuthenticationFilter] validateAccessToken 오류 분기 진행");
+                        log.info("[TokenAuthenticationFilter] validateAccessToken 토큰 검증 실패 분기 진행");
 
-                        ErrorResponse errorResponse = new ErrorResponse(
+                        handleAuthenticationException(response,
                                         "유효하지 않거나 만료된 토큰입니다.",
-                                        HttpStatus.UNAUTHORIZED.value());
+                                        HttpServletResponse.SC_UNAUTHORIZED);
 
-                        log.debug("실행 dofilterinternal 유효성검사 후 - 실패 ");
-                        // Content-Type 설정
-                        response.setContentType("application/json;charset=UTF-8");
-                        response.setCharacterEncoding("UTF-8");
-                        response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-                        // 응답 메시지 작성
-                        response.getWriter().write(new ObjectMapper().writeValueAsString(errorResponse));
                         return; // 유효하지 않은 토큰이면 필터 체인 종료, 다음 필터로 넘어가지 않음
 
                 }
@@ -132,19 +76,60 @@ public class TokenAuthenticationFilter extends OncePerRequestFilter {
 
                 Authentication authentication = authenticationProvider.getAuthentication(accessToken);
 
-
-
-                log.info("=== Authentication 상세 정보 ===");
-                log.info("Principal: {}", authentication.getPrincipal());
-                log.info("Credentials: {}", authentication.getCredentials());
-                log.info("Name: {}", authentication.getName());
-                log.info("Authorities: {}", authentication.getAuthorities());
-                log.info("Details: {}", authentication.getDetails());
-                log.info("========================");
-
                 SecurityContextHolder.getContext().setAuthentication(authentication);
 
                 filterChain.doFilter(request, response);
+        }
+
+        private boolean isSwaggerRequest(String requestURI) {
+                return requestURI.equals("/swagger-ui.html") ||
+                                requestURI.startsWith("/swagger-ui/") ||
+                                requestURI.startsWith("/v3/api-docs") ||
+                                requestURI.startsWith("/swagger-resources/");
+        }
+
+        private boolean isPermitAllGetRequest(String method, String requestURI) {
+                if (!method.equals("GET")) {
+                        return false;
+                }
+
+                return requestURI.equals("/api/token/initial-token") ||
+                                requestURI.equals("/api/token/new-token") ||
+                                requestURI.matches("/api/[^/]+/posts") ||
+                                requestURI.matches("/api/[^/]+/posts/page/[^/]+") ||
+                                requestURI.matches("/api/[^/]+/posts/[^/]+") ||
+                                requestURI.matches("/api/[^/]+/posts/[^/]+/edit") ||
+                                requestURI.matches("/api/[^/]+/categories") ||
+                                requestURI.matches("/api/[^/]+/categories/[^/]+/posts") ||
+                                requestURI.matches("/api/[^/]+/categories/[^/]+/posts/page/[^/]+") ||
+                                requestURI.matches("/api/users/[^/]+/profile") ||
+                                requestURI.startsWith("/api/posts") ||
+                                requestURI.startsWith("/api/check/") ||
+                                isSwaggerRequest(requestURI);
+        }
+
+        private boolean isPermitAllPostRequest(String method, String requestURI) {
+                if (!method.equals("POST")) {
+                        return false;
+                }
+
+                return requestURI.equals("/api/users/signup") ||
+                                requestURI.equals("/api/auth/login") ||
+                                requestURI.equals("/api/auth/logout") ||
+                                requestURI.equals("/api/users/verify-code") ||
+                                requestURI.equals("/api/oauth2/users") ||
+                                requestURI.equals("/api/admin/batch/cleanup");
+        }
+
+        private void handleAuthenticationException(HttpServletResponse response,
+                        String message, int status) throws IOException {
+
+                ErrorResponse errorResponse = new ErrorResponse(message, status);
+                response.setContentType("application/json;charset=UTF-8");
+                response.setCharacterEncoding("UTF-8");
+
+                response.setStatus(status);
+                response.getWriter().write(new ObjectMapper().writeValueAsString(errorResponse));
         }
 
 }

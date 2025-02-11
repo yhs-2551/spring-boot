@@ -65,7 +65,7 @@ class PostFindControllerTest {
               final String content = "테스트 컨텐츠";
 
               postRepository.save(
-                            Post.builder().user(savedUser).title(title).content(content).postStatus(PostStatus.PUBLIC)
+                            Post.builder().userId(savedUser.getId()).title(title).content(content).postStatus(PostStatus.PUBLIC)
                                           .commentsEnabled(CommentsEnabled.ALLOW).build());
 
               // when
@@ -86,7 +86,7 @@ class PostFindControllerTest {
               final String content = "게시글 조회 테스트 컨텐츠 값";
 
               Post savePost = postRepository.save(Post.builder()
-                            .user(savedUser)
+                            .userId(savedUser.getId())
                             .title(title)
                             .content(content)
                             .postStatus(PostStatus.PUBLIC).commentsEnabled(CommentsEnabled.ALLOW)
@@ -96,8 +96,8 @@ class PostFindControllerTest {
                             get("/api/{blogId}/posts/{id}", TEST_BLOG_ID, savePost.getId()));
 
               resultActions.andExpect(MockMvcResultMatchers.status().isOk())
-                            .andExpect(jsonPath("$.content").value(content))
-                            .andExpect(jsonPath("$.title").value(title));
+                            .andExpect(jsonPath("$.data.content").value(content))
+                            .andExpect(jsonPath("$.data.title").value(title));
        }
 
 }

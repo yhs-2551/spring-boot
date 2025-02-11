@@ -16,7 +16,7 @@ import com.yhs.blog.springboot.jpa.aop.performance.MeasurePerformance;
 import com.yhs.blog.springboot.jpa.common.response.BaseResponse;
 import com.yhs.blog.springboot.jpa.common.response.ErrorResponse;
 import com.yhs.blog.springboot.jpa.common.response.SuccessResponse;
-import com.yhs.blog.springboot.jpa.domain.post.dto.response.PageResponse; 
+import com.yhs.blog.springboot.jpa.domain.post.dto.response.PageResponse;
 import com.yhs.blog.springboot.jpa.domain.post.dto.response.PostResponseForDetailPage;
 import com.yhs.blog.springboot.jpa.domain.post.dto.response.PostResponseForEditPage;
 import com.yhs.blog.springboot.jpa.domain.post.dto.response.PostUserPageResponse;
@@ -46,7 +46,7 @@ public class PostFindController {
         // 응답 DTO 필요한 데이터만 남겨서 1000건 데이터 기준 평균 4000ms -> 1800ms로 성능 개선
         // Projections.constructor을 사용하여 Entity전체가 아닌 필요한 컬럼만 조회, 연관 엔티티 추가 조회 없음(N+1문제
         // 해결), 조인으로 한 번에 데이터 조회로 성능 개선
-        // 이에 따라 1800ms -> 600ms로 성능 개선 
+        // 이에 따라 1800ms -> 600ms로 성능 개선
         // 연관관계 매핑 제거, 필요한 필드만 조회, 인덱스 설정으로 응답 시간 5ms~10ms로 성능 개선(1000건 데이터 기준)
         @Operation(summary = "모든 사용자의 게시글 조회 요청 처리", description = "사용자가 모든 사용자의 게시글을 조회 요청을 보내면 해당 요청을 처리")
         @ApiResponses(value = {

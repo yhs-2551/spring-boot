@@ -100,7 +100,7 @@ public class PostOperationServiceImpl implements PostOperationService {
             fileService.processCreateFilesForCreatePostRequest(postRequest.getFiles(), savedPost.getId());
 
             // 태그 처리
-            processPostTagsAndTags(post, postRequest.getTags(), savedPost.getId());
+            processPostTagsAndTags(postRequest.getTags(), savedPost.getId());
 
             log.info("[PostOperationServiceImpl] createNewPost S3 메인 스레드 시작: {}", Thread.currentThread().getName());
 
@@ -145,6 +145,8 @@ public class PostOperationServiceImpl implements PostOperationService {
 
         try {
 
+            // 아래 수정할때 조회 -> 수정 대신 바로 게시글 수정할수도 있는데, 조회할때 찾지 못하면 예외 발생 시켜야 하기 때문에 조회 -> 수정
+            // 처리
             // fetch join으로 user까지 함께 가져와 영속성 컨텍스트에 저장. 이후 getUser()로 가져올때 추가 select 쿼리 없음
             Post post = postRepository.findById(postId)
                     .orElseThrow(() -> new BusinessException(ErrorCode.POST_NOT_FOUND, postId +
@@ -164,7 +166,7 @@ public class PostOperationServiceImpl implements PostOperationService {
                 categoryId = null;
             }
 
-            // 파일(이미지) 삭제 및 저장 처리
+            // 파일(이미지) 삭제 및 저장 처리 - 대표 이미지 포함
             fileService.processUpdateFilesForUpdatePostRequest(postUpdateRequest.getFiles(), postId,
                     postUpdateRequest.getDeletedImageUrlsInFuture());
 
@@ -184,9 +186,10 @@ public class PostOperationServiceImpl implements PostOperationService {
                 tagRepository.deleteAll(unusedTags);
             }
 
-            processPostTagsAndTags(post, postUpdateRequest.getTags(), postId);
+            processPostTagsAndTags(postUpdateRequest.getTags(), postId);
 
-            // 대표 이미지 처리
+            // 대표 이미지 설정, 대표 이미지 삭제는 위쪽 fileService.processUpdateFilesForUpdatePostRequest에서
+            // 일괄 처리 했음
             Long featuredImageId = featuredImageService
                     .processFeaturedImageForUpdatePostRequest(postUpdateRequest.getFeaturedImage());
 
@@ -194,7 +197,7 @@ public class PostOperationServiceImpl implements PostOperationService {
             String convertedContent = postUpdateRequest.getContent().replace(blogId + "/temp/",
                     blogId + "/final/");
 
-            // 더티 체킹 대상으로써 save 메서드 불필요
+            // 더티 체킹 대상으로써 save 메서드 불필요.
             post.update(categoryId, featuredImageId, postUpdateRequest.getTitle(), convertedContent,
                     PostStatus.valueOf(postUpdateRequest.getPostStatus().toUpperCase()),
                     CommentsEnabled.valueOf(postUpdateRequest.getCommentsEnabled().toUpperCase()));
@@ -226,26 +229,44 @@ public class PostOperationServiceImpl implements PostOperationService {
     public void deletePostByPostId(Long postId, BlogUser blogUser) {
         log.info("[PostOperationServiceImpl] deletePostByPostId 메서드 시작: postId: {}", postId);
 
-        String blogId = blogUser.getBlogIdFromToken();
-
         try {
 
+            // 아래 삭제할때 조회 -> 삭제 대신 바로 삭제할수도 있는데, 조회할때 찾지 못하면 예외 발생 시켜야 하기 때문에 조회 -> 삭제
+
+            String blogId = blogUser.getBlogIdFromToken();
+
+            Post foundPost = postRepository.findById(postId)
+                    .orElseThrow(() -> new BusinessException(ErrorCode.POST_NOT_FOUND, postId + "번 게시글을 찾을 수 없습니다.",
+                            "PostOperationServiceImpl", "deletePostByPostId"));
+
+            List<String> toBeDeletedFileUrls = new ArrayList<>();
+
             // 파일 삭제 처리
-            List<String> toBeDeletedFileUrls = fileService.processDeleteFilesForDeletePostRequest(postId);
+            List<String> fileUrls = fileService.processDeleteFilesForDeletePostRequest(postId);
+
+            if (fileUrls != null && !fileUrls.isEmpty()) {
+                toBeDeletedFileUrls.addAll(fileUrls);
+            }
 
             // 대표 이미지 삭제 처리
             Long featuredImageId = postRepository.findFeaturedImageIdByPostId(postId);
-            featuredImageService.processDeleteFeaturedImageForDeletePostRequest(featuredImageId);
+
+            if (featuredImageId != null) {
+                String featuredImageFileUrl = featuredImageService
+                        .processDeleteFeaturedImageForDeletePostRequest(featuredImageId);
+                toBeDeletedFileUrls.add(featuredImageFileUrl);
+            }
 
             // 태그 삭제 처리, PostTag는 무조건 삭제하면 됨
             postTagRepository.deletePostTagsByPostId(postId);
             List<Tag> toBeDeletedTags = tagRepository.findUnusedTagsByPostId(postId);
-            tagRepository.deleteAllInBatch(toBeDeletedTags);
+
+            if (toBeDeletedTags != null && !toBeDeletedTags.isEmpty()) {
+                tagRepository.deleteAllInBatch(toBeDeletedTags);
+            }
 
             // 게시글 삭제 처리
-            Post foundPost = postRepository.findById(postId)
-                    .orElseThrow(() -> new BusinessException(ErrorCode.POST_NOT_FOUND, postId + "번 게시글을 찾을 수 없습니다.",
-                            "PostOperationServiceImpl", "deletePostByPostId"));
+
             postRepository.delete(foundPost);
 
             // 트랜잭션이 성공되어야만 실행
@@ -266,7 +287,7 @@ public class PostOperationServiceImpl implements PostOperationService {
 
     }
 
-    private void processPostTagsAndTags(Post post, List<String> tagNames, Long postId) {
+    private void processPostTagsAndTags(List<String> tagNames, Long postId) {
 
         log.info("[PostOperationServiceImpl] processTags 메서드 시작");
 
@@ -281,15 +302,25 @@ public class PostOperationServiceImpl implements PostOperationService {
                 Optional<Tag> tag = tagRepository.findByName(tagName);
 
                 if (tag.isPresent()) {
+                    postTags.add(new PostTag(postId, tag.get().getId()));
                     continue;
                 }
 
-                tags.add(tag.get()); // 새롭게 생성된 태그를 영속성 컨텍스트에 저장
-                PostTag postTag = new PostTag(postId, tag.get().getId());
-                postTags.add(postTag);
+                Tag newTag = new Tag(tagName);
+
+                tags.add(newTag);
             }
-            tagRepository.saveAll(tags);
+
+            List<Tag> savedTags = tagRepository.saveAll(tags);
+
+            savedTags.forEach(tag -> {
+                PostTag postTag = new PostTag(postId, tag.getId());
+                postTags.add(postTag);
+            });
+
             postTagRepository.saveAll(postTags);
+        } else {
+            return;
         }
     }
 

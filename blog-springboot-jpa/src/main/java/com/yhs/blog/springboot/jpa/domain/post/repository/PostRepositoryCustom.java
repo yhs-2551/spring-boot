@@ -1,9 +1,11 @@
 package com.yhs.blog.springboot.jpa.domain.post.repository;
 
+import java.util.Optional;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
-import com.yhs.blog.springboot.jpa.domain.post.dto.response.PostIndexAndIndexSearchResponse; 
+import com.yhs.blog.springboot.jpa.domain.post.dto.response.PostIndexAndIndexSearchResponse;
 import com.yhs.blog.springboot.jpa.domain.post.dto.response.PostResponseForDetailPage;
 import com.yhs.blog.springboot.jpa.domain.post.dto.response.PostResponseForEditPage;
 import com.yhs.blog.springboot.jpa.domain.post.dto.response.PostUserPageResponse;
@@ -17,8 +19,8 @@ public interface PostRepositoryCustom {
 
     Page<PostIndexAndIndexSearchResponse> findPostsAllUser(String keyword, SearchType searchType, Pageable pageable);
 
-    PostResponseForDetailPage findByIdNotWithFeaturedImage(Long postId);
+    Optional<PostResponseForDetailPage> findByIdNotWithFeaturedImage(Long postId);
 
-    PostResponseForEditPage findByIdWithFeaturedImage(Long postId);
+    Optional<PostResponseForEditPage> findByIdWithFeaturedImage(Long postId);
 
 }

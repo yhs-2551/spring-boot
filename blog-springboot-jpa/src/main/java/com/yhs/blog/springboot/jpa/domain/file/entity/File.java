@@ -1,7 +1,6 @@
 package com.yhs.blog.springboot.jpa.domain.file.entity;
 
-import com.yhs.blog.springboot.jpa.common.entity.BaseEntity;
-import com.yhs.blog.springboot.jpa.domain.post.entity.Post;
+import com.yhs.blog.springboot.jpa.common.entity.BaseEntity; 
 
 import jakarta.persistence.*;
 import lombok.*;
@@ -11,7 +10,7 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 @Getter
 @Entity
 @Table(name = "files", indexes = {
-        @Index(name = "idx_files_post_id", columnList = "post_id") // post_id에 인덱스 추가
+        @Index(name = "idx_files_post_id", columnList = "post_id") 
 })
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor

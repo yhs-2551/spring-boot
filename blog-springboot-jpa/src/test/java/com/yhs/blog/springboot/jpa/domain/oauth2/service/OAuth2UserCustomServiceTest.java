@@ -39,7 +39,7 @@ class OAuth2UserCustomServiceTest {
 
     @Test
     @DisplayName("이메일이 있는 경우 성공")
-    void loadUser_WithEmail_Success() {
+    void 사용자를_불러왔을때_이메일이_있는_경우_성공() {
         // given
         OAuth2UserLoadService serviceSpy = spy(oAuth2UserLoadService);
         when(oAuth2User.getAttribute("email")).thenReturn("test@email.com");
