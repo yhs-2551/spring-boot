@@ -13,6 +13,7 @@ import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.data.jpa.mapping.JpaMetamodelMappingContext;
 
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import static org.mockito.Mockito.*;
@@ -23,6 +24,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 // @WebMvcTest + MockMVC를 사용한 컨트롤러 단위 테스트
 @WebMvcTest(UserCheckController.class)
 @AutoConfigureMockMvc(addFilters = false) // Security 모든 필터 무시
+@ActiveProfiles("test") 
 class UseCheckControllerUnitTest {
 
     @Autowired
