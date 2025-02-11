@@ -3,12 +3,19 @@ name: Spring boot Blog CI/CD
 on:
     push:
         branches: ["main"]
+        paths:
+            - "blog-springboot-jpa/**" # blog-springboot-jpa 폴더의 변경사항만 감지
     pull_request:
         branches: ["main"]
+        paths:
+            - "blog-springboot-jpa/**" # blog-springboot-jpa 폴더의 변경사항만 감지
 
 jobs:
     build:
         runs-on: ubuntu-latest
+        defaults:
+            run:
+                working-directory: ./blog-springboot-jpa # 작업 디렉토리 설정
 
         steps:
             # 기본 체크아웃
@@ -21,11 +28,11 @@ jobs:
                   java-version: "17"
                   distribution: "temurin"
 
-            # Gradle 캐시 설정: 빌드 속도 향상 및 의존성 재다운로드 방지  
+            # Gradle 캐시 설정: 빌드 속도 향상 및 의존성 재다운로드 방지
             # ~는 홈 디렉토리를 의미 (Windows에서는 C:\Users\{사용자이름})
             - name: Gradle 캐시
               uses: actions/cache@v4
-              with: 
+              with:
                   path: |
                       ~/.gradle/caches 
                       ~/.gradle/wrapper
