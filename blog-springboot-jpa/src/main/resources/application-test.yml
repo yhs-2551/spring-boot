@@ -17,7 +17,7 @@ spring:
     data:
         redis:
             host: localhost
-            port: 6379
+            port: 6379 #DynamicPropertySource에 의해 덮어씌워질 수 있기 때문에 나중에 확인해보기
 
     # elasticsearch:
     #     uris: http://localhost:9200
