@@ -1,4 +1,4 @@
-name: Spring boot Blog CI/CDdddada
+name: Spring boot Blog CI/CD
 
 on:
   push:
