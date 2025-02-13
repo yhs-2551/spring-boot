@@ -1,3 +1,6 @@
 spring:
-  profiles:
-    active: dev
+    profiles:
+        active: dev
+
+logging:
+    config: classpath:log4jdbc-${spring.profiles.active}.properties

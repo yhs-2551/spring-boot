@@ -18,7 +18,7 @@ jobs:
                 working-directory: ./blog-springboot-jpa # 작업 디렉토리 설정
 
         steps:
-            - uses: actions/checkout@v4
+            - uses: actions/checkout@v4 # 저장소 코드를 워크플로우 환경으로 체크아웃. 즉 GitHub 저장소 코드를 runner의 작업 디렉토리로 복사
 
             - name: JDK 17 설정
               uses: actions/setup-java@v4
@@ -27,7 +27,7 @@ jobs:
                   distribution: "temurin"
 
             - name: Gradle 캐시
-              uses: actions/cache@v4
+              uses: actions/cache@v4 # 빌드 의존성 캐싱으로 빌드 시간 단축, Gradle/Maven 의존성 캐싱. key로 캐시 존재 확인, 없으면 restore-keys 사용. 작업 완료 후 자동 캐시 저장 
               with:
                   path: |
                       ~/.gradle/caches 
@@ -42,7 +42,7 @@ jobs:
 
             - name: 테스트 결과 저장
               if: always()
-              uses: actions/upload-artifact@v4
+              uses: actions/upload-artifact@v4 # 빌드/테스트 결과물 저장 및 공유. 빌드된 JAR 파일 저장, 테스트 리포트 저장, 코드 커버리지(jacoco) 리포트 저장. 다른 워크플로우에서 재사용 할수도 있음
               with:
                   name: test-results
                   path: build/reports/tests/test/

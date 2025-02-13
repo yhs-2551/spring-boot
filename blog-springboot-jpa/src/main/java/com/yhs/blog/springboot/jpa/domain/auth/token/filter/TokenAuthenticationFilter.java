@@ -88,6 +88,10 @@ public class TokenAuthenticationFilter extends OncePerRequestFilter {
                                 requestURI.startsWith("/swagger-resources/");
         }
 
+        private boolean isActuatorRequest(String requestURI) {
+                return requestURI.startsWith("/actuator");
+        }
+
         private boolean isPermitAllGetRequest(String method, String requestURI) {
                 if (!method.equals("GET")) {
                         return false;
@@ -105,7 +109,8 @@ public class TokenAuthenticationFilter extends OncePerRequestFilter {
                                 requestURI.matches("/api/users/[^/]+/profile") ||
                                 requestURI.startsWith("/api/posts") ||
                                 requestURI.startsWith("/api/check/") ||
-                                isSwaggerRequest(requestURI);
+                                isSwaggerRequest(requestURI) ||
+                                isActuatorRequest(requestURI);
         }
 
         private boolean isPermitAllPostRequest(String method, String requestURI) {

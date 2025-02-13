@@ -47,10 +47,6 @@ public class Category extends BaseEntity {
     @Column(name = "order_index", nullable = false)
     private Long orderIndex;
 
-    @LastModifiedDate
-    @Column(name = "updated_at")
-    private LocalDateTime updatedAt;
-
     // 여러 자식이 동일한 부모 id값을 가질 수 있기 때문에 unique = true 제약조건을 걸지 않음.
     // JPA에서 별로도 참조하는 컬럼을 명시하지 않으면 자동으로 해당 테이블의 id 컬럼 참조. 즉 여기에서 id 컬럼 참조
     @Column(name = "parent_id", nullable = true)
@@ -58,5 +54,9 @@ public class Category extends BaseEntity {
 
     @Column(name = "user_id", nullable = false)
     private Long userId;
+
+    @LastModifiedDate
+    @Column(name = "updated_at")
+    private LocalDateTime updatedAt;
 
 }

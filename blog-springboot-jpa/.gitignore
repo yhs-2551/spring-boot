@@ -37,16 +37,27 @@ out/
 .vscode/
 
 #env
-.env
-application-local.yml
+.env 
 
 #queryDSL related folder 
 build/generated/querydsl/
 
 # VS CODE에서 문서 작업용 파일
 document.md
-
-dummy.sql
+ 
+# sql 파일 외 resources 폴더 내부 파일들
+/src/main/resources/sql/
+/src/main/resources/erd/
+/src/main/resources/diagram/
+/src/main/resources/entity/
 
 # Log files
 logs/
+*.log
+
+# Prod 환경 설정 파일 
+/src/main/resources/application-prod.yml
+/src/main/resources/log4j2-prod.xml
+/src/main/resources/log4jdbc-prod.properties
+docker-compose-prod.yml
+prometheus-prod.yml

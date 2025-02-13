@@ -1,0 +1,10 @@
+#.gitignore에 추가x 
+global:
+    scrape_interval: 30s
+    evaluation_interval: 30s
+
+scrape_configs:
+    - job_name: "spring-boot-blog-app"
+      metrics_path: "/actuator/prometheus"
+      static_configs:
+          - targets: ["host.docker.internal:8000"] # 컨테이너에서 호스트 머신(나의 경우 윈도우)의 8000번 포트로 접근할 수 있게 함

@@ -117,3 +117,27 @@ springdoc:
         path: /v3/api-docs # OpenAPI 명세 JSON 경로
     default-consumes-media-type: application/json # 기본 요청 타입
     default-produces-media-type: application/json # 기본 응답 타입
+
+
+management:
+    endpoints:
+        web:
+            exposure:
+                include: "*"  # 개발 환경에서는 모든 엔드포인트 활성화. 운영 환경에서는 health,metrics,prometheus 이것만
+    endpoint:
+        health:
+            show-details: always # 상세한 헬스 체크 정보 표시
+    info:
+        env:
+            enabled: true # http://localhost:8000/actuator/info 에서 확인. 애플리케이션 기본 정보, 환경 정보, 빌드 정보 등이 JSON 형태로 제공
+
+    metrics:
+        tags:
+            application: blog-springboot-jpa # 메트릭에 애플리케이션 이름 태그 추가
+        distribution:
+            percentiles-histogram:
+                "[http.server.requests]": true  # HTTP 요청에 대한 히스토그램 메트릭 수집 / . 마침표가 있어서 []로 감싸서 특수문자 이스케이프 해야함
+    prometheus:
+        metrics:
+            export:
+                enabled: true # 프로메테우스 메트릭 익스포트 활성화

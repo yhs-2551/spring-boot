@@ -96,6 +96,17 @@ public class SecurityConfig {
         // Swagger UI: http://localhost:8000/swagger-ui.html
         // 브라우저에서 API 문서를 시각적으로 탐색하고 테스트할 수 있다.
 
+        // actuator: 자세한 엔드포인트는 all endpoint로 검색 아래는 자주 쓰이는 것들
+        // http://localhost:8000/actuator/health
+        // http://localhost:8000/actuator/metrics
+        // http://localhost:8000/actuator/prometheus
+        // http://localhost:8000/actuator/loggers: 로그 레벨 확인/변경
+        // http://localhost:8000/actuator/env : 환경 설정 정보
+        // http://localhost:8000/actuator/metrics/jvm.memory.used : JVM 메모리 사용량
+        // http://localhost:8000/actuator/metrics/http.server.requests : HTTP 요청 통계
+        // curl http://localhost:8000/actuator/metrics/http.server.requests 과 같이 curl로
+        // get 요청 해도 편함
+
         private static final String[] SWAGGER_WHITELIST = {
                         "/swagger-ui.html",
                         "/swagger-ui/**",
@@ -155,6 +166,8 @@ public class SecurityConfig {
                                                 .permitAll()
                                                 .requestMatchers(HttpMethod.GET, "/api/users/*/profile").permitAll()
                                                 .requestMatchers(HttpMethod.GET, "/api/check/**").permitAll()
+                                                .requestMatchers(HttpMethod.GET, "/actuator/**").permitAll() // actuator
+                                                                                                             // 활성화
                                                 // POST 요청 permitAll
                                                 .requestMatchers(HttpMethod.POST, "/api/users/signup").permitAll()
                                                 .requestMatchers(HttpMethod.POST, "/api/auth/login").permitAll()
