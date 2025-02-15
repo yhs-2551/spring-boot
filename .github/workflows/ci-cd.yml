@@ -114,17 +114,16 @@ jobs:
                   cat ~/.ssh/known_hosts
 
             - name: EC2에 배포
-              run: |
+              run: |    
                   #  기존 JAR 파일 삭제 및 이전 버전 백업
                   ssh -i blog-springboot-key.pem ec2-user@${{ secrets.EC2_HOST }} "
                       cd /home/ec2-user/app
                       echo '===== 컨테이너 중지 ====='
-                      docker-compose stop app
+                      docker-compose down
                       
                       echo '===== 기존 JAR 파일 백업 및 삭제 ====='
                       if [ -f blog-springboot-jpa-1.0.0.jar ]; then
                           cp blog-springboot-jpa-1.0.0.jar blog-springboot-jpa-1.0.0.jar.backup
-                          rm blog-springboot-jpa-1.0.0.jar
                       fi
                   "
 
@@ -136,11 +135,11 @@ jobs:
                   # 애플리케이션 재시작 with 롤백
                   ssh -i blog-springboot-key.pem ec2-user@${{ secrets.EC2_HOST }} "
                       cd /home/ec2-user/app
-                      if ! docker-compose up -d app; then
+                      if ! docker-compose up -d; then
                         echo '배포 실패. 롤백 시작...'
                         # .backup 파일을 원래 파일 이름으로 복원
                         mv blog-springboot-jpa-1.0.0.jar.backup blog-springboot-jpa-1.0.0.jar
-                        docker-compose --env-file .env up -d app
+                        docker-compose up -d
                         exit 1
                       else 
                         echo '배포 성공'
