@@ -1,3 +1,5 @@
+#Github action 워크플로우 시작 시 마다 새로운 가상 머신 생성. 실행 후 자동으로 삭제
+
 name: Spring boot Blog CI/CD
 
 on:
@@ -13,6 +15,7 @@ on:
 jobs:
     build:
         runs-on: ubuntu-latest
+        timeout-minutes: 10
         defaults:
             run:
                 working-directory: ./blog-springboot-jpa # 작업 디렉토리 설정
@@ -27,7 +30,7 @@ jobs:
                   distribution: "temurin"
 
             - name: Gradle 캐시
-              uses: actions/cache@v4 # 빌드 의존성 캐싱으로 빌드 시간 단축, Gradle/Maven 의존성 캐싱. key로 캐시 존재 확인, 없으면 restore-keys 사용. 작업 완료 후 자동 캐시 저장 
+              uses: actions/cache@v4 # 빌드 의존성 캐싱으로 빌드 시간 단축, Gradle/Maven 의존성 캐싱. key로 캐시 존재 확인, 없으면 restore-keys 사용. 작업 완료 후 자동 캐시 저장
               with:
                   path: |
                       ~/.gradle/caches 
@@ -54,4 +57,68 @@ jobs:
               uses: actions/upload-artifact@v4
               with:
                   name: build-artifact
-                  path: build/libs/*.jar
+                  path: build/libs/blog-springboot-jpa-1.0.0.jar # plain.jar 제외
+
+    deploy:
+        needs: build # build job이 성공적으로 완료된 후 실행
+        runs-on: ubuntu-latest
+        timeout-minutes: 10
+        defaults:
+            run:
+                working-directory: ./blog-springboot-jpa
+
+        steps:
+            - name: 빌드 결과물 다운로드
+              uses: actions/download-artifact@v4
+              with:
+                  name: build-artifact
+                  path: build/libs
+
+            - name: AWS 자격증명 구성
+              uses: aws-actions/configure-aws-credentials@v4
+              with:
+                  aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+                  aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+                  aws-region: ap-northeast-2
+
+            - name: EC2 SSH 키 생성 # secrets.EC2_SSH_PRIVATE_KEY를 출력 후 blog-springboot-key.pem 파일로 생성 및 저장 후에 소유자에게만 "읽기" 권한 설정. 첫번째는 소유자 읽기(4), 두번째는 그룹의 권한, 세번째는 다른 사용자의 권한
+              run: |
+                  echo "${{ secrets.EC2_SSH_PRIVATE_KEY }}" > blog-springboot-key.pem
+                  chmod 400 blog-springboot-key.pem
+
+            - name: EC2 호스트 키 설정
+              run: |
+                  # .ssh 디렉토리가 있다면 아무 일도 일어나지 않음, EC2 서버의 SSH 공개 키를 자동으로 가져온 후에 known_hosts 파일에 추가
+                  # .ssh 폴더는 GitHub Actions 러너(Runner)에 생성.
+                  # 맨처음에 ssh에 접속할때 서버의 호스트 키를 확인하는 수동 확인 과정이 필요한데 이를 자동화 함.
+                  mkdir -p ~/.ssh 
+                  ssh-keyscan -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts
+
+            - name: EC2에 배포
+              run: |
+                  # 이전 버전 백업
+                  ssh -i blog-springboot-key.pem ec2-user@${{ secrets.EC2_HOST }} "
+                      cd /home/ec2-user/app
+                      # || true: 이 부분은 "혹시 오류가 발생하더라도 명령어가 실패하지 않도록" 하는 구문
+                      cp blog-springboot-jpa-1.0.0.jar blog-springboot-jpa-1.0.0.jar.backup || true
+                  "
+
+                  # 새 버전 배포, 줄 끝에 \는 가독성 향상을 위해 줄바꿈 용도
+                  scp -i blog-springboot-key.pem \
+                      build/libs/blog-springboot-jpa-1.0.0.jar \
+                      ec2-user@${{ secrets.EC2_HOST }}:/home/ec2-user/app/
+
+                  # 애플리케이션 재시작 with 롤백
+                  ssh -i blog-springboot-key.pem ec2-user@${{ secrets.EC2_HOST }} "
+                      cd /home/ec2-user/app
+                      if ! docker-compose up -d app; then
+                        echo '배포 실패. 롤백 시작...'
+                        # .backup 파일을 원래 파일 이름으로 복원
+                        mv blog-springboot-jpa-1.0.0.jar.backup blog-springboot-jpa-1.0.0.jar
+                        docker-compose up -d app
+                        exit 1
+                      else 
+                        echo '배포 성공'
+                      fi
+                      rm -f blog-springboot-jpa-1.0.0.jar.backup
+                  "
