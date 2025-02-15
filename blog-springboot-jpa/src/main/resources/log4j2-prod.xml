@@ -4,7 +4,7 @@
     <Properties>
         <Property name="LOG_PATTERN">%d{yyyy-MM-dd HH:mm:ss.SSS} [%t] %-5level %logger{36} - %msg%n</Property>
         <!-- EC2의 로그 디렉토리 경로 -->
-        <Property name="LOG_DIR">/home/ec2-user/app/logs</Property>
+        <Property name="LOG_DIR">/logs</Property>
     </Properties>
 
     <Appenders>

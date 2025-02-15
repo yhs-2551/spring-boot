@@ -1,11 +1,11 @@
-# prod 설정파일 변경 시 ec2에도 적용 필요. 
+# prod 설정파일 변경 시 ec2에도 적용 필요.
 global:
-    scrape_interval: 5m
-    evaluation_interval: 5m
-    retention_time: 3d # 일단 적게 3일 보존. 부족하면 나중에 늘리기 
+    scrape_interval: 2m #Prometheus가 타겟(예: 스프링부트 앱)에서 데이터를 가져오는 간격, 아래 evaluation_interval이랑 얘도 1m이어도 될 것 같지만 용량 상 혹시 모르니 2m
+    evaluation_interval: 2m # 기록 규칙(recording rules)과 경고 규칙(alerting rules)을 평가하는 간격, 예: 5분마다 한 번씩 알림 조건 검사
+    scrape_timeout: 30s # 메트릭 수집 제한 시간. 예: 30초 안에 메트릭 수집이 완료되지 않으면 실패 처리. 대부분 10s 이내에 수행된다고 하지만 넉넉하게 일단 30s
 
- # tagets: 프로메테우스가 정기적으로(scrape_interval: 1m) 타겟 URL에 요청, 호스트 이름은 문자, 숫자, 하이픈(-)만 사용 가능
- # 동일한 네트워크를 사용하는 도커 컨테이너 내부에서는 컨테이너명(blog-app)을 사용해서 접근
+    # tagets: 프로메테우스가 정기적으로(scrape_interval: 1m) 타겟 URL에 요청, 호스트 이름은 문자, 숫자, 하이픈(-)만 사용 가능
+    # 동일한 네트워크를 사용하는 도커 컨테이너 내부에서는 컨테이너명(blog-app)을 사용해서 접근
 scrape_configs:
     - job_name: "spring-boot-blog-app"
       metrics_path: "/actuator/prometheus"

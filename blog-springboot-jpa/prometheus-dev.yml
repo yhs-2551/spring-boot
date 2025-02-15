@@ -1,4 +1,4 @@
-#.gitignore에 추가x 
+#.gitignore에 추가x
 global:
     scrape_interval: 30s
     evaluation_interval: 30s

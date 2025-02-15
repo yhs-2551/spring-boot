@@ -70,7 +70,7 @@ services:
             - prometheus_data:/prometheus # 데이터 영구 저장
         command:
             - "--config.file=/etc/prometheus/prometheus.yml"
-            - "--storage.tsdb.retention.time=7d"
+            - "--storage.tsdb.retention.time=3d" # 보존 기간 3일(EC2 용량 때문에 혹시 모르니 적게 설정)
             - "--storage.tsdb.retention.size=512MB" # 저장 용량 제한
         networks:
             - blog_network
