@@ -1,0 +1,193 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Configuration status="WARN">
+
+    <!-- 개발 환경, 운영 환경 공통 Properties -->
+    <Properties>
+        <Property name="LOG_PATTERN">%d{yyyy-MM-dd HH:mm:ss.SSS} [%t] %-5level %logger{36} - %msg%n</Property>
+    </Properties>
+
+
+    <SpringProfile name="dev">
+
+        <!-- 바로 아래 properties는 인식 안돼서 주석 처리
+        <Properties>
+            <Property name="LOG_DIR">logs</Property>
+        </Properties> -->
+
+
+        <Appenders>
+            <!-- 콘솔 출력 설정 -->
+            <Console name="Console" target="SYSTEM_OUT">
+                <PatternLayout pattern="${LOG_PATTERN}" charset="UTF-8" />
+            </Console>
+
+            <RollingFile name="RollingFile"
+                fileName="logs/application.log"
+                filePattern="logs/backup-application-%d{yyyy-MM-dd}-%i.log">
+                <PatternLayout pattern="${LOG_PATTERN}" charset="UTF-8" />
+                <Policies>
+                    <OnStartupTriggeringPolicy />
+                    <!-- 파일 크기가 10MB 넘어가면 새 파일 생성 -->
+                    <SizeBasedTriggeringPolicy size="10 MB" />
+                </Policies>
+                <DefaultRolloverStrategy max="5" />
+            </RollingFile>
+        </Appenders>
+
+
+        <Loggers>
+            <!-- Root logger: 기본 로그 레벨 설정 -->
+            <Root level="warn">
+                <AppenderRef ref="Console" />
+                <AppenderRef ref="RollingFile" />
+            </Root>
+
+            <!-- Hibernate SQL 로그 레벨 설정. warn으로 지정하면 콘솔에는 찍히지만 파일에는 찍히지가 않아서 debug -->
+            <!-- additivity="false": 상위 로거(Root)의 설정을 상속받지 않음 -->
+            <Logger name="org.hibernate.SQL" level="debug" additivity="false">
+                <AppenderRef ref="Console" />
+                <AppenderRef ref="RollingFile" />
+            </Logger>
+
+
+            <!-- 바인딩된 파라미터 값 로그 레벨 설정 -->
+            <Logger name="org.hibernate.type.descriptor.sql.BasicBinder" level="trace"
+                additivity="false">
+                <AppenderRef ref="Console" />
+                <AppenderRef ref="RollingFile" />
+
+            </Logger>
+
+            <!-- 얘가 있어야 바인딩 파라미터값이 보임 -->
+            <Logger name="org.hibernate.orm.jdbc.bind" level="trace" additivity="false">
+                <AppenderRef ref="Console" />
+                <AppenderRef ref="RollingFile" />
+            </Logger>
+
+            <!-- 트랜잭션 관련 로그 -->
+            <Logger name="org.springframework.transaction" level="warn" additivity="false">
+                <AppenderRef ref="Console" />
+                <AppenderRef ref="RollingFile" />
+
+            </Logger>
+
+            <!-- JPA 관련 로그 -->
+            <Logger name="org.springframework.orm.jpa" level="warn" additivity="false">
+                <AppenderRef ref="Console" />
+                <AppenderRef ref="RollingFile" />
+
+            </Logger>
+
+            <!-- 애플리케이션 비즈니스 로직 로그 -->
+            <Logger name="com.yhs.blog.springboot.jpa" level="info" additivity="false">
+                <AppenderRef ref="Console" />
+                <AppenderRef ref="RollingFile" />
+
+            </Logger>
+
+            <!-- 톰캣 로깅. info로 안해놓으면(debug로 하면) 불필요한 로그가 많이 찍힘 -->
+            <Logger name="org.apache.tomcat" level="warn" additivity="false">
+                <AppenderRef ref="Console" />
+                <AppenderRef ref="RollingFile" />
+
+            </Logger>
+
+            <Logger name="org.apache.catalina" level="warn" additivity="false">
+                <AppenderRef ref="Console" />
+                <AppenderRef ref="RollingFile" />
+            </Logger>
+        </Loggers>
+    </SpringProfile>
+
+    <SpringProfile name="prod">
+
+        <!-- 바로 아래 properties는 인식 안돼서 주석 처리
+        <Properties>
+            <Property name="LOG_DIR">/logs</Property>
+        </Properties> -->
+
+        <Appenders>
+            <!-- 운영환경에서는 파일 로깅만 사용, 아래 /logs는 도커 컨테이너 내부의 /logs를 의미함(EC2에서는 도커 컨테이너 내부에서 스프링 부트 앱이
+            실행되기 때문) -->
+            <RollingFile name="RollingFile"
+                fileName="/logs/application.log"
+                filePattern="/logs/backup/application-%d{yyyy-MM-dd}-%i.log.gz">
+                <PatternLayout pattern="${LOG_PATTERN}" charset="UTF-8" />
+                <Policies>
+                    <TimeBasedTriggeringPolicy />
+                    <!-- 최대 크기 20MB -->
+                    <SizeBasedTriggeringPolicy size="20 MB" />
+                </Policies>
+                <!-- 3일간 보관, 최대 10개 파일 -->
+                <DefaultRolloverStrategy max="10">
+                    <Delete basePath="${LOG_DIR}/backup">
+                        <IfLastModified age="3d" />
+                    </Delete>
+                </DefaultRolloverStrategy>
+            </RollingFile>
+
+            <!-- 에러 로그 별도 저장 -->
+            <RollingFile name="ErrorFile"
+                fileName="${LOG_DIR}/error.log"
+                filePattern="${LOG_DIR}/backup/error-%d{yyyy-MM-dd}-%i.log.gz">
+                <PatternLayout pattern="${LOG_PATTERN}" charset="UTF-8" />
+                <Policies>
+                    <TimeBasedTriggeringPolicy />
+                    <SizeBasedTriggeringPolicy size="20 MB" />
+                </Policies>
+                <DefaultRolloverStrategy max="10" />
+            </RollingFile>
+        </Appenders>
+
+        <Loggers>
+            <!-- Root logger -->
+            <Root level="warn">
+                <AppenderRef ref="RollingFile" />
+            </Root>
+
+            <!-- SQL 로깅 최소화 -->
+            <Logger name="org.hibernate.SQL" level="error" additivity="false">
+                <AppenderRef ref="RollingFile" />
+            </Logger>
+
+            <!-- 바인딩 파라미터 로깅 비활성화 -->
+            <Logger name="org.hibernate.type.descriptor.sql.BasicBinder" level="error"
+                additivity="false">
+                <AppenderRef ref="RollingFile" />
+            </Logger>
+
+            <Logger name="org.hibernate.orm.jdbc.bind" level="error" additivity="false">
+                <AppenderRef ref="RollingFile" />
+            </Logger>
+
+            <!-- 트랜잭션 로깅 -->
+            <Logger name="org.springframework.transaction" level="error" additivity="false">
+                <AppenderRef ref="RollingFile" />
+                <AppenderRef ref="ErrorFile" level="error" />
+            </Logger>
+
+            <!-- JPA 로깅 -->
+            <Logger name="org.springframework.orm.jpa" level="error" additivity="false">
+                <AppenderRef ref="RollingFile" />
+                <AppenderRef ref="ErrorFile" level="error" />
+            </Logger>
+
+            <!-- 애플리케이션 로깅 -->
+            <Logger name="com.yhs.blog.springboot.jpa" level="info" additivity="false">
+                <AppenderRef ref="RollingFile" />
+                <AppenderRef ref="ErrorFile" level="error" />
+            </Logger>
+
+            <!-- 톰캣 로깅 -->
+            <Logger name="org.apache.tomcat" level="error" additivity="false">
+                <AppenderRef ref="RollingFile" />
+                <AppenderRef ref="ErrorFile" level="error" />
+            </Logger>
+
+            <Logger name="org.apache.catalina" level="error" additivity="false">
+                <AppenderRef ref="RollingFile" />
+                <AppenderRef ref="ErrorFile" level="error" />
+            </Logger>
+        </Loggers>
+    </SpringProfile>
+</Configuration>

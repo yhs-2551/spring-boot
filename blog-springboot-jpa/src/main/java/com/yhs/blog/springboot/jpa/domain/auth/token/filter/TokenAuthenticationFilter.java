@@ -34,11 +34,6 @@ public class TokenAuthenticationFilter extends OncePerRequestFilter {
                         FilterChain filterChain)
                         throws ServletException, IOException {
 
-                log.debug("디버그 로그 테스트");
-                log.info("인포 로그 테스트");
-                log.warn("경고 로그 테스트");
-                log.error("에러 로그 테스트");
-
                 log.info("[TokenAuthenticationFilter] doFilterInternal 메서드 시작");
 
                 String method = request.getMethod();
