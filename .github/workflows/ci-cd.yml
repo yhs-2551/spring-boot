@@ -114,7 +114,7 @@ jobs:
                   cat ~/.ssh/known_hosts
 
             - name: EC2에 배포
-              run: |    
+              run: |
                   #  기존 JAR 파일 삭제 및 이전 버전 백업
                   ssh -i blog-springboot-key.pem ec2-user@${{ secrets.EC2_HOST }} "
                       cd /home/ec2-user/app
@@ -131,6 +131,9 @@ jobs:
                   scp -i blog-springboot-key.pem \
                       ${{ github.workspace }}/blog-springboot-jpa/build/libs/blog-springboot-jpa-1.0.0.jar \
                       ec2-user@${{ secrets.EC2_HOST }}:/home/ec2-user/app/
+
+                      echo '===== Docker Compose 환경변수 확인 ====='
+                      docker-compose config
 
                   # 애플리케이션 재시작 with 롤백
                   ssh -i blog-springboot-key.pem ec2-user@${{ secrets.EC2_HOST }} "
