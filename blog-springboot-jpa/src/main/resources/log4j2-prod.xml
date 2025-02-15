@@ -41,12 +41,12 @@
 
     <Loggers>
         <!-- Root logger -->
-        <Root level="warn">
+        <Root level="debug">
             <AppenderRef ref="RollingFile" />
         </Root>
 
         <!-- SQL 로깅 최소화 -->
-        <Logger name="org.hibernate.SQL" level="error" additivity="false">
+        <Logger name="org.hibernate.SQL" level="debug" additivity="false">
             <AppenderRef ref="RollingFile" />
         </Logger>
 
