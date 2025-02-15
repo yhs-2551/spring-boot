@@ -68,6 +68,10 @@ jobs:
                 working-directory: ./blog-springboot-jpa
 
         steps:
+            - name: libs 디렉토리 생성 # 추가
+              run: |
+                  mkdir -p build/libs
+
             - name: 빌드 결과물 다운로드
               uses: actions/download-artifact@v4
               with:
