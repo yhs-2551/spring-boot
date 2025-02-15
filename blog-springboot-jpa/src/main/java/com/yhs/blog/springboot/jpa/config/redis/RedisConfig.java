@@ -3,6 +3,7 @@ package com.yhs.blog.springboot.jpa.config.redis;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
@@ -18,6 +19,7 @@ import com.yhs.blog.springboot.jpa.domain.category.dto.response.CategoryWithChil
 import com.yhs.blog.springboot.jpa.domain.user.dto.response.UserPublicProfileResponse;
  
 @Configuration
+// @ConfigurationProperties("spring.data.redis")  private String host;  private int port; 와 같이 사용할 수 있지만 일단 기존 방식 사용(ConfigurationProperties방식이 더 선호되는 듯 함)
 public class RedisConfig {
 
     @Value("${spring.data.redis.host}")

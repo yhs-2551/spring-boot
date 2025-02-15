@@ -2,33 +2,48 @@
 services:
     redis:
         image: redis:latest
-        container_name: blog_redis
+        container_name: blog-redis
         ports:
             - "6379:6379"
         volumes:
             - redis_data:/data
+        networks:
+            - blog_network
 
     prometheus:
         image: prom/prometheus:latest
+        container_name: blog-prometheus
         ports:
             - "9090:9090"
         volumes:
             - ./prometheus-dev.yml:/etc/prometheus/prometheus.yml
+            - prometheus_data:/prometheus # 데이터 영구 저장
         command:
             - "--config.file=/etc/prometheus/prometheus.yml"
             - "--storage.tsdb.retention.time=7d"
+        networks:
+            - blog_network
 
     grafana:
         image: grafana/grafana-oss:latest
+        container_name: blog-grafana
         ports:
-            - "3000:3000" #localhost:3000으로 접근 가능. 기본 패스워드는 admin/admin
+            - "4000:3000" #localhost:4000으로 접근 가능. 개발환경은 프론트 Next.js 포트 번호와 충돌할 수 있어서 4000으로 변경. 기본 패스워드는 admin/admin, 패스워드 admin123*로 변경
         environment:
             - GF_SECURITY_ADMIN_PASSWORD=admin
             - GF_USERS_ALLOW_SIGN_UP=false
         volumes:
             - grafana-storage:/var/lib/grafana
+        depends_on:
+            - prometheus # 그라파나는 프로메테우스 데이터 필요
+        networks:
+            - blog_network
 
-# 볼륨 정의로 데이터 유지
+networks:
+    blog_network:
+        driver: bridge # 도커 컨테이너간 통신을 위한 가상 네트워크(도커의 기본 네트워크 드라이버), AWS의 VPC와 같은 역할이라 보면 됨
+
 volumes:
     redis_data:
     grafana-storage:
+    prometheus_data:  

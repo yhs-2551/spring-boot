@@ -7,7 +7,8 @@ import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.s3.S3Client;
 
-@Configuration
+@Configuration 
+// @ConfigurationProperties("aws")와 같이 사용할 수 있지만 일단 기존 방식 사용 
 public class S3Config {
 
     @Value("${aws.accessKeyId}")

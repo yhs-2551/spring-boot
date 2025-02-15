@@ -8,9 +8,8 @@ spring:
         banner-MODE: "off"
 
     datasource:
-        # Sets the Log4jdbc driver to enable SQL logging (helps in tracking SQL queries)
-        driver-class-name: net.sf.log4jdbc.sql.jdbcapi.DriverSpy
-        url: jdbc:log4jdbc:mysql://localhost:3306/blog_jpa?serverTimezone=Asia/Seoul&characterEncoding=UTF-8
+        driver-class-name: com.mysql.cj.jdbc.Driver
+        url: jdbc:mysql://localhost:3306/blog_jpa?serverTimezone=Asia/Seoul&characterEncoding=UTF-8
         username: root
         password: root
 
@@ -62,6 +61,8 @@ spring:
             max-request-size: 20MB
     data:
         redis:
+            repositories:
+                enabled: false 
             # Redis settings
             host: localhost
             port: 6379
@@ -95,12 +96,14 @@ spring:
                         enable: true
 
 # jwt issuer settings, secret key is located in JwtProperties file
+# jwt의 경우 케밥 케이스인 "-"로 구분, @ConfigurationProperties("jwt")를 사용하면 secretKeyString과 같이 카멜 케이스를 쓸 수 있지만 명확하게 쓰기 위해 이렇게 사용 
 jwt:
     issuer: ${JWT_ISSUER}
-    secret-key-string: ${JWT_SECRET_KEY}
+    secret-key-string: ${JWT_SECRET_KEY} 
 
 # aws s3 settings
-aws:
+# aws sdk의 경우 jwt와는 다르게 케밥케이스가 아닌 단어 사이 대문자로 구분하는 카멜 케이스 사용
+aws: 
     accessKeyId: ${AWS_ACCESS_KEY_ID}
     secretKey: ${AWS_SECRET_ACCESS_KEY}
     s3:
