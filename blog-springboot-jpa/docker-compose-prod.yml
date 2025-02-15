@@ -1,0 +1,103 @@
+# prod 설정파일 변경 시 ec2에도 적용 필요 
+services:
+    app:
+        image: openjdk:17-jdk-slim # 도커 컨테이너에서 사용할 jdk, EC2 서버에는 Amazon Corretto 17 사용하는데, 도커 컨테이너 내부와는 별개이다.
+        container_name: blog-app # 프로메테우스에서 blog_app과 같이 사용하면 즉, _로 사용하면 오류 발생. 호스트 이름은 문자, 숫자, 하이픈(-)만 사용 가능
+        ports:
+            - "8000:8000"
+        volumes:
+            - ./blog-springboot-jpa-1.0.0.jar:/app.jar
+            - ./logs:/logs # 로그 디렉토리 마운트
+        environment: # docker-compose가 실행 되면서 ec2 내의 .env파일을 참조, 이후에 jar파일을 실행할때 application-prod.yml에서 도커 컨테이너에 등록된 환경 변수를 참조. 
+            - SPRING_PROFILES_ACTIVE=prod # 프로필 우선 순위: 1. 환경변수 (SPRING_PROFILES_ACTIVE), 2. - JVM 인자 (-Dspring.profiles.active) 3. application.yml의 설정
+              # DB 설정
+            - RDS_ENDPOINT=${RDS_ENDPOINT}
+            - RDS_USERNAME=${RDS_USERNAME}
+            - RDS_PASSWORD=${RDS_PASSWORD}
+
+            # Redis 설정
+            - REDIS_HOST=${REDIS_HOST}
+
+            # JWT 설정
+            - JWT_ISSUER=${JWT_ISSUER}
+            - JWT_SECRET_KEY=${JWT_SECRET_KEY}
+
+            # Google OAuth 설정
+            - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
+            - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
+            - GOOGLE_REDIRECT_URI=${GOOGLE_REDIRECT_URI}
+            - GOOGLE_AUTHORIZATION_GRANT_TYPE=${GOOGLE_AUTHORIZATION_GRANT_TYPE}
+            - GOOGLE_SCOPE=${GOOGLE_SCOPE}
+            - GOOGLE_AUTHORIZATION_URI=${GOOGLE_AUTHORIZATION_URI}
+
+            # AWS S3 설정
+            - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+            - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+            - AWS_S3_BUCKET_NAME=${AWS_S3_BUCKET_NAME}
+            - AWS_REGION=${AWS_REGION}
+
+            # Mail 설정
+            - MAIL_USERNAME=${MAIL_USERNAME}
+            - MAIL_PASSWORD=${MAIL_PASSWORD}
+
+            # 그라파나 패스워드는 application.prod-.yml파일 내부에서 사용하지 않아서 environment에 설정 안해도 됨
+        depends_on: # 아래 의존성 순서대로 실행. redis -> prometheus -> app.jar -> grafana. 즉, app은 redis와 prometheus가 시작된 후 실행
+            - redis
+            - prometheus # 메트릭(앱의 건강상태를 수치화한 것) 수집을 위해 필요
+        networks:
+            - blog_network # 모든 컨테이너가 같은 네트워크 사용
+        command: java -jar /app.jar
+        restart: always # 서버 재시작시 자동 시작
+
+    redis:
+        image: redis:latest
+        container_name: blog-redis
+        ports:
+            - "6379:6379"
+        volumes:
+            - redis_data:/data
+        networks:
+            - blog_network
+        restart: always # 서버 재시작시 자동 시작
+
+    prometheus:
+        image: prom/prometheus:latest
+        container_name: blog-prometheus
+        ports:
+            - "9090:9090"
+        volumes:
+            - ./prometheus.yml:/etc/prometheus/prometheus.yml # ./prometheus-prod.yml가 아닌  ./prometheus.yml인 이유는 EC2 폴더 내에   prometheus.yml 로 저장 했기 때문. docker-compose.yml 역시 docker-compose-prod.yml이 아닌 docker-compose.yml로 저장
+            - prometheus_data:/prometheus # 데이터 영구 저장
+        command:
+            - "--config.file=/etc/prometheus/prometheus.yml"
+            - "--storage.tsdb.retention.time=7d"
+            - "--storage.tsdb.retention.size=512MB" # 저장 용량 제한
+        networks:
+            - blog_network
+        restart: always
+
+    grafana:
+        image: grafana/grafana-oss:latest
+        container_name: blog-grafana
+        ports:
+            - "3000:3000"
+        environment:
+            - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD} # 환경변수로 변경
+            - GF_USERS_ALLOW_SIGN_UP=false
+            - GF_AUTH_ANONYMOUS_ENABLED=false # 익명 접근 비활성화
+        volumes:
+            - grafana-storage:/var/lib/grafana
+        depends_on:
+            - prometheus # 그라파나는 프로메테우스 데이터 필요, Prometheus가 준비된 후 시작
+        networks:
+            - blog_network
+        restart: always
+
+networks:
+    blog_network:
+        driver: bridge # 도커 컨테이너간 통신을 위한 가상 네트워크(도커의 기본 네트워크 드라이버), AWS의 VPC와 같은 역할이라 보면 됨
+
+volumes:
+    redis_data:
+    grafana-storage:
+    prometheus_data: # 프로메테우스 데이터 볼륨 추가

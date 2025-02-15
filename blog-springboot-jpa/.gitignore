@@ -58,6 +58,5 @@ document.md
 logs/
 *.log
 
-# Prod 환경 설정 파일  
-docker-compose-prod.yml
-prometheus-prod.yml
+# Prod 환경 설정 파일은 .gitignore에 추가하면 CD할때 github에 올라가지 않아서 자동으로 EC2로 배포되지도 않고, 민감정보가 없기 때문에 포함시키지 않음
+ 

@@ -115,7 +115,7 @@ jobs:
 
             - name: EC2에 배포
               run: |
-                  #  기존 JAR 파일 삭제 및 이전 버전 백업
+                  #  새 버전 배포 전에 컨테이너 중지 및 이전 버전 백업
                   ssh -i blog-springboot-key.pem ec2-user@${{ secrets.EC2_HOST }} "
                       cd /home/ec2-user/app
                       echo '===== 컨테이너 중지(새 버전으로 변경하기 위함) ====='
@@ -127,7 +127,17 @@ jobs:
                       fi
                   "
 
-                  # 새 버전 배포, 줄 끝에 \는 가독성 향상을 위해 줄바꿈 용도
+                  # 설정 파일 전송, .env파일은 깃허브에 포함시킬 수 없어서 직접 업데이트 해야함.
+                  echo '===== 설정 파일 전송 ====='
+                  scp -i blog-springboot-key.pem \
+                      ${{ github.workspace }}/blog-springboot-jpa/docker-compose-prod.yml \
+                      ec2-user@${{ secrets.EC2_HOST }}:/home/ec2-user/app/docker-compose.yml
+
+                  scp -i blog-springboot-key.pem \
+                      ${{ github.workspace }}/blog-springboot-jpa/prometheus-prod.yml \
+                      ec2-user@${{ secrets.EC2_HOST }}:/home/ec2-user/app/prometheus.yml
+
+                  # 새 버전 배포(jar 파일 전송), 줄 끝에 \는 가독성 향상을 위해 줄바꿈 용도
                   scp -i blog-springboot-key.pem \
                       ${{ github.workspace }}/blog-springboot-jpa/build/libs/blog-springboot-jpa-1.0.0.jar \
                       ec2-user@${{ secrets.EC2_HOST }}:/home/ec2-user/app/
@@ -142,7 +152,7 @@ jobs:
                         # .backup 파일을 원래 파일 이름으로 복원
                         mv blog-springboot-jpa-1.0.0.jar.backup blog-springboot-jpa-1.0.0.jar
                         docker-compose up -d
-                        exit 1
+                        exit 1 # 스크립트만 종료, 컨테이너는 영향 없음. 즉 이전 버전의 서비스 계속 실행 
                       else 
                         echo '배포 성공'
                       fi
