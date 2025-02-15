@@ -148,49 +148,58 @@
         <Loggers>
             <!-- Root logger -->
             <Root level="warn">
+                <AppenderRef ref="Console" />
                 <AppenderRef ref="RollingFile" />
             </Root>
 
             <!-- SQL 로깅 최소화 -->
             <Logger name="org.hibernate.SQL" level="error" additivity="false">
+                <AppenderRef ref="Console" />
                 <AppenderRef ref="RollingFile" />
             </Logger>
 
             <!-- 바인딩 파라미터 로깅 비활성화 -->
             <Logger name="org.hibernate.type.descriptor.sql.BasicBinder" level="error"
                 additivity="false">
+                <AppenderRef ref="Console" />
                 <AppenderRef ref="RollingFile" />
             </Logger>
 
             <Logger name="org.hibernate.orm.jdbc.bind" level="error" additivity="false">
+                <AppenderRef ref="Console" />
                 <AppenderRef ref="RollingFile" />
             </Logger>
 
             <!-- 트랜잭션 로깅 -->
             <Logger name="org.springframework.transaction" level="error" additivity="false">
+                <AppenderRef ref="Console" />
                 <AppenderRef ref="RollingFile" />
                 <AppenderRef ref="ErrorFile" level="error" />
             </Logger>
 
             <!-- JPA 로깅 -->
             <Logger name="org.springframework.orm.jpa" level="error" additivity="false">
+                <AppenderRef ref="Console" />
                 <AppenderRef ref="RollingFile" />
                 <AppenderRef ref="ErrorFile" level="error" />
             </Logger>
 
             <!-- 애플리케이션 로깅 -->
             <Logger name="com.yhs.blog.springboot.jpa" level="info" additivity="false">
+                <AppenderRef ref="Console" />
                 <AppenderRef ref="RollingFile" />
                 <AppenderRef ref="ErrorFile" level="error" />
             </Logger>
 
             <!-- 톰캣 로깅 -->
             <Logger name="org.apache.tomcat" level="error" additivity="false">
+                <AppenderRef ref="Console" />
                 <AppenderRef ref="RollingFile" />
                 <AppenderRef ref="ErrorFile" level="error" />
             </Logger>
 
             <Logger name="org.apache.catalina" level="error" additivity="false">
+                <AppenderRef ref="Console" />
                 <AppenderRef ref="RollingFile" />
                 <AppenderRef ref="ErrorFile" level="error" />
             </Logger>
