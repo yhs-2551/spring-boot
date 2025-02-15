@@ -34,7 +34,7 @@ public class TokenAuthenticationFilter extends OncePerRequestFilter {
                         FilterChain filterChain)
                         throws ServletException, IOException {
 
-                log.info("[TokenAuthenticationFilter] doFilterInternal 123456.");
+                log.info("[TokenAuthenticationFilter] doFilterInternal dadadadad굿잡잡잡잡잡잡.");
 
                 String method = request.getMethod();
                 String requestURI = request.getRequestURI();
