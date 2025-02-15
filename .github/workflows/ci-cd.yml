@@ -115,16 +115,22 @@ jobs:
 
             - name: EC2에 배포
               run: |
-                  # 이전 버전 백업
+                  #  기존 JAR 파일 삭제 및 이전 버전 백업
                   ssh -i blog-springboot-key.pem ec2-user@${{ secrets.EC2_HOST }} "
                       cd /home/ec2-user/app
-                      # || true: 이 부분은 "혹시 오류가 발생하더라도 명령어가 실패하지 않도록" 하는 구문
-                      cp blog-springboot-jpa-1.0.0.jar blog-springboot-jpa-1.0.0.jar.backup || true
+                      echo '===== 컨테이너 중지 ====='
+                      docker-compose down
+                      
+                      echo '===== 기존 JAR 파일 백업 및 삭제 ====='
+                      if [ -f blog-springboot-jpa-1.0.0.jar ]; then
+                          cp blog-springboot-jpa-1.0.0.jar blog-springboot-jpa-1.0.0.jar.backup
+                          rm blog-springboot-jpa-1.0.0.jar
+                      fi
                   "
 
                   # 새 버전 배포, 줄 끝에 \는 가독성 향상을 위해 줄바꿈 용도
                   scp -i blog-springboot-key.pem \
-                      build/libs/blog-springboot-jpa-1.0.0.jar \
+                      ${{ github.workspace }}/blog-springboot-jpa/build/libs/blog-springboot-jpa-1.0.0.jar \
                       ec2-user@${{ secrets.EC2_HOST }}:/home/ec2-user/app/
 
                   # 애플리케이션 재시작 with 롤백
