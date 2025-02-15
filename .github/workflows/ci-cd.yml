@@ -57,7 +57,7 @@ jobs:
               uses: actions/upload-artifact@v4 # 빌드/테스트 결과물 저장 및 공유. 빌드된 JAR 파일 저장, 테스트 리포트 저장, 코드 커버리지(jacoco) 리포트 저장. 다른 워크플로우에서 재사용 할수도 있음
               with:
                   name: test-results
-                  path: build/reports/tests/test/
+                  path: ./build/reports/tests/test/
 
             - name: 테스트 커버리지 생성
               run: ./gradlew jacocoTestReport
@@ -67,7 +67,7 @@ jobs:
               with:
                   name: build-artifact
                   path: |
-                      build/libs/*.jar
+                      ./build/libs/*.jar
 
     deploy:
         needs: build # build job이 성공적으로 완료된 후 실행
