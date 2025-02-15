@@ -132,12 +132,15 @@ jobs:
                       ${{ github.workspace }}/blog-springboot-jpa/build/libs/blog-springboot-jpa-1.0.0.jar \
                       ec2-user@${{ secrets.EC2_HOST }}:/home/ec2-user/app/
 
-                      echo '===== Docker Compose 환경변수 확인 ====='
-                      docker-compose config
+                      
 
                   # 애플리케이션 재시작 with 롤백
                   ssh -i blog-springboot-key.pem ec2-user@${{ secrets.EC2_HOST }} "
                       cd /home/ec2-user/app
+
+                      echo '===== Docker Compose 환경변수 확인 ====='
+                      docker-compose config
+                      
                       if ! docker-compose up -d; then
                         echo '배포 실패. 롤백 시작...'
                         # .backup 파일을 원래 파일 이름으로 복원
