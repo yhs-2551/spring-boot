@@ -1,5 +1,14 @@
 server:
     port: 8000
+    # 아래는 nginx 관련
+    forward-headers-strategy: native #프록시 서버로부터 전달받은 헤더 인식
+    tomcat:
+        remoteip:
+            remote-ip-header: X-Forwarded-For # 클라이언트 IP 정보가 담긴 헤더
+            protocol-header: X-Forwarded-Proto # HTTP/HTTPS 정보가 담긴 헤더
+    
+
+ 
 
 spring:
     main:
@@ -112,3 +121,4 @@ management:
         metrics:
             export:
                 enabled: true
+ 
