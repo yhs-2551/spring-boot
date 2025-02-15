@@ -42,15 +42,15 @@ jobs:
               run: |
                   chmod +x gradlew
                   ./gradlew clean build --info
-              
+
             - name: 테스트 결과 저장
               if: always()
               uses: actions/upload-artifact@v4 # 빌드/테스트 결과물 저장 및 공유. 빌드된 JAR 파일 저장, 테스트 리포트 저장, 코드 커버리지(jacoco) 리포트 저장. 다른 워크플로우에서 재사용 할수도 있음
               with:
                   name: test-results
                   #github.workspace방식 말고 build/reports/~~경로 사용하면 찾을 수 없다고 나옴. 워크 스페이스는  /home/runner/work/spring-boot/spring-boot 경로 인데, 쉽게 저장소명이라고 생각하면 된다.
-                  path: ${{ github.workspace }}/blog-springboot-jpa/build/reports/tests/test/  
-                  if-no-files-found: error  # 파일이 없으면 에러 발생
+                  path: ${{ github.workspace }}/blog-springboot-jpa/build/reports/tests/test/
+                  if-no-files-found: error # 파일이 없으면 에러 발생
 
             - name: 테스트 커버리지 생성
               run: ./gradlew jacocoTestReport
@@ -60,7 +60,7 @@ jobs:
               with:
                   name: build-artifact
                   path: ${{ github.workspace }}/blog-springboot-jpa/build/libs/*.jar
-                  if-no-files-found: error  
+                  if-no-files-found: error
 
     deploy:
         needs: build # build job이 성공적으로 완료된 후 실행
@@ -99,8 +99,19 @@ jobs:
                   # .ssh 디렉토리가 있다면 아무 일도 일어나지 않음, EC2 서버의 SSH 공개 키를 자동으로 가져온 후에 known_hosts 파일에 추가
                   # .ssh 폴더는 GitHub Actions 러너(Runner)에 생성.
                   # 맨처음에 ssh에 접속할때 서버의 호스트 키를 확인하는 수동 확인 과정이 필요한데 이를 자동화 함.
-                  mkdir -p ~/.ssh 
-                  ssh-keyscan -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts
+                  echo "===== SSH 디렉토리 생성 ====="
+                  mkdir -p ~/.ssh
+                  chmod 700 ~/.ssh
+
+                  echo "===== EC2 호스트 확인 ====="
+                  echo "EC2 Host: ${{ secrets.EC2_HOST }}"
+
+                  echo "===== SSH-KEYSCAN 실행 ====="
+                  ssh-keyscan -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts || echo "ssh-keyscan 실패"
+
+                  echo "===== known_hosts 파일 확인 ====="
+                  ls -la ~/.ssh/
+                  cat ~/.ssh/known_hosts
 
             - name: EC2에 배포
               run: |
