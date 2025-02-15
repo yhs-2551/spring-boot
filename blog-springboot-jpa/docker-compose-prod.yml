@@ -26,7 +26,7 @@ services:
             # Google OAuth 설정
             - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
             - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
-            - GOOGLE_REDIRECT_URI=${GOOGLE_REDIRECT_URI}
+            # - GOOGLE_REDIRECT_URI=${GOOGLE_REDIRECT_URI} 얘는 개발 환경이랑 운영환경 값이 다르기 때문에 직접 application-prod.yml에서 설정
             - GOOGLE_AUTHORIZATION_GRANT_TYPE=${GOOGLE_AUTHORIZATION_GRANT_TYPE}
             - GOOGLE_SCOPE=${GOOGLE_SCOPE}
             - GOOGLE_AUTHORIZATION_URI=${GOOGLE_AUTHORIZATION_URI}

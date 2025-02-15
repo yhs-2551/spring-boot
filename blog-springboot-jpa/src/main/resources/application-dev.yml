@@ -76,7 +76,7 @@ spring:
                         # Registration, ??? ?? provider? ?? ??. ?? ???? ???? provider?? ?? ??
                         client-id: ${GOOGLE_CLIENT_ID}
                         client-secret: ${GOOGLE_CLIENT_SECRET}
-                        redirect-uri: ${GOOGLE_REDIRECT_URI}
+                        redirect-uri: http://localhost:8000/login/oauth2/code/google
                         authorization-grant-type: ${GOOGLE_AUTHORIZATION_GRANT_TYPE}
                         scope: ${GOOGLE_SCOPE}
                 provider:
