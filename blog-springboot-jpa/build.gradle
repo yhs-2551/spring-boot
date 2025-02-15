@@ -11,6 +11,17 @@ version = '1.0.0'  // 정식 첫 배포 버전
 // version = '1.0.0-RELEASE'  // 릴리스 버전
 // version = '1.0.0-BETA'  // 베타 버전
 
+jar {
+    enabled = false  // plain jar 생성 비활성화
+}
+
+// 아래 지정하지 않을 경우 기본 파일명
+// ${projectName}-${version}.jar
+// 예: blog-springboot-jpa-1.0.0.jar
+// bootJar {
+//     archiveFileName = 'blog-springboot-jpa-1.0.0.jar'  // jar 파일명 지정
+// }
+
 java {
     toolchain {
         languageVersion = JavaLanguageVersion.of(17) // 자바 버전 수정하고 싶으면 윈도우 powershell 관리자로 실행 -> choco install temurin17 명령어 입력 
