@@ -37,7 +37,10 @@ out/
 .vscode/
 
 #env
-.env 
+.env
+.env.dev
+.env.prod 
+.env.*
 
 #queryDSL related folder 
 build/generated/querydsl/
@@ -55,8 +58,6 @@ document.md
 logs/
 *.log
 
-# Prod 환경 설정 파일 
-/src/main/resources/application-prod.yml
-/src/main/resources/log4j2-prod.xml
+# Prod 환경 설정 파일  
 docker-compose-prod.yml
 prometheus-prod.yml

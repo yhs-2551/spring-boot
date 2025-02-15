@@ -1,0 +1,114 @@
+server:
+    port: 8000
+
+spring:
+    main:
+        banner-mode: "off"
+
+    datasource:
+        driver-class-name: com.mysql.cj.jdbc.Driver
+        url: jdbc:mysql://${RDS_ENDPOINT}:3306/blog?serverTimezone=Asia/Seoul&characterEncoding=UTF-8
+        username: ${RDS_USERNAME}
+        password: ${RDS_PASSWORD}
+
+    devtools:
+        restart:
+            enabled: false
+        livereload:
+            enabled: false
+
+    jpa:
+        open-in-view: false
+        hibernate:
+            ddl-auto: validate # 운영환경에서는 validate 사용
+        show-sql: false
+        properties:
+            hibernate:
+                format_sql: false
+                show_sql: false
+                use_sql_comments: false
+                highlight_sql: false
+
+    batch:
+        job:
+            enabled: false
+        jdbc:
+            initialize-schema: never
+
+    servlet:
+        multipart:
+            max-file-size: 10MB
+            max-request-size: 20MB
+
+    data:
+        redis:
+            repositories:
+                enabled: false 
+            host: ${REDIS_HOST} #Docker Compose 네트워크 내부에서는 컨테이너 이름으로 서비스 접근 가능, Spring Boot 애플리케이션이 직접 연결하므로 설정 필요
+            port: 6379
+
+    # Prometheus/Grafana: Docker Compose에서 관리하므로 docker-compose-prod.yml에서만 설정해도 충분
+
+    security:
+        oauth2:
+            client:
+                registration:
+                    google:
+                        client-id: ${GOOGLE_CLIENT_ID}
+                        client-secret: ${GOOGLE_CLIENT_SECRET}
+                        redirect-uri: ${GOOGLE_REDIRECT_URI}
+                        authorization-grant-type: ${GOOGLE_AUTHORIZATION_GRANT_TYPE}
+                        scope: ${GOOGLE_SCOPE}
+                provider:
+                    google:
+                        authorization-uri: ${GOOGLE_AUTHORIZATION_URI}
+
+    mail:
+        host: smtp.gmail.com
+        port: 587
+        username: ${MAIL_USERNAME}
+        password: ${MAIL_PASSWORD}
+        properties:
+            mail:
+                smtp:
+                    auth: true
+                    starttls:
+                        enable: true
+
+jwt:
+    issuer: ${JWT_ISSUER}
+    secret-key-string: ${JWT_SECRET_KEY}
+
+aws:
+    accessKeyId: ${AWS_ACCESS_KEY_ID}
+    secretKey: ${AWS_SECRET_ACCESS_KEY}
+    s3:
+        bucketName: ${AWS_S3_BUCKET_NAME}
+        region: ${AWS_REGION}
+
+springdoc:
+    swagger-ui:
+        enabled: false # 운영환경에서는 Swagger UI 비활성화
+
+management:
+    endpoints:
+        web:
+            exposure:
+                include: health,metrics,prometheus # 운영환경에서는 필요한 엔드포인트만 활성화
+    endpoint:
+        health:
+            show-details: never # 운영환경에서는 상세 정보 숨김
+    info:
+        env:
+            enabled: false
+
+    metrics:
+        tags:
+            application: blog-springboot-jpa
+        distribution:
+            percentiles-histogram:
+                "[http.server.requests]": true
+    prometheus:
+        metrics:
+            export:
+                enabled: true

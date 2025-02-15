@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Configuration status="WARN">
+
+    <Properties>
+        <Property name="LOG_PATTERN">%d{yyyy-MM-dd HH:mm:ss.SSS} [%t] %-5level %logger{36} - %msg%n</Property>
+        <!-- EC2의 로그 디렉토리 경로 -->
+        <Property name="LOG_DIR">/home/ec2-user/app/logs</Property>
+    </Properties>
+
+    <Appenders>
+        <!-- 운영환경에서는 파일 로깅만 사용 -->
+        <RollingFile name="RollingFile"
+            fileName="${LOG_DIR}/application.log"
+            filePattern="${LOG_DIR}/backup/application-%d{yyyy-MM-dd}-%i.log.gz">
+            <PatternLayout pattern="${LOG_PATTERN}" charset="UTF-8" />
+            <Policies>
+                <TimeBasedTriggeringPolicy />
+                <!-- 최대 크기 20MB -->
+                <SizeBasedTriggeringPolicy size="20 MB" /> 
+            </Policies>
+            <!-- 3일간 보관, 최대 10개 파일 -->
+            <DefaultRolloverStrategy max="10">
+                <Delete basePath="${LOG_DIR}/backup">
+                    <IfLastModified age="3d" />
+                </Delete>
+            </DefaultRolloverStrategy>
+        </RollingFile>
+
+        <!-- 에러 로그 별도 저장 -->
+        <RollingFile name="ErrorFile"
+            fileName="${LOG_DIR}/error.log"
+            filePattern="${LOG_DIR}/backup/error-%d{yyyy-MM-dd}-%i.log.gz">
+            <PatternLayout pattern="${LOG_PATTERN}" charset="UTF-8" />
+            <Policies>
+                <TimeBasedTriggeringPolicy />
+                <SizeBasedTriggeringPolicy size="20 MB" />
+            </Policies>
+            <DefaultRolloverStrategy max="10"/>
+        </RollingFile>
+    </Appenders>
+
+    <Loggers>
+        <!-- Root logger -->
+        <Root level="warn">
+            <AppenderRef ref="RollingFile" />
+        </Root>
+
+        <!-- SQL 로깅 최소화 -->
+        <Logger name="org.hibernate.SQL" level="error" additivity="false">
+            <AppenderRef ref="RollingFile" />
+        </Logger>
+
+        <!-- 바인딩 파라미터 로깅 비활성화 -->
+        <Logger name="org.hibernate.type.descriptor.sql.BasicBinder" level="error" additivity="false">
+            <AppenderRef ref="RollingFile" />
+        </Logger>
+
+        <Logger name="org.hibernate.orm.jdbc.bind" level="error" additivity="false">
+            <AppenderRef ref="RollingFile" />
+        </Logger>
+
+        <!-- 트랜잭션 로깅 -->
+        <Logger name="org.springframework.transaction" level="error" additivity="false">
+            <AppenderRef ref="RollingFile" />
+            <AppenderRef ref="ErrorFile" level="error"/>
+        </Logger>
+
+        <!-- JPA 로깅 -->
+        <Logger name="org.springframework.orm.jpa" level="error" additivity="false">
+            <AppenderRef ref="RollingFile" />
+            <AppenderRef ref="ErrorFile" level="error"/>
+        </Logger>
+
+        <!-- 애플리케이션 로깅 -->
+        <Logger name="com.yhs.blog.springboot.jpa" level="info" additivity="false">
+            <AppenderRef ref="RollingFile" />
+            <AppenderRef ref="ErrorFile" level="error"/>
+        </Logger>
+
+        <!-- 톰캣 로깅 -->
+        <Logger name="org.apache.tomcat" level="error" additivity="false">
+            <AppenderRef ref="RollingFile" />
+            <AppenderRef ref="ErrorFile" level="error"/>
+        </Logger>
+
+        <Logger name="org.apache.catalina" level="error" additivity="false">
+            <AppenderRef ref="RollingFile" />
+            <AppenderRef ref="ErrorFile" level="error"/>
+        </Logger>
+    </Loggers>
+</Configuration>
