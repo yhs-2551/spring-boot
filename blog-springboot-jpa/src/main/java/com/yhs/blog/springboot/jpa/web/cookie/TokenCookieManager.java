@@ -59,7 +59,7 @@ public class TokenCookieManager {
 
         if (ApplicationContextProvider.isProd()) {
             accessTokenCookie.setSecure(true); // 쿠키가 HTTPS 연결을 통해서만 전송되도록 함.
-            accessTokenCookie.setAttribute("SameSite", "Lax"); // CSRF 공격 방지
+            accessTokenCookie.setAttribute("SameSite", "None"); // CSRF 공격 방지 
             accessTokenCookie.setDomain("dduha.duckdns.org"); // 도메인 설정
         }
 
