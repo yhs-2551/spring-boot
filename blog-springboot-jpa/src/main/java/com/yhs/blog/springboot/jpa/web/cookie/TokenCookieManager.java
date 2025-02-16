@@ -1,5 +1,6 @@
 package com.yhs.blog.springboot.jpa.web.cookie;
 
+import com.yhs.blog.springboot.jpa.common.config.ApplicationContextProvider;
 import com.yhs.blog.springboot.jpa.common.constant.token.TokenConstants;
 import com.yhs.blog.springboot.jpa.common.util.cookie.CookieUtil;
 import jakarta.servlet.http.Cookie;
@@ -53,9 +54,14 @@ public class TokenCookieManager {
         // 지정하지 않을 수도 있음.
         Cookie accessTokenCookie = new Cookie(TokenConstants.ACCESS_TOKEN_COOKIE_NAME, accessToken);
         accessTokenCookie.setHttpOnly(true); // javascript 에서 접근 불가
-        accessTokenCookie.setSecure(false); // true면 HTTPS에서만 전달, 배포 시에 true로 변경 필요
         accessTokenCookie.setPath("/");
         accessTokenCookie.setMaxAge(60); // 1분 60초.
+
+        if (ApplicationContextProvider.isProd()) {
+            accessTokenCookie.setSecure(true); // 쿠키가 HTTPS 연결을 통해서만 전송되도록 함.
+            accessTokenCookie.setAttribute("SameSite", "Lax"); // CSRF 공격 방지
+            accessTokenCookie.setDomain("dduha.duckdns.org"); // 도메인 설정
+        }
 
         response.addCookie(accessTokenCookie);
     }

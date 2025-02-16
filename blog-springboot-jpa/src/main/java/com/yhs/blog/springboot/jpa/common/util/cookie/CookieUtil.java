@@ -1,14 +1,21 @@
 package com.yhs.blog.springboot.jpa.common.util.cookie;
 
+import java.util.Arrays;
+
+import org.springframework.core.env.Environment;
+
+import com.yhs.blog.springboot.jpa.common.config.ApplicationContextProvider;
+
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 
 @Log4j2
 public class CookieUtil {
 
-    // getCookie는 Spring에서 제공해주는 기능 사용 
+    // getCookie는 Spring에서 제공해주는 기능 사용
 
     // 요청 값(이름, 값, 만료 기간)을 바탕으로 쿠키 추가
     public static void addCookie(HttpServletResponse httpServletResponse, String name,
@@ -19,12 +26,13 @@ public class CookieUtil {
         Cookie cookie = new Cookie(name, value);
         cookie.setPath("/");
         cookie.setHttpOnly(true); // 쿠키를 HttpOnly로 설정하여 클라이언트측 JavaScript에서 접근 방지
-        // cookie.setSecure(true); 쿠키가 HTTPS 연결을 통해서만 전송되도록 함.
-        // cookie.setAttribute("SameSite", "Lax"); 크로스 사이트 요청 위조(CSRF) 공격을 방지하기 위한 쿠키 보안
-        // 속성
-
         cookie.setMaxAge(maxAge);
 
+        if (ApplicationContextProvider.isProd()) {
+            cookie.setSecure(true); // 쿠키가 HTTPS 연결을 통해서만 전송되도록 함.
+            cookie.setAttribute("SameSite", "Lax"); // 크로스 사이트 요청 위조(CSRF) 공격을 방지하기 위한 쿠키 보안
+            cookie.setDomain("dduha.duckdns.org"); // 도메인 설정
+        }
         // 응답에 쿠키 추가
         httpServletResponse.addCookie(cookie);
     }
@@ -50,6 +58,13 @@ public class CookieUtil {
                 cookie.setValue("");
                 cookie.setPath("/");
                 cookie.setMaxAge(0);
+
+                if (ApplicationContextProvider.isProd()) {
+                    cookie.setSecure(true);
+                    cookie.setAttribute("SameSite", "Lax");
+                    cookie.setDomain("dduha.duckdns.org");
+                }
+
                 response.addCookie(cookie);
             }
         }
