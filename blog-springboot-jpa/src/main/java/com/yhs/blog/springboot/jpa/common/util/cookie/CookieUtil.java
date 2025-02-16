@@ -27,7 +27,7 @@ public class CookieUtil {
             log.info("[CookieUtil] addCookie() 메서드 isProd() 분기 진행");
 
             cookie.setSecure(true); // 쿠키가 HTTPS 연결을 통해서만 전송되도록 함.
-            cookie.setDomain("duckdns.org"); // 백엔드 도메인으로 설정
+            cookie.setDomain(".duckdns.org"); // 백엔드 도메인으로 설정
 
         }
         // 응답에 쿠키 추가
@@ -61,7 +61,7 @@ public class CookieUtil {
                     log.info("[CookieUtil] deleteCookie() 메서드 isProd() 분기 진행");
 
                     cookie.setSecure(true);
-                    cookie.setDomain("duckdns.org"); // 백엔드 도메인으로 설정
+                    cookie.setDomain(".duckdns.org"); // 백엔드 도메인으로 설정
 
                 }
 

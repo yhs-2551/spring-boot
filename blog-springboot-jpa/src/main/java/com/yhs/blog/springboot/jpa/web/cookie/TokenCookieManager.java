@@ -62,7 +62,7 @@ public class TokenCookieManager {
             log.info("[TokenCookieManager] handleAccessTokenCookie() 메서드 isProd() 분기 진행");
 
             accessTokenCookie.setSecure(true); // 쿠키가 HTTPS 연결을 통해서만 전송되도록 함.
-            accessTokenCookie.setDomain("duckdns.org"); // 백엔드 도메인으로 설정
+            accessTokenCookie.setDomain(".duckdns.org"); // 백엔드 도메인으로 설정
 
         }
 
