@@ -6,10 +6,9 @@ server:
         remoteip:
             remote-ip-header: X-Forwarded-For # 클라이언트 IP 정보가 담긴 헤더
             protocol-header: X-Forwarded-Proto # HTTP/HTTPS 정보가 담긴 헤더
-    
+
 frontend:
     url: https://blog-app-kohl-one.vercel.app
- 
 
 spring:
     main:
@@ -53,7 +52,7 @@ spring:
     data:
         redis:
             repositories:
-                enabled: false 
+                enabled: false
             host: ${REDIS_HOST} #Docker Compose 네트워크 내부에서는 컨테이너 이름으로 서비스 접근 가능, Spring Boot 애플리케이션이 직접 연결하므로 설정 필요
             port: 6379
 
@@ -122,4 +121,3 @@ management:
         metrics:
             export:
                 enabled: true
- 

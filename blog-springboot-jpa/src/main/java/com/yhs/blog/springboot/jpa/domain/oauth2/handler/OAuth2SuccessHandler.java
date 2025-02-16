@@ -35,7 +35,7 @@ import java.util.concurrent.TimeUnit;
 public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler {
 
         @Value("${frontend.url}")
-        private String frontendUrl = "http://localhost:3000/"; // 개발 환경, 운영환경에 따라 분기 처리
+        private String frontendUrl; // 개발 환경, 운영환경에 따라 분기 처리
 
         private final TokenProvider tokenProvider;
         private final TokenCookieManager tokenCookieManager;
