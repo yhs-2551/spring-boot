@@ -93,6 +93,9 @@ public class TokenAuthenticationFilter extends OncePerRequestFilter {
         }
 
         private boolean isPermitAllGetRequest(String method, String requestURI) {
+
+                log.info("[TokenAuthenticationFilter] isPermitAllGetRequest 메서드 진행");
+
                 if (!method.equals("GET")) {
                         return false;
                 }
@@ -114,6 +117,9 @@ public class TokenAuthenticationFilter extends OncePerRequestFilter {
         }
 
         private boolean isPermitAllPostRequest(String method, String requestURI) {
+
+                log.info("[TokenAuthenticationFilter] isPermitAllPostRequest 메서드 진행");
+
                 if (!method.equals("POST")) {
                         return false;
                 }

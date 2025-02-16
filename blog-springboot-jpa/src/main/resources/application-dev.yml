@@ -1,6 +1,9 @@
 server:
     port: 8000
 
+frontend:
+    url: http://localhost:3000
+
 # spring.datasource.driver-class-name=com.mysql.cj.jdbc.Driver
 
 spring:
