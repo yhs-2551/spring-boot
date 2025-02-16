@@ -61,7 +61,7 @@ public class SecurityConfig {
 
                 configuration.setAllowedOrigins(List.of(
                                 "http://localhost:3000",
-                                "https://blog-app-kohl-one.vercel.app" // https 프로토콜 추가
+                                "https://dduhalog.duckdns.org" // https 프로토콜 추가
                 ));
 
                 configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "PATCH"));

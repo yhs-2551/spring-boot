@@ -8,7 +8,7 @@ server:
             protocol-header: X-Forwarded-Proto # HTTP/HTTPS 정보가 담긴 헤더
 
 redirect:
-    frontendUrl: https://blog-app-kohl-one.vercel.app
+    frontendUrl: https://dduhalog.duckdns.org
 
 spring:
     main:
