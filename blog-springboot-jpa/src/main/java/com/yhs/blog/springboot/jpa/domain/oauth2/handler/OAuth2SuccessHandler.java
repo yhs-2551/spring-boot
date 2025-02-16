@@ -11,7 +11,9 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import lombok.Getter;
 import lombok.RequiredArgsConstructor;
+import lombok.Setter;
 import lombok.extern.log4j.Log4j2;
 
 import org.springframework.beans.factory.annotation.Value;
@@ -29,10 +31,12 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
+@Setter
+@Getter
 @Component
 @RequiredArgsConstructor
 @Log4j2
-@ConfigurationProperties("redirect")
+@ConfigurationProperties(prefix = "redirect")
 // OAUTH2의 경우 로그인 유지 기간을 어떻게 할지 고민 임시로 리멤버미와 똑같은 기간으로 구현 했음
 public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler {
 
