@@ -15,6 +15,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.oauth2.core.user.OAuth2User;
@@ -31,11 +32,13 @@ import java.util.concurrent.TimeUnit;
 @Component
 @RequiredArgsConstructor
 @Log4j2
+@ConfigurationProperties("redirect")
 // OAUTH2의 경우 로그인 유지 기간을 어떻게 할지 고민 임시로 리멤버미와 똑같은 기간으로 구현 했음
 public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler {
 
-        @Value("${frontend.url}")
-        private String frontendUrl; // 개발 환경, 운영환경에 따라 분기 처리
+        // @Value("${frontend.url}")
+        // private String frontendUrl; // 개발 환경, 운영환경에 따라 분기 처리
+        private String frontendUrl = "http://localhost:3000";
 
         private final TokenProvider tokenProvider;
         private final TokenCookieManager tokenCookieManager;

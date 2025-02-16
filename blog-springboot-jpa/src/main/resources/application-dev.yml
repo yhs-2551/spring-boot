@@ -1,15 +1,15 @@
 server:
     port: 8000
 
-frontend:
-    url: http://localhost:3000
+redirect:
+    frontendUrl: http://localhost:3000
 
 # spring.datasource.driver-class-name=com.mysql.cj.jdbc.Driver
 
 spring:
     main:
         banner-MODE: "off"
- 
+
     datasource:
         driver-class-name: com.mysql.cj.jdbc.Driver
         url: jdbc:mysql://localhost:3306/blog_jpa?serverTimezone=Asia/Seoul&characterEncoding=UTF-8
@@ -65,11 +65,11 @@ spring:
     data:
         redis:
             repositories:
-                enabled: false 
+                enabled: false
             # Redis settings
             host: localhost
             port: 6379
- 
+
     security:
         oauth2:
             client:
@@ -99,14 +99,14 @@ spring:
                         enable: true
 
 # jwt issuer settings, secret key is located in JwtProperties file
-# jwt의 경우 케밥 케이스인 "-"로 구분, @ConfigurationProperties("jwt")를 사용하면 secretKeyString과 같이 카멜 케이스를 쓸 수 있지만 명확하게 쓰기 위해 이렇게 사용 
+# jwt의 경우 케밥 케이스인 "-"로 구분, @ConfigurationProperties("jwt")를 사용하면 secretKeyString과 같이 카멜 케이스를 쓸 수 있지만 명확하게 쓰기 위해 이렇게 사용
 jwt:
     issuer: ${JWT_ISSUER}
-    secret-key-string: ${JWT_SECRET_KEY} 
+    secret-key-string: ${JWT_SECRET_KEY}
 
 # aws s3 settings
 # aws sdk의 경우 jwt와는 다르게 케밥케이스가 아닌 단어 사이 대문자로 구분하는 카멜 케이스 사용
-aws: 
+aws:
     accessKeyId: ${AWS_ACCESS_KEY_ID}
     secretKey: ${AWS_SECRET_ACCESS_KEY}
     s3:
@@ -124,12 +124,11 @@ springdoc:
     default-consumes-media-type: application/json # 기본 요청 타입
     default-produces-media-type: application/json # 기본 응답 타입
 
-
 management:
     endpoints:
         web:
             exposure:
-                include: "*"  # 개발 환경에서는 모든 엔드포인트 활성화. 운영 환경에서는 health,metrics,prometheus 이것만
+                include: "*" # 개발 환경에서는 모든 엔드포인트 활성화. 운영 환경에서는 health,metrics,prometheus 이것만
     endpoint:
         health:
             show-details: always # 상세한 헬스 체크 정보 표시
@@ -142,7 +141,7 @@ management:
             application: blog-springboot-jpa # 메트릭에 애플리케이션 이름 태그 추가
         distribution:
             percentiles-histogram:
-                "[http.server.requests]": true  # HTTP 요청에 대한 히스토그램 메트릭 수집 / . 마침표가 있어서 []로 감싸서 특수문자 이스케이프 해야함
+                "[http.server.requests]": true # HTTP 요청에 대한 히스토그램 메트릭 수집 / . 마침표가 있어서 []로 감싸서 특수문자 이스케이프 해야함
     prometheus:
         metrics:
             export:
