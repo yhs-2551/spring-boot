@@ -62,9 +62,7 @@ public class TokenCookieManager {
             log.info("[TokenCookieManager] handleAccessTokenCookie() 메서드 isProd() 분기 진행");
 
             accessTokenCookie.setSecure(true); // 쿠키가 HTTPS 연결을 통해서만 전송되도록 함.
-            accessTokenCookie.setAttribute("SameSite", "None"); // 프론트 백엔드 도메인이 달라서 None으로 확실하게 처리. Post 요청이 껴있어서
-                                                                // Lax사용하기엔 덜 안정적이라 판단.
-            accessTokenCookie.setDomain(".dduha.duckdns.org");
+            accessTokenCookie.setDomain("dduha.duckdns.org"); // 백엔드 도메인으로 설정
 
         }
 
