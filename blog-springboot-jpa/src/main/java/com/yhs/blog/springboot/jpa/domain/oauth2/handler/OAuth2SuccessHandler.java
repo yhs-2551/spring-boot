@@ -79,7 +79,8 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
                         String newOAuth2UserEmail = (String) oAuth2User.getAttributes().get("email");
                         String tempOAuth2UserUniqueId = UUID.randomUUID().toString(); // 추가 정보를 입력하고 POST 요청했을 때 특정 사용자를
                                                                                       // 식별하기 위함.
-                        targetUrl = UriComponentsBuilder.fromUriString(frontendUrl + "/oauth2/redirect")
+                        targetUrl = UriComponentsBuilder.fromUriString(frontendUrl)
+                                        .path("/oauth2/redirect")
                                         .queryParam("showNewUserModal", true)
                                         .queryParam("tempOAuth2UserUniqueId", tempOAuth2UserUniqueId)
                                         .build().toUriString();
