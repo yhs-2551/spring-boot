@@ -23,10 +23,12 @@ public class CookieUtil {
         cookie.setMaxAge(maxAge);
 
         if (ApplicationContextProvider.isProd()) {
+
+            log.info("[CookieUtil] addCookie() 메서드 isProd() 분기 진행");
+
             cookie.setSecure(true); // 쿠키가 HTTPS 연결을 통해서만 전송되도록 함.
-            cookie.setAttribute("SameSite", "None"); // 크로스 사이트 요청 위조(CSRF) 공격을 방지하기 위한 쿠키
-            // 보안
-            cookie.setDomain("dduha.duckdns.org");
+            cookie.setAttribute("SameSite", "None");
+            cookie.setDomain(".dduha.duckdns.org");
 
         }
         // 응답에 쿠키 추가
@@ -56,9 +58,12 @@ public class CookieUtil {
                 cookie.setMaxAge(0);
 
                 if (ApplicationContextProvider.isProd()) {
+
+                    log.info("[CookieUtil] deleteCookie() 메서드 isProd() 분기 진행");
+
                     cookie.setSecure(true);
                     cookie.setAttribute("SameSite", "None");
-                    cookie.setDomain("dduha.duckdns.org");
+                    cookie.setDomain(".dduha.duckdns.org");
 
                 }
 

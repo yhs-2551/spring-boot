@@ -58,17 +58,13 @@ public class TokenCookieManager {
         accessTokenCookie.setMaxAge(60); // 1분 60초.
 
         if (ApplicationContextProvider.isProd()) {
+
+            log.info("[TokenCookieManager] handleAccessTokenCookie() 메서드 isProd() 분기 진행");
+
             accessTokenCookie.setSecure(true); // 쿠키가 HTTPS 연결을 통해서만 전송되도록 함.
             accessTokenCookie.setAttribute("SameSite", "None"); // 프론트 백엔드 도메인이 달라서 None으로 확실하게 처리. Post 요청이 껴있어서
                                                                 // Lax사용하기엔 덜 안정적이라 판단.
-            accessTokenCookie.setDomain("dduha.duckdns.org"); // 동일한 루트 도메인이며, 쿠키 공유 목적일때만 사용
-
-            log.info("쿠키 설정 정보: name={}, path={}, domain={}, secure={}, samesite={}",
-                    accessTokenCookie.getName(),
-                    accessTokenCookie.getPath(),
-                    accessTokenCookie.getDomain(),
-                    accessTokenCookie.getSecure(),
-                    accessTokenCookie.getAttribute("SameSite"));
+            accessTokenCookie.setDomain(".dduha.duckdns.org");
 
         }
 
