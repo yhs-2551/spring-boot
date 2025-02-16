@@ -24,7 +24,7 @@ public class CookieUtil {
 
         if (ApplicationContextProvider.isProd()) {
             cookie.setSecure(true); // 쿠키가 HTTPS 연결을 통해서만 전송되도록 함.
-            cookie.setAttribute("SameSite", "Lax"); // 크로스 사이트 요청 위조(CSRF) 공격을 방지하기 위한 쿠키 보안
+            // cookie.setAttribute("SameSite", "Lax"); // 크로스 사이트 요청 위조(CSRF) 공격을 방지하기 위한 쿠키 보안
             // cookie.setDomain("dduha.duckdns.org"); 
 
             log.info("쿠키 설정 정보: name={}, path={}, domain={}, secure={}, samesite={}", 
@@ -63,7 +63,7 @@ public class CookieUtil {
 
                 if (ApplicationContextProvider.isProd()) {
                     cookie.setSecure(true);
-                    cookie.setAttribute("SameSite", "Lax");
+                    // cookie.setAttribute("SameSite", "Lax");
                     // cookie.setDomain("dduha.duckdns.org");
 
                     log.info("쿠키 설정 정보: name={}, path={}, domain={}, secure={}, samesite={}", 
