@@ -28,7 +28,7 @@ public class CookieUtil {
 
             cookie.setSecure(true); // 쿠키가 HTTPS 연결을 통해서만 전송되도록 함.
             cookie.setAttribute("SameSite", "None");
-            // cookie.setDomain("dduha.duckdns.org"); // 백엔드 도메인으로 설정. 최소한 하나의 서브도메인 필요
+            cookie.setDomain(".duckdns.org"); // 백엔드 도메인으로 설정. 최소한 하나의 서브도메인 필요
 
         }
         // 응답에 쿠키 추가
@@ -63,7 +63,7 @@ public class CookieUtil {
 
                     cookie.setSecure(true);
                     cookie.setAttribute("SameSite", "None");
-                    // cookie.setDomain("dduha.duckdns.org"); // 백엔드 도메인으로 설정. 최소한 하나의 서브도메인 필요
+                    cookie.setDomain(".duckdns.org"); // 백엔드 도메인으로 설정. 최소한 하나의 서브도메인 필요
                    
                 }   
 
