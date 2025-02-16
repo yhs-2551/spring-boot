@@ -63,7 +63,7 @@ public class TokenCookieManager {
 
             accessTokenCookie.setSecure(true); // 쿠키가 HTTPS 연결을 통해서만 전송되도록 함.
             accessTokenCookie.setAttribute("SameSite", "None");
-            accessTokenCookie.setDomain("dduha.duckdns.org"); // 백엔드 도메인으로 설정.  최소한 하나의 서브도메인 필요 
+            // accessTokenCookie.setDomain("dduha.duckdns.org"); // 백엔드 도메인으로 설정.  최소한 하나의 서브도메인 필요 
 
         }
 
