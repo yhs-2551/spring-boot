@@ -37,12 +37,10 @@ import java.util.concurrent.TimeUnit;
 @RequiredArgsConstructor
 @Log4j2
 @ConfigurationProperties(prefix = "redirect")
-// OAUTH2의 경우 로그인 유지 기간을 어떻게 할지 고민 임시로 리멤버미와 똑같은 기간으로 구현 했음
+// OAUTH2의 경우 로그인 유지 기간: 리멤버미 체크 안하면 하루, 체크 하면 2주
 public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler {
-
-        // @Value("${frontend.url}")
-        // private String frontendUrl; // 개발 환경, 운영환경에 따라 분기 처리
-        private String frontendUrl;
+ 
+        private String frontendUrl; // 개발 환경, 운영환경에 따라 분기 처리
 
         private final TokenProvider tokenProvider;
         private final TokenCookieManager tokenCookieManager;
