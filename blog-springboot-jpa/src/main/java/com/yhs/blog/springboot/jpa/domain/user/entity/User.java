@@ -57,7 +57,7 @@ public class User extends BaseEntity implements UserDetails {
 
     @PrePersist
     public void prePersist() {
-        this.blogName = this.username + "의 DevLog";
+        this.blogName = this.username + "의 DDuhaLog";
     }
 
     // 필드의 기본값 (UserRole.USER)은 객체가 기본 생성자를 통해 생성될 때 적용된다. 반면, 빌더 패턴을 사용하거나 파라미터화된
