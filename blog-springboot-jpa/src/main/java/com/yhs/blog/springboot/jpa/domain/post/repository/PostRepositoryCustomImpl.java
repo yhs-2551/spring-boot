@@ -7,6 +7,7 @@ import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.core.types.dsl.Expressions;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import com.yhs.blog.springboot.jpa.aop.log.Loggable;
+import com.yhs.blog.springboot.jpa.common.config.ApplicationContextProvider;
 import com.yhs.blog.springboot.jpa.common.constant.code.ErrorCode;
 import com.yhs.blog.springboot.jpa.domain.category.entity.QCategory;
 import com.yhs.blog.springboot.jpa.domain.file.dto.response.FileResponse;
@@ -286,10 +287,12 @@ public class PostRepositoryCustomImpl implements PostRepositoryCustom {
                                                                         post.postStatus,
                                                                         user.username,
                                                                         category.name,
-                                                                        Expressions.dateTemplate(
-                                                                                        LocalDateTime.class,
-                                                                                        "CONVERT_TZ({0}, 'UTC', 'Asia/Seoul')",
-                                                                                        post.createdAt))));
+                                                                        ApplicationContextProvider
+                                                                                        .isProd() ? Expressions.dateTemplate(
+                                                                                                        LocalDateTime.class,
+                                                                                                        "CONVERT_TZ({0}, 'UTC', 'Asia/Seoul')",
+                                                                                                        post.createdAt)
+                                                                                                        : post.createdAt)));
 
                         return result.isEmpty() ? Optional.empty() : Optional.of(result.get(0));
 
