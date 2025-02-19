@@ -42,6 +42,7 @@ jobs:
               run: |
                   chmod +x gradlew
                   ./gradlew clean build
+                  ls -la build/generated/querydsl/  # Q클래스 생성 확인
 
             - name: 테스트 결과 저장
               if: always()
