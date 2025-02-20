@@ -30,7 +30,6 @@ public class CookieUtil {
             cookie.setAttribute("SameSite", "None"); // 크로스 도메인 요청에서 쿠키 전송 가능. 서로 다른 도메인 일때만 설정
             // cookie.setDomain("dduha.duckdns.org"); // setDomain은 duckdns, github pages와
             // 같은 공용(퍼블릭) 도메인 에서는 보안상 설정 불가능
-            cookie.setDomain(".duckdns.org");
 
         }
         // 응답에 쿠키 추가

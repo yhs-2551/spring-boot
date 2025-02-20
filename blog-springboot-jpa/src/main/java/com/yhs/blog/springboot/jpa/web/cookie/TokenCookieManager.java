@@ -63,7 +63,7 @@ public class TokenCookieManager {
             log.info("[TokenCookieManager] handleAccessTokenCookie() 메서드 isProd() 분기 진행");
 
             accessTokenCookie.setSecure(true);
-            accessTokenCookie.setAttribute("SameSite", "None");
+            accessTokenCookie.setAttribute("SameSite", "None"); 
 
         }
 
