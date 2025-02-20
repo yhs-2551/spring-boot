@@ -14,12 +14,13 @@ public class PostUserPageResponse {
     private final String content;
     private final String postStatus;
     private final String username;
+    private final String blogId;
     private final String categoryName;
     private final String featuredImageUrl;
     private final LocalDateTime createdAt;
 
     @QueryProjection
-    public PostUserPageResponse(Long id, String title, String content, PostStatus postStatus, String username,
+    public PostUserPageResponse(Long id, String title, String content, PostStatus postStatus, String username, String blogId,
             String categoryName,
             String featuredImageUrl, LocalDateTime createdAt) {
         this.id = id;
@@ -27,6 +28,7 @@ public class PostUserPageResponse {
         this.content = content;
         this.postStatus = postStatus.name();
         this.username = username;
+        this.blogId = blogId;
         this.categoryName = categoryName == null ? null : categoryName;
         this.featuredImageUrl = featuredImageUrl == null ? null : featuredImageUrl;
         this.createdAt = createdAt;

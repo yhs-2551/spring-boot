@@ -41,9 +41,9 @@ import java.util.Optional;
 public class PostRepositoryCustomImpl implements PostRepositoryCustom {
 
         // 아래 쿼리들 여러 쿼리는 postStatus가 포함되어 있는지 없는지에 따라 다름. 나중에 postStatus상태에 따라 분기 처리 필요
-
         private final JPAQueryFactory queryFactory;
 
+        // findPostsAllUser는 바로 아래인 findPostsByUserId랑 아마 where절 부분만 다른데 함수로 동일한 부분 빼도 좋을 거 같음 
         @Loggable
         @Override
         public Page<PostIndexAndIndexSearchResponse> findPostsAllUser(String keyword, SearchType searchType,
@@ -143,6 +143,7 @@ public class PostRepositoryCustomImpl implements PostRepositoryCustom {
                                                                 post.content,
                                                                 post.postStatus,
                                                                 user.username,
+                                                                user.blogId,
                                                                 category.name,
                                                                 featuredImage.fileUrl,
                                                                 post.createdAt))
@@ -215,6 +216,7 @@ public class PostRepositoryCustomImpl implements PostRepositoryCustom {
                                                                 post.content,
                                                                 post.postStatus,
                                                                 user.username,
+                                                                user.blogId,
                                                                 category.name,
                                                                 featuredImage.fileUrl,
                                                                 post.createdAt))
@@ -425,6 +427,7 @@ public class PostRepositoryCustomImpl implements PostRepositoryCustom {
                                                 post.content,
                                                 post.postStatus,
                                                 user.username,
+                                                user.blogId,
                                                 category.name,
                                                 featuredImage.fileUrl,
                                                 post.createdAt))

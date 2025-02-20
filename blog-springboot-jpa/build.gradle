@@ -111,9 +111,8 @@ sourceSets {
 
 // QueryDSL QClass 생성 설정
 tasks.withType(JavaCompile) {
-    options.generatedSourceOutputDirectory = file(querydslDir)
+    options.getGeneratedSourceOutputDirectory().set(file(querydslDir))
 }
-
 // // clean 시에 QClass 삭제
 // clean {
 //     delete file(querydslDir)
@@ -122,7 +121,7 @@ tasks.withType(JavaCompile) {
 // doLast는 clean 태스크의 모든 작업이 완료된 후 실행되므로 더 안전
 // ./gradlew clean시에 동작
 clean.doLast {
-    file(querydslDir).deleteDir()
+    file(querydslDir).deleteDir() 
 }
 
 
