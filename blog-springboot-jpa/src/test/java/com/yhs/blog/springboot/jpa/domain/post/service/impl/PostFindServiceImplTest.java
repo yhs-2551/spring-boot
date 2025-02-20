@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -33,6 +34,7 @@ import com.yhs.blog.springboot.jpa.domain.user.factory.TestUserFactory;
 import com.yhs.blog.springboot.jpa.domain.user.service.UserFindService;
 import com.yhs.blog.springboot.jpa.exception.custom.BusinessException;
 
+// 아래 테스트는 블로그의 주인이 아닌 경우 즉, 비로그인 사용자 또는 A사용자가 B사용자의 블로그에 방문했을때를 가정. 즉 refresh token 값을 null로 한다
 @ExtendWith(MockitoExtension.class)
 public class PostFindServiceImplTest {
 
@@ -67,10 +69,10 @@ public class PostFindServiceImplTest {
         when(categoryService.findCategoryByNameAndUserId(anyString(), anyLong())).thenReturn(category);
 
         // when
-        postFindService.getAllPostsSpecificUser("testBlogId", "keyword", SearchType.TITLE, "Test Category", pageable);
+        postFindService.getAllPostsSpecificUser("testBlogId", "keyword", SearchType.TITLE, "Test Category", pageable, null);
 
         // then
-        verify(postRepository).findPostsByUserIdAndCategoryId(anyLong(), anyString(), anyString(),
+        verify(postRepository).findPostsByUserIdAndCategoryIdForUserWithUserPage(anyLong(), anyString(), anyString(),
                 any(SearchType.class), any(Pageable.class));
     }
 
@@ -81,20 +83,20 @@ public class PostFindServiceImplTest {
         when(userFindService.findUserByBlogId(anyString())).thenReturn(user);
 
         // when
-        postFindService.getAllPostsSpecificUser("testBlogId", "keyword", SearchType.TITLE, null, pageable);
+        postFindService.getAllPostsSpecificUser("testBlogId", "keyword", SearchType.TITLE, null, pageable, null);
 
         // then
-        verify(postRepository).findPostsByUserId(anyLong(), anyString(), any(SearchType.class), any(Pageable.class));
+        verify(postRepository).findPostsByUserIdForUserWithUserPage(anyLong(), anyString(), any(SearchType.class), any(Pageable.class));
     }
 
     @Test
     @DisplayName("전체 사용자의 게시글 조회 테스트")
     void 전체_사용자의_모든_게시글_조회() {
         // when
-        postFindService.getAllPostsAllUser("keyword", SearchType.TITLE, pageable);
+        postFindService.getAllPostsAllUser("keyword", SearchType.TITLE, pageable, null);
 
         // then
-        verify(postRepository).findPostsAllUser(anyString(), any(SearchType.class), any(Pageable.class));
+        verify(postRepository).findPostsForUserWithIndexPage(anyString(), any(SearchType.class), any(Pageable.class), isNull());
     }
 
     @Test

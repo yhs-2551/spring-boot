@@ -14,10 +14,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
-
-import org.aspectj.lang.annotation.Before;
+import java.util.Optional; 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -34,8 +31,7 @@ import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import com.yhs.blog.springboot.jpa.domain.auth.token.provider.user.BlogUser;
-import com.yhs.blog.springboot.jpa.domain.category.dto.response.CategoryWithChildrenResponse;
-import com.yhs.blog.springboot.jpa.domain.category.entity.Category;
+import com.yhs.blog.springboot.jpa.domain.category.dto.response.CategoryWithChildrenResponse; 
 import com.yhs.blog.springboot.jpa.domain.category.service.CategoryService;
 import com.yhs.blog.springboot.jpa.domain.featured_image.repository.FeaturedImageRepository;
 import com.yhs.blog.springboot.jpa.domain.featured_image.service.FeaturedImageService;

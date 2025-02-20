@@ -2,6 +2,7 @@ package com.yhs.blog.springboot.jpa.domain.post.controller;
 
 import com.yhs.blog.springboot.jpa.domain.category.entity.Category;
 import com.yhs.blog.springboot.jpa.domain.category.repository.CategoryRepository;
+import com.yhs.blog.springboot.jpa.domain.post.dto.response.PostAdminAndUserBaseResponse;
 import com.yhs.blog.springboot.jpa.domain.post.dto.response.PostUserPageResponse;
 import com.yhs.blog.springboot.jpa.domain.post.entity.Post;
 import com.yhs.blog.springboot.jpa.domain.post.entity.enums.CommentsEnabled;
@@ -35,6 +36,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 // After All을 Public으로 실행하기 위해. 각각의 테스트 메서드는 독립적으로 실행되어서 전체 테스트에서 Public으로 After
 // All이 되려면 이 어노테이션 필요
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
+// 아래 테스트는 블로그의 주인이 아닌 경우 즉, 비로그인 사용자 또는 A사용자가 B사용자의 블로그에 방문했을때를 가정. 즉 refresh token 값을 null로 한다
 public class PostSearchIntegrationTest {
 
         @Autowired
@@ -88,9 +90,9 @@ public class PostSearchIntegrationTest {
                 PageRequest pageRequest = PageRequest.of(0, 10, Sort.by(Sort.Direction.DESC, "createdAt"));
 
                 // when
-                Page<PostUserPageResponse> result = postFindService.getAllPostsSpecificUser(testUser.getBlogId(), null,
+                Page<? extends PostAdminAndUserBaseResponse> result = postFindService.getAllPostsSpecificUser(testUser.getBlogId(), null,
                                 null, null,
-                                pageRequest);
+                                pageRequest, null);
 
                 // then
                 assertThat(result.getContent()).hasSize(10);
@@ -106,8 +108,8 @@ public class PostSearchIntegrationTest {
                                 "createdAt"));
 
                 // when
-                Page<PostUserPageResponse> result = postFindService.getAllPostsSpecificUser(testUser.getBlogId(), null,
-                                null, null, pageRequest);
+                Page<? extends PostAdminAndUserBaseResponse> result = postFindService.getAllPostsSpecificUser(testUser.getBlogId(), null,
+                                null, null, pageRequest, null);
 
                 // then
                 assertThat(result.getContent()).hasSize(10);
@@ -126,9 +128,9 @@ public class PostSearchIntegrationTest {
                 SearchType searchType = SearchType.ALL;
 
                 // when
-                Page<PostUserPageResponse> result = postFindService.getAllPostsSpecificUser(testUser.getBlogId(),
+                Page<? extends PostAdminAndUserBaseResponse> result = postFindService.getAllPostsSpecificUser(testUser.getBlogId(),
                                 searchKeyword, searchType, null,
-                                pageRequest);
+                                pageRequest, null);
 
                 // then
                 assertThat(result.getContent()).isNotEmpty();
@@ -149,9 +151,9 @@ public class PostSearchIntegrationTest {
                 SearchType searchType = SearchType.TITLE;
 
                 // when
-                Page<PostUserPageResponse> result = postFindService.getAllPostsSpecificUser(testUser.getBlogId(),
+                Page<? extends PostAdminAndUserBaseResponse> result = postFindService.getAllPostsSpecificUser(testUser.getBlogId(),
                                 searchKeyword, searchType, null,
-                                pageRequest);
+                                pageRequest, null);
 
                 // then
                 assertThat(result.getContent()).isNotEmpty();
@@ -170,9 +172,9 @@ public class PostSearchIntegrationTest {
                 SearchType searchType = SearchType.CONTENT;
 
                 // when
-                Page<PostUserPageResponse> result = postFindService.getAllPostsSpecificUser(testUser.getBlogId(),
+                Page<? extends PostAdminAndUserBaseResponse> result = postFindService.getAllPostsSpecificUser(testUser.getBlogId(),
                                 searchKeyword, searchType, null,
-                                pageRequest);
+                                pageRequest, null);
 
                 // then
                 assertThat(result.getContent()).isNotEmpty();
@@ -189,10 +191,10 @@ public class PostSearchIntegrationTest {
                 String categoryName = "테스트 카테고리";
 
                 // when
-                Page<PostUserPageResponse> result = postFindService.getAllPostsSpecificUser(testUser.getBlogId(), null,
+                Page<? extends PostAdminAndUserBaseResponse> result = postFindService.getAllPostsSpecificUser(testUser.getBlogId(), null,
                                 null,
                                 categoryName,
-                                pageRequest);
+                                pageRequest, null);
 
                 // then
                 assertThat(result.getContent()).isNotEmpty();
@@ -215,10 +217,10 @@ public class PostSearchIntegrationTest {
                 SearchType searchType = SearchType.ALL;
 
                 // when
-                Page<PostUserPageResponse> result = postFindService.getAllPostsSpecificUser(testUser.getBlogId(),
+                Page<? extends PostAdminAndUserBaseResponse> result = postFindService.getAllPostsSpecificUser(testUser.getBlogId(),
                                 searchKeyword,
                                 searchType,
-                                categoryName, pageRequest);
+                                categoryName, pageRequest, null);
 
                 // then
                 assertThat(result.getContent()).isNotEmpty(); // 검색 결과가 비어있지 않은지 확인

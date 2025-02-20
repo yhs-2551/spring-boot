@@ -6,10 +6,13 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.util.WebUtils;
 
 import com.yhs.blog.springboot.jpa.aop.log.Loggable;
 import com.yhs.blog.springboot.jpa.common.constant.code.ErrorCode;
+import com.yhs.blog.springboot.jpa.domain.auth.token.claims.ClaimsExtractor;
 import com.yhs.blog.springboot.jpa.domain.category.service.CategoryService;
+import com.yhs.blog.springboot.jpa.domain.post.dto.response.PostAdminAndUserBaseResponse;
 import com.yhs.blog.springboot.jpa.domain.post.dto.response.PostIndexAndIndexSearchResponse;
 import com.yhs.blog.springboot.jpa.domain.post.dto.response.PostResponseForDetailPage;
 import com.yhs.blog.springboot.jpa.domain.post.dto.response.PostResponseForEditPage;
@@ -31,16 +34,19 @@ public class PostFindServiceImpl implements PostFindService {
     private final CategoryService categoryService;
     private final PostRepository postRepository;
     private final UserFindService userFindService;
+    private final ClaimsExtractor claimsExtractor;
 
+    // PostAdminPageResponse, PostUserPageResponse 둘 중 하나 리턴
     @Override
     @Transactional(readOnly = true)
-    public Page<PostUserPageResponse> getAllPostsSpecificUser(String blogId, String keyword, SearchType searchType,
+    public Page<? extends PostAdminAndUserBaseResponse> getAllPostsSpecificUser(String blogId, String keyword, SearchType searchType,
             String categoryName,
-            Pageable pageable) {
+            Pageable pageable, String refreshToken) {
 
         log.info(
-                "[PostFindServiceImpl] getAllPostsSpecificUser 메서드 시작: blogId: {}, keyword: {}, searchType: {}, categoryName: {}, pageable: {}",
-                blogId, keyword, searchType, categoryName, pageable);
+                "[PostFindServiceImpl] getAllPostsSpecificUser 메서드 시작");
+
+        log.info("Refresh Token >>>> {}", refreshToken);
 
         Long userId = userFindService.findUserByBlogId(blogId).getId();
 
@@ -50,23 +56,64 @@ public class PostFindServiceImpl implements PostFindService {
 
             String categoryId = categoryService.findCategoryByNameAndUserId(categoryName, userId).getId();
 
-            return postRepository.findPostsByUserIdAndCategoryId(userId, categoryId, keyword, searchType, pageable);
+            if (refreshToken != null && claimsExtractor.getBlogId(refreshToken).equals(blogId)) {
+
+                log.info("[PostFindServiceImpl] getAllPostsSpecificUser 블로그 주인일 때 분기 진행");
+
+                return postRepository.findPostsByUserIdAndCategoryIdForAdminWithUserPage(userId, categoryId, keyword,
+                        searchType, pageable);
+
+            } else {
+
+                log.info("[PostFindServiceImpl] getAllPostsSpecificUser 블로그 주인이 아닐 때 분기 진행");
+
+                return postRepository.findPostsByUserIdAndCategoryIdForUserWithUserPage(userId, categoryId, keyword,
+                        searchType, pageable);
+
+            }
+
         }
 
-        log.info("[PostFindServiceImpl] getAllPostsSpecificUser 카테고리 미존재");
+        log.info("[PostFindServiceImpl] getAllPostsSpecificUser 카테고리 미존재 분기 진행");
 
-        return postRepository.findPostsByUserId(userId, keyword, searchType, pageable);
+        if (refreshToken != null && claimsExtractor.getBlogId(refreshToken).equals(blogId)) {
+            log.info("[PostFindServiceImpl] getAllPostsSpecificUser 블로그 주인일 때 분기 진행");
+
+            return postRepository.findPostsByUserIdForAdminWithUserPage(userId, keyword, searchType, pageable);
+
+        } else {
+
+            log.info("[PostFindServiceImpl] getAllPostsSpecificUser 블로그 주인이 아닐 때 분기 진행");
+
+            return postRepository.findPostsByUserIdForUserWithUserPage(userId, keyword, searchType, pageable);
+
+        }
+
     }
 
     @Override
     @Transactional(readOnly = true)
     public Page<PostIndexAndIndexSearchResponse> getAllPostsAllUser(String keyword, SearchType searchType,
-            Pageable pageable) {
+            Pageable pageable, String refreshToken) {
 
         log.info("[PostFindServiceImpl] getAllPostsAllUser 메서드 시작: keyword: {}, searchType: {}, pageable: {}", keyword,
                 searchType, pageable);
 
-        return postRepository.findPostsAllUser(keyword, searchType, pageable);
+        if (refreshToken != null) {
+
+            log.info("[PostFindServiceImpl] getAllPostsAllUser 블로그 주인일 때 분기 진행");
+
+            Long userIdFromRefreshToken = claimsExtractor.getUserId(refreshToken);
+            return postRepository.findPostsForUserWithIndexPage(keyword, searchType, pageable, userIdFromRefreshToken);
+
+        } else {
+
+            log.info("[PostFindServiceImpl] getAllPostsAllUser 블로그 주인이 아닐 때 분기 진행");
+
+            return postRepository.findPostsForUserWithIndexPage(keyword, searchType, pageable, null);
+
+        }
+
     }
 
     @Loggable

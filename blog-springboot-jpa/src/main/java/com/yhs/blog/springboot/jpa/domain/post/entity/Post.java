@@ -17,12 +17,11 @@ import java.time.LocalDateTime;
 @Setter
 @Entity
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@Table(name = "posts", indexes = {
-        @Index(name = "idx_post_created_at_id", columnList = "created_at DESC, id DESC"), // explain에서 사용되진 않았는데, 혹시
-                                                                                          // 다른데서 사용될 수 있으니 보류
-        @Index(name = "idx_posts_user_id", columnList = "user_id"),
-        @Index(name = "idx_posts_category_id", columnList = "category_id"), // 카테고리조회시 필요해서 필수.
-        @Index(name = "idx_posts_featured_image_id", columnList = "featured_image_id"),
+@Table(name = "posts", indexes = { 
+    // @Index(name = "idx_posts_created_at_desc_id_desc", columnList = "created_at DESC, id DESC"),  // 이렇게 설정하고 index hint를 써야만 정렬 인덱스를 사용.(나는 인덱스는 사용하고 있지 않음) 
+    @Index(name = "idx_posts_post_status_user_id_created_at_id", columnList = "post_status, user_id, created_at DESC, id DESC"),  
+    @Index(name = "idx_posts_category_id", columnList = "category_id"), // 카테고리조회시 필요해서 필수.
+    @Index(name = "idx_posts_featured_image_id", columnList = "featured_image_id"), 
 })
 public class Post extends BaseEntity {
     @Id
@@ -36,9 +35,9 @@ public class Post extends BaseEntity {
     @Column(nullable = false, columnDefinition = "TEXT")
     private String content;
 
-    @Enumerated(EnumType.STRING)
+    @Enumerated(EnumType.STRING) // DB에는 문자열로 저장 
     @Column(length = 10, nullable = false)
-    private PostStatus postStatus = PostStatus.PUBLIC;
+    private PostStatus postStatus = PostStatus.PUBLIC; // 엔티티에서는 enum 으로 사용 
 
     @Enumerated(EnumType.STRING)
     @Column(length = 10, nullable = false)
