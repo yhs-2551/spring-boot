@@ -101,7 +101,7 @@ dependencies {
 }
 
 // QueryDSL QClass 생성 위치 지정
-def querydslDir = "$buildDir/generated/querydsl" 
+def querydslDir = "src/main/generated"  
 
 // QueryDSL QClass 위치 지정
 sourceSets {

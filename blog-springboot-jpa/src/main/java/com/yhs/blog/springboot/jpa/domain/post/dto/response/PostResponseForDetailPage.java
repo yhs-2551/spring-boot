@@ -33,7 +33,6 @@ public class PostResponseForDetailPage { // 프론트에 DTO응답 전달되는 
     @Nullable
     private final List<FileResponse> files;
 
-    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "Asia/Seoul")
     private final LocalDateTime createdAt; // 생성 일시, LocalDateTime은 Spring Boot에서 자동으로 ISO-8601 형식으로 변환. Redis같은거만 설정해주면
                                            // 됨
 
