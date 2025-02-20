@@ -53,7 +53,7 @@ public class TokenCookieManager {
         // 액세스 토큰 HTTP Only 쿠키 저장은, 초기에 응답 헤더로 액세스 토큰을 전송해줄때만 사용하므로 setMaxAge를 60초만 설정.
         // 지정하지 않을 수도 있음.
         Cookie accessTokenCookie = new Cookie(TokenConstants.ACCESS_TOKEN_COOKIE_NAME, accessToken);
-        accessTokenCookie.setHttpOnly(false); // javascript 에서 접근 불가
+        accessTokenCookie.setHttpOnly(true); // javascript 에서 접근 불가
         accessTokenCookie.setPath("/");
         accessTokenCookie.setMaxAge(60); // 1분 60초.
 
