@@ -302,6 +302,13 @@ public class PostOperationServiceImpl implements PostOperationService {
                 Optional<Tag> tag = tagRepository.findByName(tagName);
 
                 if (tag.isPresent()) {
+
+                    Optional<PostTag> optionalPostTag = postTagRepository.findByPostIdAndTagId(postId, tag.get().getId());
+
+                    if (optionalPostTag.isPresent()) {
+                        continue;
+                    }
+
                     postTags.add(new PostTag(postId, tag.get().getId()));
                     continue;
                 }

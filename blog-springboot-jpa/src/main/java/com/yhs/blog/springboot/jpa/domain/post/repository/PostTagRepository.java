@@ -7,12 +7,15 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.util.List;
+import java.util.Optional;
 
 public interface PostTagRepository extends JpaRepository<PostTag, Long> {
 
         // tag.id값의 경우 중복될 가능성이 없기 때문에 distinct 필요x
         @Query("SELECT pt.tagId FROM PostTag pt WHERE pt.postId = :postId")
         List<Long> findTagIdsByPostId(@Param("postId") Long postId);
+
+        Optional<PostTag> findByPostIdAndTagId(Long postId, Long tagId);
 
         @Modifying
         @Query("DELETE FROM PostTag pt WHERE pt.postId = :postId AND pt.tagId IN " +
