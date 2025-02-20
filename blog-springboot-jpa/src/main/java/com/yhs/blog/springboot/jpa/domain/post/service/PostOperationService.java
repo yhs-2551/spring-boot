@@ -14,5 +14,5 @@ public interface PostOperationService {
     void updatePostByPostId(Long postI, BlogUser blogUser,
             PostUpdateRequest postUpdateRequest);
 
-    // void updatePostStatusByPostId(Long postId, PostStatus status);
+    void updatePostStatusByPostId(Long postId, PostStatus status);
 }

@@ -125,32 +125,32 @@ public class PostOperationController {
         }
 
 
-        // @Operation(summary = "특정 사용자의 단일 게시글의 게시글 상태 업데이트 요청 처리", description = "특정 사용자의 단일 게시글에 대한 게시글 상태 업데이트 요청 처리")
-        // @ApiResponses(value = {
-        //                 @ApiResponse(responseCode = "200", description = "특정 사용자의 단일 게시글에 대한 게시글 상태 업데이트 성공 응답", content = @Content(schema = @Schema(implementation = SuccessResponse.class))),
-        //                 @ApiResponse(responseCode = "401", description = "인증 실패(액세스 토큰 만료)", content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
-        //                 @ApiResponse(responseCode = "403", description = "권한 없음(게시글 작성자 본인이 아닌 경우)", content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
-        //                 @ApiResponse(responseCode = "404", description = "특정 사용자의 단일 게시글 조회 실패", content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+        @Operation(summary = "특정 사용자의 단일 게시글의 게시글 상태 업데이트 요청 처리", description = "특정 사용자의 단일 게시글에 대한 게시글 상태 업데이트 요청 처리")
+        @ApiResponses(value = {
+                        @ApiResponse(responseCode = "200", description = "특정 사용자의 단일 게시글에 대한 게시글 상태 업데이트 성공 응답", content = @Content(schema = @Schema(implementation = SuccessResponse.class))),
+                        @ApiResponse(responseCode = "401", description = "인증 실패(액세스 토큰 만료)", content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+                        @ApiResponse(responseCode = "403", description = "권한 없음(게시글 작성자 본인이 아닌 경우)", content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+                        @ApiResponse(responseCode = "404", description = "특정 사용자의 단일 게시글 조회 실패", content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
 
-        // })
-        // @Parameters({
-        //                 @Parameter(name = "blogId", description = "사용자 블로그 ID", required = true),
-        //                 @Parameter(name = "postId", description = "수정할 단일 게시글 ID", required = true),
+        })
+        @Parameters({
+                        @Parameter(name = "blogId", description = "사용자 블로그 ID", required = true),
+                        @Parameter(name = "postId", description = "수정할 단일 게시글 ID", required = true),
 
-        // })
-        // @PatchMapping("/{blogId}/posts/{postId}/{postStatus}")
-        // @PreAuthorize("#userBlogId == authentication.name")
-        // public ResponseEntity<BaseResponse> updatePostStatusByPostId(@PathVariable("postId") Long postId,
-        //                 @P("userBlogId") @PathVariable("blogId") String blogId,
-        //                 @PathVariable("postStatus") PostStatus status) { // 프론트 문자열 값을 enum으로 자동 변환해서 받을 수 있음. 단 정확히
-        //                                                                  // 일치해야함
+        })
+        @PatchMapping("/{blogId}/posts/{postId}/{postStatus}")
+        @PreAuthorize("#userBlogId == authentication.name")
+        public ResponseEntity<BaseResponse> updatePostStatusByPostId(@PathVariable("postId") Long postId,
+                        @P("userBlogId") @PathVariable("blogId") String blogId,
+                        @PathVariable("postStatus") PostStatus status) { // 프론트 문자열 값을 enum으로 자동 변환해서 받을 수 있음. 단 정확히
+                                                                         // 일치해야함
 
-        //         log.info("[PostOperationController] updatePostStatusByPostId() 요청");
+                log.info("[PostOperationController] updatePostStatusByPostId() 요청");
 
-        //         postOperationService.updatePostStatusByPostId(postId, status);
+                postOperationService.updatePostStatusByPostId(postId, status);
 
-        //         return ResponseEntity.status(HttpStatus.OK)
-        //                         .body(new SuccessResponse<>("게시글 상태가 성공적으로 수정되었습니다."));
-        // }
+                return ResponseEntity.status(HttpStatus.OK)
+                                .body(new SuccessResponse<>("게시글 상태가 성공적으로 수정되었습니다."));
+        }
 
 }
