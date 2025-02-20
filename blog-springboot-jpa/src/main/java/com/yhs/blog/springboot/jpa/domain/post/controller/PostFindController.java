@@ -74,7 +74,7 @@ public class PostFindController {
                         @PageableDefault(page = 0, size = 10, sort = { "createdAt",
                                         "id" }, direction = Sort.Direction.DESC) Pageable pageable) {
 
-                log.info("[PostFindController] findAllPosts() 요청");
+                log.info("[PostFindController] findAllPosts() 요청d");
 
                 Cookie cookie = WebUtils.getCookie(request, "refresh_token");
 
