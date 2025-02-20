@@ -289,7 +289,7 @@ public class PostRepositoryCustomImpl implements PostRepositoryCustom {
                                                                         post.postStatus,
                                                                         user.username,
                                                                         category.name,
-                                                                        getDateExpression(post.createdAt))));
+                                                                        post.createdAt)));
 
                         return result.isEmpty() ? Optional.empty() : Optional.of(result.get(0));
 
@@ -466,15 +466,6 @@ public class PostRepositoryCustomImpl implements PostRepositoryCustom {
 
         private BooleanExpression categoryIdEq(String categoryId) {
                 return StringUtils.hasText(categoryId) ? QPost.post.categoryId.eq(categoryId) : null;
-        }
-
-        private Expression<LocalDateTime> getDateExpression(DateTimePath<LocalDateTime> dateTime) {
-                return ApplicationContextProvider.isProd()
-                                ? Expressions.dateTemplate(
-                                                LocalDateTime.class,
-                                                "DATE_FORMAT(CONVERT_TZ({0}, 'UTC', 'Asia/Seoul'), '%Y-%m-%d %H:%i:%s')",
-                                                dateTime)
-                                : dateTime;
         }
 
 }

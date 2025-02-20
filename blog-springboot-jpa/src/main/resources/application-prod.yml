@@ -33,10 +33,15 @@ spring:
         show-sql: false
         properties:
             hibernate:
+                jdbc:
+                    time_zone: Asia/Seoul
                 format_sql: false
                 show_sql: false
                 use_sql_comments: false
                 highlight_sql: false
+    
+    jackson:
+        time_zone: Asia/Seoul
 
     batch:
         job:

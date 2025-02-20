@@ -32,14 +32,15 @@ public class PostResponseForDetailPage { // 프론트에 DTO응답 전달되는 
 
     @Nullable
     private final List<FileResponse> files;
-
-    private final String createdAt; // 생성 일시, LocalDateTime은 Spring Boot에서 자동으로 ISO-8601 형식으로 변환. Redis같은거만 설정해주면
+ 
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+    private final LocalDateTime createdAt; // 생성 일시, LocalDateTime은 Spring Boot에서 자동으로 ISO-8601 형식으로 변환. Redis같은거만 설정해주면
                                            // 됨
 
     @QueryProjection
     public PostResponseForDetailPage(String title, String content, List<String> tags,
             List<FileResponse> files,
-            PostStatus postStatus, String username, String categoryName, String createdAt) {
+            PostStatus postStatus, String username, String categoryName, LocalDateTime createdAt) {
         this.title = title;
         this.content = content;
         // 리스트에 하나의 문자열이라도 있으면 tags 리턴
