@@ -27,7 +27,7 @@ public class CookieUtil {
             log.info("[CookieUtil] addCookie() 메서드 isProd() 분기 진행");
 
             cookie.setSecure(true); // 쿠키가 HTTPS 연결을 통해서만 전송되도록 함. samesite = none 일 때 필수
-            cookie.setAttribute("SameSite", "Lax"); // 크로스 도메인 요청에서 쿠키 전송 가능. 서로 다른 도메인 일때만 설정
+            cookie.setAttribute("SameSite", "None"); // 크로스 도메인 요청에서 쿠키 전송 가능. 서로 다른 도메인 일때만 설정
             // cookie.setDomain("dduha.duckdns.org"); // setDomain은 duckdns, github pages와
             // 같은 공용(퍼블릭) 도메인 에서는 보안상 설정 불가능
 
