@@ -291,6 +291,8 @@ public class PostRepositoryCustomImpl implements PostRepositoryCustom {
                                                                         category.name,
                                                                         post.createdAt)));
 
+                        log.info("created At>>>>>> {} ", Optional.of(result.get(0).getCreatedAt()));
+
                         return result.isEmpty() ? Optional.empty() : Optional.of(result.get(0));
 
                 } catch (Exception e) {
