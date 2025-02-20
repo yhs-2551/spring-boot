@@ -42,8 +42,7 @@ jobs:
               run: |
                   chmod +x gradlew
                   ./gradlew clean build
-                  ls -la ${{ github.workspace }}/blog-springboot-jpa/build/generated/querydsl/  # Q클래스 생성 확인
-
+    
             - name: 테스트 결과 저장
               if: always()
               uses: actions/upload-artifact@v4 # 빌드/테스트 결과물 저장 및 공유. 빌드된 JAR 파일 저장, 테스트 리포트 저장, 코드 커버리지(jacoco) 리포트 저장. 다른 워크플로우에서 재사용 할수도 있음

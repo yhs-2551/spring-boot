@@ -42,11 +42,6 @@ out/
 .env.prod 
 .env.*
 
-#   Java 컴파일 과정에서 자동으로 생성되는 메타데이터 및 헤더 파일을 포함하는 Gradle의 기본 디렉토리 제외.
-
-
-build/generated/
-
 # VS CODE에서 문서 작업용 파일
 document.md
  
