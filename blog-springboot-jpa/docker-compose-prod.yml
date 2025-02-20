@@ -10,6 +10,7 @@ services:
             - ./blog-springboot-jpa-1.0.0.jar:/app.jar
             - ./logs:/logs # 로그 디렉토리 마운트
         environment: # docker-compose가 실행 되면서 ec2 내의 .env파일을 참조, 이후에 jar파일을 실행할때 application-prod.yml에서 도커 컨테이너에 등록된 환경 변수를 참조. 
+            - TZ=Asia/Seoul
             - SPRING_PROFILES_ACTIVE=prod # 프로필 우선 순위: 1. 환경변수 (SPRING_PROFILES_ACTIVE), 2. - JVM 인자 (-Dspring.profiles.active) 3. application.yml의 설정
               # DB 설정
             - RDS_ENDPOINT=${RDS_ENDPOINT}
