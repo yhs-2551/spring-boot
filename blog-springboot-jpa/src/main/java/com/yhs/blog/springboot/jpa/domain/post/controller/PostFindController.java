@@ -74,7 +74,7 @@ public class PostFindController {
                         @PageableDefault(page = 0, size = 10, sort = { "createdAt",
                                         "id" }, direction = Sort.Direction.DESC) Pageable pageable) {
 
-                log.info("[PostFindController] findAllPosts() 요청d");
+                log.info("[PostFindController] findAllPosts() 요청");
 
                 Cookie cookie = WebUtils.getCookie(request, "refresh_token");
 
@@ -174,17 +174,24 @@ public class PostFindController {
                                 pageable.getPageSize(),
                                 pageable.getSort());
 
-                // Cookie cookie = WebUtils.getCookie(request, "refresh_token");
+                Cookie cookie = WebUtils.getCookie(request, "refresh_token");
 
                 Page<? extends PostAdminAndUserBaseResponse> postResponses;
 
-                if (true) {
+                if (cookie == null) {
 
                         postResponses = postFindService.getAllPostsSpecificUser(blogId, null,
                                         null,
                                         null,
                                         pageRequest, null);
-                }  
+                } else {
+                        String refreshToken = cookie.getValue();
+
+                        postResponses = postFindService.getAllPostsSpecificUser(blogId, null,
+                                        null,
+                                        null,
+                                        pageRequest, refreshToken);
+                }
 
                 PageResponse<? extends PostAdminAndUserBaseResponse> pageResponse = new PageResponse<>(postResponses);
 
