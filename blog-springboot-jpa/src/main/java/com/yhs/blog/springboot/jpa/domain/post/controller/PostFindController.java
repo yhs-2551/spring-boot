@@ -174,24 +174,17 @@ public class PostFindController {
                                 pageable.getPageSize(),
                                 pageable.getSort());
 
-                Cookie cookie = WebUtils.getCookie(request, "refresh_token");
+                // Cookie cookie = WebUtils.getCookie(request, "refresh_token");
 
                 Page<? extends PostAdminAndUserBaseResponse> postResponses;
 
-                if (cookie == null) {
+                if (true) {
 
                         postResponses = postFindService.getAllPostsSpecificUser(blogId, null,
                                         null,
                                         null,
                                         pageRequest, null);
-                } else {
-                        String refreshToken = cookie.getValue();
-
-                        postResponses = postFindService.getAllPostsSpecificUser(blogId, null,
-                                        null,
-                                        null,
-                                        pageRequest, refreshToken);
-                }
+                }  
 
                 PageResponse<? extends PostAdminAndUserBaseResponse> pageResponse = new PageResponse<>(postResponses);
 
