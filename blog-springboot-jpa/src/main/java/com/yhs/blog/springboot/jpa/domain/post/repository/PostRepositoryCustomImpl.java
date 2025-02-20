@@ -4,6 +4,7 @@ import com.querydsl.core.BooleanBuilder;
 import com.querydsl.core.group.GroupBy;
 import com.querydsl.core.types.Projections;
 import com.querydsl.core.types.dsl.BooleanExpression;
+import com.querydsl.core.types.dsl.Expressions;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import com.yhs.blog.springboot.jpa.aop.log.Loggable;
 import com.yhs.blog.springboot.jpa.common.constant.code.ErrorCode;
@@ -32,6 +33,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Repository;
 import org.springframework.util.StringUtils;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -284,7 +286,10 @@ public class PostRepositoryCustomImpl implements PostRepositoryCustom {
                                                                         post.postStatus,
                                                                         user.username,
                                                                         category.name,
-                                                                        post.createdAt)));
+                                                                        Expressions.dateTemplate(
+                                                                                        LocalDateTime.class,
+                                                                                        "DATE_FORMAT(CONVERT_TZ({0}, 'UTC', 'Asia/Seoul'), '%Y-%m-%d %H:%i:%s')",
+                                                                                        post.createdAt))));
 
                         return result.isEmpty() ? Optional.empty() : Optional.of(result.get(0));
 
