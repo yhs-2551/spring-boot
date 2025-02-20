@@ -79,4 +79,9 @@ public class Post extends BaseEntity {
         this.commentsEnabled = commentsEnabled;
     }
 
+    public Post updatePostStatus(PostStatus postStatus) {
+        this.postStatus = postStatus;
+        return this;
+    }
+
 }

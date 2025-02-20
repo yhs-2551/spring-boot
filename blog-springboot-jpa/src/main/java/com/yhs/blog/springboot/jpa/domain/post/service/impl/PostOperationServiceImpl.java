@@ -303,7 +303,8 @@ public class PostOperationServiceImpl implements PostOperationService {
 
                 if (tag.isPresent()) {
 
-                    Optional<PostTag> optionalPostTag = postTagRepository.findByPostIdAndTagId(postId, tag.get().getId());
+                    Optional<PostTag> optionalPostTag = postTagRepository.findByPostIdAndTagId(postId,
+                            tag.get().getId());
 
                     if (optionalPostTag.isPresent()) {
                         continue;
@@ -328,6 +329,23 @@ public class PostOperationServiceImpl implements PostOperationService {
             postTagRepository.saveAll(postTags);
         } else {
             return;
+        }
+    }
+
+    @Override
+    public void updatePostStatusByPostId(Long postId, PostStatus status) {
+        
+        log.info("[PostOperationServiceImpl] updatePostStatusByPostId 메서드 진행");
+
+        Optional<Post> optionalPost = postRepository.findById(postId); // 조회 안하고 바로 update 쿼리 직접 날릴 수 있지만, 조회 후 존재 유무에 따른 분기 처리가 안전할 것 같음
+
+        if (optionalPost.isEmpty()) {
+            throw new BusinessException(ErrorCode.POST_NOT_FOUND, postId + "번 게시글을 찾을 수 없습니다.",
+                    "PostOperationServiceImpl", "updatePostStatusByPostId");
+        } else {
+            Post post = optionalPost.get();
+            Post updatedPost = post.updatePostStatus(status);
+            postRepository.save(updatedPost); // 더티체킹 쓸 수도 있지만 단점이 많아서 명시적으로 save 
         }
     }
 
