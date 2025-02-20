@@ -1,18 +1,5 @@
 package com.yhs.blog.springboot.jpa.domain.post.controller;
 
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
-import org.springframework.data.web.PageableDefault;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.util.WebUtils;
-
 import com.yhs.blog.springboot.jpa.aop.performance.MeasurePerformance;
 import com.yhs.blog.springboot.jpa.common.response.BaseResponse;
 import com.yhs.blog.springboot.jpa.common.response.ErrorResponse;
@@ -23,7 +10,6 @@ import com.yhs.blog.springboot.jpa.domain.post.dto.response.PostResponseForDetai
 import com.yhs.blog.springboot.jpa.domain.post.dto.response.PostResponseForEditPage;
 import com.yhs.blog.springboot.jpa.domain.post.repository.search.SearchType;
 import com.yhs.blog.springboot.jpa.domain.post.service.PostFindService;
-
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.Parameters;
@@ -36,6 +22,14 @@ import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.util.WebUtils;
 
 @Tag(name = "게시글 조회", description = "모든 사용자의 게시글, 특정 사용자의 게시글 등 조회 관련 API")
 @RequiredArgsConstructor
@@ -74,7 +68,7 @@ public class PostFindController {
                         @PageableDefault(page = 0, size = 10, sort = { "createdAt",
                                         "id" }, direction = Sort.Direction.DESC) Pageable pageable) {
 
-                log.info("[PostFindController] findAllPosts() 요청");
+                log.info("[PostFindController] findAllPosts() 요청d");
 
                 Cookie cookie = WebUtils.getCookie(request, "refresh_token");
 
@@ -125,15 +119,15 @@ public class PostFindController {
                         // 모든 사용자의 전체 게시글 조회
 
                         if (cookie == null) {
-
+                                
                                 postResponses = postFindService.getAllPostsAllUser(keyword, searchType, pageable, null);
 
                         } else {
 
                                 String refreshToken = cookie.getValue();
 
-                                postResponses = postFindService.getAllPostsAllUser(keyword, searchType, pageable,
-                                                refreshToken);
+
+                                postResponses = postFindService.getAllPostsAllUser(keyword, searchType, pageable, refreshToken);
 
                         }
 
