@@ -2,7 +2,7 @@ plugins {
     id 'java'
     id 'org.springframework.boot' version '3.4.0'
     id 'io.spring.dependency-management' version '1.1.7'
-    id 'jacoco'
+    id 'jacoco' 
 }
 
 group = 'com.yhs'
@@ -101,11 +101,12 @@ dependencies {
 }
 
 // QueryDSL QClass 생성 위치 지정
-def querydslDir = "src/main/generated"  
+def querydslDir = "$buildDir/generated/querydsl" 
 
-// QueryDSL QClass 위치 지정
+ 
+// 소스 디렉토리 설정
 sourceSets {
-    main.java.srcDirs += [ querydslDir ]
+    main.java.srcDirs += [ querydslDir ] // 기존 src/main/java에 querydslDir 추가
 }
 
 // QueryDSL QClass 생성 설정

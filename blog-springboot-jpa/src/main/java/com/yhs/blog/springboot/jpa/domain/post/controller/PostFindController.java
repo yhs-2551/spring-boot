@@ -223,9 +223,6 @@ public class PostFindController {
                 PostResponseForDetailPage postResponseForDetailPage = postFindService
                                 .getPostByPostIdForDetailPage(postId);
 
-                                log.info("CreatedAt >>>>>>>>>>>> {}", postResponseForDetailPage.getCreatedAt());
-
-
                 return ResponseEntity.ok()
                                 .body(new SuccessResponse<>(postResponseForDetailPage, "상세 페이지 게시글 조회 응답에 성공하였습니다."));
         }

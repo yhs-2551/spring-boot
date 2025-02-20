@@ -1,15 +1,11 @@
 package com.yhs.blog.springboot.jpa.domain.post.repository;
 
 import com.querydsl.core.BooleanBuilder;
-import com.querydsl.core.group.GroupBy;
-import com.querydsl.core.types.Expression;
+import com.querydsl.core.group.GroupBy; 
 import com.querydsl.core.types.Projections;
-import com.querydsl.core.types.dsl.BooleanExpression;
-import com.querydsl.core.types.dsl.DateTimePath;
-import com.querydsl.core.types.dsl.Expressions;
+import com.querydsl.core.types.dsl.BooleanExpression; 
 import com.querydsl.jpa.impl.JPAQueryFactory;
-import com.yhs.blog.springboot.jpa.aop.log.Loggable;
-import com.yhs.blog.springboot.jpa.common.config.ApplicationContextProvider;
+import com.yhs.blog.springboot.jpa.aop.log.Loggable; 
 import com.yhs.blog.springboot.jpa.common.constant.code.ErrorCode;
 import com.yhs.blog.springboot.jpa.domain.category.entity.QCategory;
 import com.yhs.blog.springboot.jpa.domain.file.dto.response.FileResponse;
@@ -35,8 +31,6 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Repository;
 import org.springframework.util.StringUtils;
-
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -290,8 +284,6 @@ public class PostRepositoryCustomImpl implements PostRepositoryCustom {
                                                                         user.username,
                                                                         category.name,
                                                                         post.createdAt)));
-
-                        log.info("created At>>>>>> {} ", Optional.of(result.get(0).getCreatedAt()));
 
                         return result.isEmpty() ? Optional.empty() : Optional.of(result.get(0));
 
