@@ -10,17 +10,17 @@ spring:
     main:
         banner-MODE: "off"
 
-    datasource:
-        driver-class-name: com.mysql.cj.jdbc.Driver
-        url: jdbc:mysql://localhost:3306/blog_jpa?serverTimezone=Asia/Seoul&characterEncoding=UTF-8
-        username: root
-        password: root
-
     devtools:
         restart:
             enabled: true
         livereload:
             enabled: true
+
+    datasource:
+        driver-class-name: com.mysql.cj.jdbc.Driver
+        url: jdbc:mysql://localhost:3306/blog_jpa?serverTimezone=Asia/Seoul&characterEncoding=UTF-8
+        username: root
+        password: root
 
     jpa:
         # Uncomment if using standard MySQL dialect (for MySQL versions below 8)
@@ -35,7 +35,7 @@ spring:
         # update: 매 시작마다 스키마 검사(엔티티가 정의하는 테이블 구조) 및 업데이트(이에따라 엔티티에 Enum이 있으면 앱 시작 시 mysql enum과 자바 enum 동기화를 위해 alter쿼리가 발생함)
         # validate: 엔티티-테이블 매핑 검증. 운영환경 사용
         hibernate:
-            ddl-auto: create
+            ddl-auto: update
 
         # Spring Boot의 JPA 설정 레벨  System.out으로 출력되는 SQL문을 보기 좋게 출력해줌
         show-sql: false

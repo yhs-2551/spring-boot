@@ -21,7 +21,6 @@ import com.yhs.blog.springboot.jpa.domain.post.dto.response.PageResponse;
 import com.yhs.blog.springboot.jpa.domain.post.dto.response.PostAdminAndUserBaseResponse;
 import com.yhs.blog.springboot.jpa.domain.post.dto.response.PostResponseForDetailPage;
 import com.yhs.blog.springboot.jpa.domain.post.dto.response.PostResponseForEditPage;
-import com.yhs.blog.springboot.jpa.domain.post.dto.response.PostUserPageResponse;
 import com.yhs.blog.springboot.jpa.domain.post.repository.search.SearchType;
 import com.yhs.blog.springboot.jpa.domain.post.service.PostFindService;
 
@@ -126,15 +125,15 @@ public class PostFindController {
                         // 모든 사용자의 전체 게시글 조회
 
                         if (cookie == null) {
-                                
+
                                 postResponses = postFindService.getAllPostsAllUser(keyword, searchType, pageable, null);
 
                         } else {
 
                                 String refreshToken = cookie.getValue();
 
-
-                                postResponses = postFindService.getAllPostsAllUser(keyword, searchType, pageable, refreshToken);
+                                postResponses = postFindService.getAllPostsAllUser(keyword, searchType, pageable,
+                                                refreshToken);
 
                         }
 
