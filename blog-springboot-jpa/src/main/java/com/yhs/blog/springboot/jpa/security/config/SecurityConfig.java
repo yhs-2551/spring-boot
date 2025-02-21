@@ -145,7 +145,7 @@ public class SecurityConfig {
                                 .sessionManagement((session) -> session
                                                 .sessionCreationPolicy(SessionCreationPolicy.STATELESS)) // 세션 사용하지 않음
                                 .httpBasic(httpBasic -> httpBasic.disable()) // jwt방식에서 http basic 방식 비활성화. 기본적으로 켜져 있음
-                                .addFilterBefore(tokenAuthenticationFilter().,
+                                .addFilterBefore(tokenAuthenticationFilter(),
                                                 UsernamePasswordAuthenticationFilter.class)
                                 // /resource/**
                                 .authorizeHttpRequests((authorize) -> authorize
@@ -215,12 +215,14 @@ public class SecurityConfig {
 
         }
 
-        // public SecurityFilterChain securityFilterChain2(HttpSecurity http) throws Exception {
-        //         http.securityMatcher("/api").authorizeHttpRequests(auth -> auth.anyRequest().authenticated())
-        //                         .addFilterBefore(tokenAuthenticationFilter(),
-        //                                         UsernamePasswordAuthenticationFilter.class);
+        // public SecurityFilterChain securityFilterChain2(HttpSecurity http) throws
+        // Exception {
+        // http.securityMatcher("/api").authorizeHttpRequests(auth ->
+        // auth.anyRequest().authenticated())
+        // .addFilterBefore(tokenAuthenticationFilter(),
+        // UsernamePasswordAuthenticationFilter.class);
 
-        //                                         return http.build();
+        // return http.build();
         // }
 
 }
