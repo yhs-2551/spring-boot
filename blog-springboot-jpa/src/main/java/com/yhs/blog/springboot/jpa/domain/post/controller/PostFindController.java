@@ -19,6 +19,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
@@ -67,7 +68,18 @@ public class PostFindController {
                         @PageableDefault(page = 0, size = 10, sort = { "createdAt",
                                         "id" }, direction = Sort.Direction.DESC) Pageable pageable) {
 
-                log.info("[PostFindController] findAllPosts() 요청d");
+                log.info("[PostFindController] findAllPosts() 요청");
+
+                Cookie[] cookies = request.getCookies();
+                if (cookies != null) {
+                        log.info("=== 쿠키 디버깅 시작 === 총 쿠키 개수: {}", cookies.length);
+                        for (Cookie c : cookies) {
+                                log.info("쿠키 이름: {}, 값: {}", c.getName(), c.getValue());
+                                log.info("Domain: {}, Path: {}", c.getDomain(), c.getPath());
+                                log.info("MaxAge: {}, Secure: {}", c.getMaxAge(), c.getSecure());
+                                log.info("---------------------");
+                        }
+                }
 
                 String refreshToken = CookieUtil.getCookie(request, "refresh_token");
 
