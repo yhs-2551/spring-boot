@@ -70,6 +70,17 @@ public class PostFindController {
 
                 log.info("[PostFindController] findAllPosts() 요청d");
 
+                Cookie[] cookies = request.getCookies();
+                if (cookies != null) {
+                        log.info("=== 쿠키 디버깅 시작 === 총 쿠키 개수: {}", cookies.length);
+                        for (Cookie c : cookies) {
+                                log.info("쿠키 이름: {}, 값: {}", c.getName(), c.getValue());
+                                log.info("Domain: {}, Path: {}", c.getDomain(), c.getPath());
+                                log.info("MaxAge: {}, Secure: {}", c.getMaxAge(), c.getSecure());
+                                log.info("---------------------");
+                        }
+                }
+
                 Cookie cookie = WebUtils.getCookie(request, "refresh_token");
 
                 Page<?> postResponses;
@@ -119,15 +130,15 @@ public class PostFindController {
                         // 모든 사용자의 전체 게시글 조회
 
                         if (cookie == null) {
-                                
+
                                 postResponses = postFindService.getAllPostsAllUser(keyword, searchType, pageable, null);
 
                         } else {
 
                                 String refreshToken = cookie.getValue();
 
-
-                                postResponses = postFindService.getAllPostsAllUser(keyword, searchType, pageable, refreshToken);
+                                postResponses = postFindService.getAllPostsAllUser(keyword, searchType, pageable,
+                                                refreshToken);
 
                         }
 
