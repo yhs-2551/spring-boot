@@ -35,7 +35,7 @@ public class TokenCookieManager {
 
         int cookieMaxAge = rememberMe ? (int) TokenConstants.REMEMBER_ME_REFRESH_TOKEN_TTL
                 : (int) TokenConstants.REFRESH_TOKEN_TTL;
-        CookieUtil.deleteCookie(request, response, TokenConstants.REFRESH_TOKEN_COOKIE_NAME);
+        // CookieUtil.deleteCookie(request, response, TokenConstants.REFRESH_TOKEN_COOKIE_NAME);
         CookieUtil.addCookie(response, TokenConstants.REFRESH_TOKEN_COOKIE_NAME, refreshToken, cookieMaxAge);
     }
 
