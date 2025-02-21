@@ -4,6 +4,7 @@ import com.yhs.blog.springboot.jpa.aop.performance.MeasurePerformance;
 import com.yhs.blog.springboot.jpa.common.response.BaseResponse;
 import com.yhs.blog.springboot.jpa.common.response.ErrorResponse;
 import com.yhs.blog.springboot.jpa.common.response.SuccessResponse;
+import com.yhs.blog.springboot.jpa.common.util.cookie.CookieUtil;
 import com.yhs.blog.springboot.jpa.domain.post.dto.response.PageResponse;
 import com.yhs.blog.springboot.jpa.domain.post.dto.response.PostAdminAndUserBaseResponse;
 import com.yhs.blog.springboot.jpa.domain.post.dto.response.PostResponseForDetailPage;
@@ -18,7 +19,6 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
@@ -29,7 +29,6 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.util.WebUtils;
 
 @Tag(name = "게시글 조회", description = "모든 사용자의 게시글, 특정 사용자의 게시글 등 조회 관련 API")
 @RequiredArgsConstructor
@@ -70,18 +69,9 @@ public class PostFindController {
 
                 log.info("[PostFindController] findAllPosts() 요청d");
 
-                Cookie[] cookies = request.getCookies();
-                if (cookies != null) {
-                        log.info("=== 쿠키 디버깅 시작 === 총 쿠키 개수: {}", cookies.length);
-                        for (Cookie c : cookies) {
-                                log.info("쿠키 이름: {}, 값: {}", c.getName(), c.getValue());
-                                log.info("Domain: {}, Path: {}", c.getDomain(), c.getPath());
-                                log.info("MaxAge: {}, Secure: {}", c.getMaxAge(), c.getSecure());
-                                log.info("---------------------");
-                        }
-                }
+                String refreshToken = CookieUtil.getCookie(request, "refresh_token");
 
-                Cookie cookie = WebUtils.getCookie(request, "refresh_token");
+                log.info("refreshToken:  >>>>>>>>>>>>> {}", refreshToken);
 
                 Page<?> postResponses;
 
@@ -91,14 +81,13 @@ public class PostFindController {
                         // 특정 사용자 즉 정확한 해당 사용자의 게시글만 조회 가능하도록 구현(blogId 사용)
                         if (category != null) {
 
-                                if (cookie == null) {
+                                if (refreshToken == null) {
 
                                         postResponses = postFindService.getAllPostsSpecificUser(blogId, keyword,
                                                         searchType,
                                                         category,
                                                         pageable, null);
                                 } else {
-                                        String refreshToken = cookie.getValue();
 
                                         postResponses = postFindService.getAllPostsSpecificUser(blogId, keyword,
                                                         searchType,
@@ -109,13 +98,12 @@ public class PostFindController {
 
                         } else {
 
-                                if (cookie == null) {
+                                if (refreshToken == null) {
                                         postResponses = postFindService.getAllPostsSpecificUser(blogId, keyword,
                                                         searchType,
                                                         null,
                                                         pageable, null);
                                 } else {
-                                        String refreshToken = cookie.getValue();
 
                                         postResponses = postFindService.getAllPostsSpecificUser(blogId, keyword,
                                                         searchType,
@@ -129,13 +117,11 @@ public class PostFindController {
 
                         // 모든 사용자의 전체 게시글 조회
 
-                        if (cookie == null) {
+                        if (refreshToken == null) {
 
                                 postResponses = postFindService.getAllPostsAllUser(keyword, searchType, pageable, null);
 
                         } else {
-
-                                String refreshToken = cookie.getValue();
 
                                 postResponses = postFindService.getAllPostsAllUser(keyword, searchType, pageable,
                                                 refreshToken);
@@ -179,18 +165,17 @@ public class PostFindController {
                                 pageable.getPageSize(),
                                 pageable.getSort());
 
-                Cookie cookie = WebUtils.getCookie(request, "refresh_token");
+                String refreshToken = CookieUtil.getCookie(request, "refresh_token");
 
                 Page<? extends PostAdminAndUserBaseResponse> postResponses;
 
-                if (cookie == null) {
+                if (refreshToken == null) {
 
                         postResponses = postFindService.getAllPostsSpecificUser(blogId, null,
                                         null,
                                         null,
                                         pageRequest, null);
                 } else {
-                        String refreshToken = cookie.getValue();
 
                         postResponses = postFindService.getAllPostsSpecificUser(blogId, null,
                                         null,
@@ -226,16 +211,15 @@ public class PostFindController {
 
                 Page<? extends PostAdminAndUserBaseResponse> postResponses;
 
-                Cookie cookie = WebUtils.getCookie(request, "refresh_token");
+                String refreshToken = CookieUtil.getCookie(request, "refresh_token");
 
-                if (cookie == null) {
+                if (refreshToken == null) {
 
                         postResponses = postFindService.getAllPostsSpecificUser(blogId, null, null,
                                         category,
                                         pageable, null);
 
                 } else {
-                        String refreshToken = cookie.getValue();
 
                         postResponses = postFindService.getAllPostsSpecificUser(blogId, null, null,
                                         category,
@@ -280,17 +264,15 @@ public class PostFindController {
 
                 Page<? extends PostAdminAndUserBaseResponse> postResponses;
 
-                Cookie cookie = WebUtils.getCookie(request, "refresh_token");
+                String refreshToken = CookieUtil.getCookie(request, "refresh_token");
 
-                if (cookie == null) {
+                if (refreshToken == null) {
 
                         postResponses = postFindService.getAllPostsSpecificUser(blogId, null, null,
                                         category,
                                         pageRequest, null);
 
                 } else {
-
-                        String refreshToken = cookie.getValue();
 
                         postResponses = postFindService.getAllPostsSpecificUser(blogId, null, null,
                                         category,

@@ -11,6 +11,31 @@ public class CookieUtil {
 
     // getCookie는 Spring에서 제공해주는 기능 사용
 
+    public static String getCookie(HttpServletRequest httpServletRequest, String name) {
+
+        log.info("[CookieUtil] getCookie() 메서드 시작");
+
+        Cookie[] cookies = httpServletRequest.getCookies();
+        if (cookies == null) {
+
+            log.info("[CookieUtil] getCookie() 메서드 cookies == null 분기 진행");
+
+            return null;
+        }
+
+        log.info("[CookieUtil] getCookie() 메서드 cookies != null 분기 진행");
+
+        for (Cookie cookie : cookies) {
+            if (name.equals(cookie.getName())) {
+                return cookie.getValue();
+            }
+        }
+
+        log.info("[CookieUtil] getCookie() 메서드 일치하는 쿠키가 없을 때 null 반환");
+
+        return null;
+    }
+
     // 요청 값(이름, 값, 만료 기간)을 바탕으로 쿠키 추가
     public static void addCookie(HttpServletResponse httpServletResponse, String name,
             String value, int maxAge) {

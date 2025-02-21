@@ -1,12 +1,9 @@
 package com.yhs.blog.springboot.jpa.domain.post.service.impl;
 
-import java.util.Optional;
-
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.util.WebUtils;
 
 import com.yhs.blog.springboot.jpa.aop.log.Loggable;
 import com.yhs.blog.springboot.jpa.common.constant.code.ErrorCode;
@@ -16,7 +13,6 @@ import com.yhs.blog.springboot.jpa.domain.post.dto.response.PostAdminAndUserBase
 import com.yhs.blog.springboot.jpa.domain.post.dto.response.PostIndexAndIndexSearchResponse;
 import com.yhs.blog.springboot.jpa.domain.post.dto.response.PostResponseForDetailPage;
 import com.yhs.blog.springboot.jpa.domain.post.dto.response.PostResponseForEditPage;
-import com.yhs.blog.springboot.jpa.domain.post.dto.response.PostUserPageResponse;
 import com.yhs.blog.springboot.jpa.domain.post.repository.PostRepository;
 import com.yhs.blog.springboot.jpa.domain.post.repository.search.SearchType;
 import com.yhs.blog.springboot.jpa.domain.post.service.PostFindService;
@@ -39,7 +35,8 @@ public class PostFindServiceImpl implements PostFindService {
     // PostAdminPageResponse, PostUserPageResponse 둘 중 하나 리턴
     @Override
     @Transactional(readOnly = true)
-    public Page<? extends PostAdminAndUserBaseResponse> getAllPostsSpecificUser(String blogId, String keyword, SearchType searchType,
+    public Page<? extends PostAdminAndUserBaseResponse> getAllPostsSpecificUser(String blogId, String keyword,
+            SearchType searchType,
             String categoryName,
             Pageable pageable, String refreshToken) {
 
