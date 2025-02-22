@@ -27,9 +27,6 @@ public class CookieUtil {
 
         for (Cookie cookie : cookies) {
             if (name.equals(cookie.getName())) {
-
-                log.info("cookie name >>>>>>>>>>>>>>", cookie.getName());
-
                 return cookie.getValue();
             }
         }
@@ -87,6 +84,8 @@ public class CookieUtil {
                 cookie.setMaxAge(0);
 
                 if (ApplicationContextProvider.isProd()) {
+
+                    log.info("cookie name >>>>>>>>>>>>>>", cookie.getName());
 
                     log.info("[CookieUtil] deleteCookie() 메서드 isProd() 분기 진행");
 
