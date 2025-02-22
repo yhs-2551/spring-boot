@@ -27,6 +27,9 @@ public class CookieUtil {
 
         for (Cookie cookie : cookies) {
             if (name.equals(cookie.getName())) {
+
+                log.info("cookie name >>>>>>>>>>>>>>", cookie.getName());
+
                 return cookie.getValue();
             }
         }
