@@ -35,7 +35,7 @@ public class TokenCookieManager {
 
         int cookieMaxAge = rememberMe ? (int) TokenConstants.REMEMBER_ME_REFRESH_TOKEN_TTL
                 : (int) TokenConstants.REFRESH_TOKEN_TTL;
-        // CookieUtil.deleteCookie(request, response, TokenConstants.REFRESH_TOKEN_COOKIE_NAME);
+        CookieUtil.deleteCookie(request, response, TokenConstants.REFRESH_TOKEN_COOKIE_NAME);
         CookieUtil.addCookie(response, TokenConstants.REFRESH_TOKEN_COOKIE_NAME, refreshToken, cookieMaxAge);
     }
 
@@ -62,6 +62,7 @@ public class TokenCookieManager {
 
             log.info("[TokenCookieManager] handleAccessTokenCookie() 메서드 isProd() 분기 진행");
 
+            accessTokenCookie.setDomain("duckdns.org");
             accessTokenCookie.setSecure(true);
             accessTokenCookie.setAttribute("SameSite", "None"); 
 

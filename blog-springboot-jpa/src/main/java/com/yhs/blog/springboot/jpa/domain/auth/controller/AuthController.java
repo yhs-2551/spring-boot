@@ -125,8 +125,8 @@ public class AuthController extends SimpleUrlAuthenticationSuccessHandler {
         // "Bearer " 이후의 토큰 값만 추출
         String token = authorizationHeader.substring(7);
 
-        // CookieUtil.deleteCookie(request, response, "refresh_token");
-        // CookieUtil.deleteCookie(request, response, "access_token");
+        CookieUtil.deleteCookie(request, response, "refresh_token");
+        CookieUtil.deleteCookie(request, response, "access_token");
 
         try {
             // logoutProcessService.logoutUse(token)에서 내부적으로 만료된 토큰인지 유효성 검사를 함. 이때 만료된 토큰이면
