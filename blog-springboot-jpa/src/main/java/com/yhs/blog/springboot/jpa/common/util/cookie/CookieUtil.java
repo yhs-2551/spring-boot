@@ -85,7 +85,7 @@ public class CookieUtil {
 
                 if (ApplicationContextProvider.isProd()) {
 
-                    log.info("cookie name >>>>>>>>>>>>>>", cookie.getName());
+                    log.info("cookie name >>>>>>>>>>>>>> {}", cookie.getName());
 
                     log.info("[CookieUtil] deleteCookie() 메서드 isProd() 분기 진행");
 
