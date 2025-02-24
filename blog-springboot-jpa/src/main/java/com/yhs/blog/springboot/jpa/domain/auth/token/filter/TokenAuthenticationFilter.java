@@ -34,18 +34,53 @@ public class TokenAuthenticationFilter extends OncePerRequestFilter {
                         FilterChain filterChain)
                         throws ServletException, IOException {
 
-                log.info("[TokenAuthenticationFilter] doFilterInternal 메서드 시작");
-
                 String method = request.getMethod();
                 String requestURI = request.getRequestURI();
 
-                if (isPermitAllGetRequest(method, requestURI) || isPermitAllPostRequest(method, requestURI)) {
+                String authorizationHeader = request.getHeader(HEADER_AUTHORIZATION);
+
+                if (isPermitPostsRead(method, requestURI)) {
+
+                        // 모든 사용자에게 허용하는 게시글들에 대한 요청일 때 게시글의 주인인지 판단하기 위함 -> 주인 이라면 해당 블로그 주인의 비공개 게시글
+                        // 까지 조회하도록 함
+                        log.info("[TokenAuthenticationFilter] isPermitPostsRead 메서드 결과가 참일때 진행");
+                        // filterChain.doFilter(request, response);
+
+                        if (authorizationHeader == null || !authorizationHeader.startsWith("Bearer ")) {
+
+                                log.info("[TokenAuthenticationFilter] isPermitPostsRead 메서드 내에 액세스 토큰이 없을때 공개 글만 보도록 분기 진행");
+
+                                filterChain.doFilter(request, response);
+                                return;
+                        } else {
+                                String accessToken = authorizationHeader.substring(TOKEN_PREFIX.length());
+
+                                if (!tokenValidator.validateAccessToken(accessToken)) {
+
+                                        log.info("[TokenAuthenticationFilter] isPermitPostsRead 메서드 내에 액세스 토큰이 있는 사용자 이지만, 유효하지 않을 때 공개 글만 보도록 분기 진행");
+
+                                        filterChain.doFilter(request, response);
+                                        return;
+                                }
+
+                                log.info("[TokenAuthenticationFilter] isPermitPostsRead 메서드 내에 액세스 토큰이 있는 사용자 이고, 유효할 때 BlogUser 객체를 컨트롤러에 넘겨주기 위한 분기 진행");
+
+                                Authentication authentication = authenticationProvider.getAuthentication(accessToken);
+
+                                SecurityContextHolder.getContext().setAuthentication(authentication);
+                                filterChain.doFilter(request, response);
+                                return;
+
+                        }
+
+                }
+
+                if (isPermitGetRequestExceptPermitPostsRead(method, requestURI)
+                                || isPermitAllPostRequest(method, requestURI)) {
                         log.info("[TokenAuthenticationFilter] 토큰 검증 수행하지 않는 분기 진행");
                         filterChain.doFilter(request, response);
                         return;
                 }
-
-                String authorizationHeader = request.getHeader(HEADER_AUTHORIZATION);
 
                 if (authorizationHeader == null || !authorizationHeader.startsWith("Bearer ")) {
 
@@ -81,6 +116,23 @@ public class TokenAuthenticationFilter extends OncePerRequestFilter {
                 filterChain.doFilter(request, response);
         }
 
+        private boolean isPermitPostsRead(String method, String requestURI) {
+
+                log.info("[TokenAuthenticationFilter] isPermitPostsRead 메서드 진행");
+
+                if (!method.equals("GET")) {
+                        return false;
+                }
+
+                return requestURI.startsWith("/api/posts") ||
+                                requestURI.matches("/api/[^/]+/posts") ||
+                                requestURI.matches("/api/[^/]+/posts/page/[^/]+") ||
+                                requestURI.matches("/api/[^/]+/categories") ||
+                                requestURI.matches("/api/[^/]+/categories/[^/]+/posts") ||
+                                requestURI.matches("/api/[^/]+/categories/[^/]+/posts/page/[^/]+");
+
+        }
+
         private boolean isSwaggerRequest(String requestURI) {
                 return requestURI.equals("/swagger-ui.html") ||
                                 requestURI.startsWith("/swagger-ui/") ||
@@ -92,9 +144,9 @@ public class TokenAuthenticationFilter extends OncePerRequestFilter {
                 return requestURI.startsWith("/actuator");
         }
 
-        private boolean isPermitAllGetRequest(String method, String requestURI) {
+        private boolean isPermitGetRequestExceptPermitPostsRead(String method, String requestURI) {
 
-                log.info("[TokenAuthenticationFilter] isPermitAllGetRequest 메서드 진행");
+                log.info("[TokenAuthenticationFilter] isPermitGetRequestExceptPermitPostsRead 메서드 진행");
 
                 if (!method.equals("GET")) {
                         return false;
@@ -102,15 +154,9 @@ public class TokenAuthenticationFilter extends OncePerRequestFilter {
 
                 return requestURI.equals("/api/token/initial-token") ||
                                 requestURI.equals("/api/token/new-token") ||
-                                requestURI.matches("/api/[^/]+/posts") ||
-                                requestURI.matches("/api/[^/]+/posts/page/[^/]+") ||
                                 requestURI.matches("/api/[^/]+/posts/[^/]+") ||
                                 requestURI.matches("/api/[^/]+/posts/[^/]+/edit") ||
-                                requestURI.matches("/api/[^/]+/categories") ||
-                                requestURI.matches("/api/[^/]+/categories/[^/]+/posts") ||
-                                requestURI.matches("/api/[^/]+/categories/[^/]+/posts/page/[^/]+") ||
                                 requestURI.matches("/api/users/[^/]+/profile") ||
-                                requestURI.startsWith("/api/posts") ||
                                 requestURI.startsWith("/api/check/") ||
                                 isSwaggerRequest(requestURI) ||
                                 isActuatorRequest(requestURI);

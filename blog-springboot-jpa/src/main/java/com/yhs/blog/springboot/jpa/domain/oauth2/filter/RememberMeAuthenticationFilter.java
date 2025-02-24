@@ -22,10 +22,8 @@ public class RememberMeAuthenticationFilter extends OncePerRequestFilter {
     private final RedisTemplate<String, String> redisTemplate;
 
     @Override
-    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
-
-        
-        log.info("[RememberMeAuthenticationFilter] doFilterInternal() 메서드 시작");
+    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
+            throws ServletException, IOException {
 
         if (request.getRequestURI().startsWith("/oauth2/authorization/")) {
 
@@ -34,7 +32,7 @@ public class RememberMeAuthenticationFilter extends OncePerRequestFilter {
             String rememberMe = request.getParameter("remember_me");
 
             if (rememberMe != null) {
-                
+
                 log.info("[RememberMeAuthenticationFilter] doFilterInternal() 메서드 rememberMe != null 분기 진행");
 
                 String uniqueId = UUID.randomUUID().toString();

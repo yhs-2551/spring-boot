@@ -5,6 +5,7 @@ import com.yhs.blog.springboot.jpa.common.response.BaseResponse;
 import com.yhs.blog.springboot.jpa.common.response.ErrorResponse;
 import com.yhs.blog.springboot.jpa.common.response.SuccessResponse;
 import com.yhs.blog.springboot.jpa.common.util.cookie.CookieUtil;
+import com.yhs.blog.springboot.jpa.domain.auth.token.provider.user.BlogUser;
 import com.yhs.blog.springboot.jpa.domain.post.dto.response.PageResponse;
 import com.yhs.blog.springboot.jpa.domain.post.dto.response.PostAdminAndUserBaseResponse;
 import com.yhs.blog.springboot.jpa.domain.post.dto.response.PostResponseForDetailPage;
@@ -29,6 +30,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 @Tag(name = "게시글 조회", description = "모든 사용자의 게시글, 특정 사용자의 게시글 등 조회 관련 API")
@@ -60,30 +62,15 @@ public class PostFindController {
         @MeasurePerformance
         @GetMapping({ "/{blogId}/posts", "/posts" })
         public ResponseEntity<BaseResponse> findAllPosts(
-                        HttpServletRequest request,
                         @PathVariable(name = "blogId", required = false) String blogId,
                         @RequestParam(name = "keyword", required = false) String keyword,
                         @RequestParam(name = "searchType", required = false) SearchType searchType,
                         @RequestParam(name = "category", required = false) String category, // 검색할때는 카테고리를 쿼리 파라미터에 포함
                         @PageableDefault(page = 0, size = 10, sort = { "createdAt",
-                                        "id" }, direction = Sort.Direction.DESC) Pageable pageable) {
+                                        "id" }, direction = Sort.Direction.DESC) Pageable pageable,
+                        @AuthenticationPrincipal BlogUser blogUser) {
 
                 log.info("[PostFindController] findAllPosts() 요청");
-
-                Cookie[] cookies = request.getCookies();
-                if (cookies != null) {
-                        log.info("=== 쿠키 디버깅 시작 === 총 쿠키 개수: {}", cookies.length);
-                        for (Cookie c : cookies) {
-                                log.info("쿠키 이름: {}, 값: {}", c.getName(), c.getValue());
-                                log.info("Domain: {}, Path: {}", c.getDomain(), c.getPath());
-                                log.info("MaxAge: {}, Secure: {}", c.getMaxAge(), c.getSecure());
-                                log.info("---------------------");
-                        }
-                }
-
-                String refreshToken = CookieUtil.getCookie(request, "refresh_token");
-
-                log.info("refreshToken:  >>>>>>>>>>>>> {}", refreshToken);
 
                 Page<?> postResponses;
 
@@ -93,35 +80,17 @@ public class PostFindController {
                         // 특정 사용자 즉 정확한 해당 사용자의 게시글만 조회 가능하도록 구현(blogId 사용)
                         if (category != null) {
 
-                                if (refreshToken == null) {
-
-                                        postResponses = postFindService.getAllPostsSpecificUser(blogId, keyword,
-                                                        searchType,
-                                                        category,
-                                                        pageable, null);
-                                } else {
-
-                                        postResponses = postFindService.getAllPostsSpecificUser(blogId, keyword,
-                                                        searchType,
-                                                        category,
-                                                        pageable, refreshToken);
-
-                                }
+                                postResponses = postFindService.getAllPostsSpecificUser(blogId, keyword,
+                                                searchType,
+                                                category,
+                                                pageable, blogUser);
 
                         } else {
 
-                                if (refreshToken == null) {
-                                        postResponses = postFindService.getAllPostsSpecificUser(blogId, keyword,
-                                                        searchType,
-                                                        null,
-                                                        pageable, null);
-                                } else {
-
-                                        postResponses = postFindService.getAllPostsSpecificUser(blogId, keyword,
-                                                        searchType,
-                                                        null,
-                                                        pageable, refreshToken);
-                                }
+                                postResponses = postFindService.getAllPostsSpecificUser(blogId, keyword,
+                                                searchType,
+                                                null,
+                                                pageable, blogUser);
 
                         }
 
@@ -129,16 +98,7 @@ public class PostFindController {
 
                         // 모든 사용자의 전체 게시글 조회
 
-                        if (refreshToken == null) {
-
-                                postResponses = postFindService.getAllPostsAllUser(keyword, searchType, pageable, null);
-
-                        } else {
-
-                                postResponses = postFindService.getAllPostsAllUser(keyword, searchType, pageable,
-                                                refreshToken);
-
-                        }
+                        postResponses = postFindService.getAllPostsAllUser(keyword, searchType, pageable, blogUser);
 
                 }
 
@@ -161,12 +121,12 @@ public class PostFindController {
         })
         @GetMapping("/{blogId}/posts/page/{page}")
         public ResponseEntity<BaseResponse> getPostsByPage(
-                        HttpServletRequest request,
                         @PathVariable("blogId") String blogId,
                         @PathVariable("page") Integer page, // String 값으로 넘어오게 되는데, Spring의 타입 컨버터가 자동으로 String →
                                                             // Integer 변환
                         @PageableDefault(page = 0, size = 10, sort = { "createdAt",
-                                        "id" }, direction = Sort.Direction.DESC) Pageable pageable) {
+                                        "id" }, direction = Sort.Direction.DESC) Pageable pageable,
+                        @AuthenticationPrincipal BlogUser blogUser) {
 
                 log.info("[PostFindController] getPostsByPage() 요청");
 
@@ -177,23 +137,11 @@ public class PostFindController {
                                 pageable.getPageSize(),
                                 pageable.getSort());
 
-                String refreshToken = CookieUtil.getCookie(request, "refresh_token");
-
-                Page<? extends PostAdminAndUserBaseResponse> postResponses;
-
-                if (refreshToken == null) {
-
-                        postResponses = postFindService.getAllPostsSpecificUser(blogId, null,
-                                        null,
-                                        null,
-                                        pageRequest, null);
-                } else {
-
-                        postResponses = postFindService.getAllPostsSpecificUser(blogId, null,
-                                        null,
-                                        null,
-                                        pageRequest, refreshToken);
-                }
+                Page<? extends PostAdminAndUserBaseResponse> postResponses = postFindService.getAllPostsSpecificUser(
+                                blogId, null,
+                                null,
+                                null,
+                                pageRequest, blogUser);
 
                 PageResponse<? extends PostAdminAndUserBaseResponse> pageResponse = new PageResponse<>(postResponses);
 
@@ -217,27 +165,15 @@ public class PostFindController {
                         @PathVariable("blogId") String blogId,
                         @PathVariable("category") String category,
                         @PageableDefault(page = 0, size = 10, sort = { "createdAt",
-                                        "id" }, direction = Sort.Direction.DESC) Pageable pageable) {
+                                        "id" }, direction = Sort.Direction.DESC) Pageable pageable,
+                        @AuthenticationPrincipal BlogUser blogUser) {
 
                 log.info("[PostFindController] getPostsByCategoryAndUser() 요청");
 
-                Page<? extends PostAdminAndUserBaseResponse> postResponses;
-
-                String refreshToken = CookieUtil.getCookie(request, "refresh_token");
-
-                if (refreshToken == null) {
-
-                        postResponses = postFindService.getAllPostsSpecificUser(blogId, null, null,
-                                        category,
-                                        pageable, null);
-
-                } else {
-
-                        postResponses = postFindService.getAllPostsSpecificUser(blogId, null, null,
-                                        category,
-                                        pageable, refreshToken);
-
-                }
+                Page<? extends PostAdminAndUserBaseResponse> postResponses = postFindService.getAllPostsSpecificUser(
+                                blogId, null, null,
+                                category,
+                                pageable, blogUser);
 
                 PageResponse<? extends PostAdminAndUserBaseResponse> pageResponse = new PageResponse<>(postResponses);
 
@@ -263,7 +199,8 @@ public class PostFindController {
                         @PathVariable("category") String category,
                         @PathVariable("page") Integer page,
                         @PageableDefault(page = 0, size = 10, sort = { "createdAt",
-                                        "id" }, direction = Sort.Direction.DESC) Pageable pageable) {
+                                        "id" }, direction = Sort.Direction.DESC) Pageable pageable,
+                        @AuthenticationPrincipal BlogUser blogUser) {
 
                 log.info("[PostFindController] getPostsByCategoryAndPage() 요청");
 
@@ -274,23 +211,10 @@ public class PostFindController {
                                 pageable.getPageSize(),
                                 pageable.getSort());
 
-                Page<? extends PostAdminAndUserBaseResponse> postResponses;
-
-                String refreshToken = CookieUtil.getCookie(request, "refresh_token");
-
-                if (refreshToken == null) {
-
-                        postResponses = postFindService.getAllPostsSpecificUser(blogId, null, null,
-                                        category,
-                                        pageRequest, null);
-
-                } else {
-
-                        postResponses = postFindService.getAllPostsSpecificUser(blogId, null, null,
-                                        category,
-                                        pageRequest, refreshToken);
-
-                }
+                Page<? extends PostAdminAndUserBaseResponse> postResponses = postFindService.getAllPostsSpecificUser(
+                                blogId, null, null,
+                                category,
+                                pageRequest, blogUser);
 
                 PageResponse<? extends PostAdminAndUserBaseResponse> pageResponse = new PageResponse<>(postResponses);
 

@@ -15,7 +15,7 @@ import com.yhs.blog.springboot.jpa.domain.post.repository.search.SearchType;
 public interface PostRepositoryCustom {
 
     Page<PostIndexAndIndexSearchResponse> findPostsForUserWithIndexPage(String keyword, SearchType searchType,
-            Pageable pageable, Long userIdFromRefreshToken);
+            Pageable pageable, Long userIdFromAuthenticatedBlogUser);
 
     Page<PostAdminPageResponse> findPostsByUserIdForAdminWithUserPage(Long userId, String keyword,
             SearchType searchType, Pageable pageable);

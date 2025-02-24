@@ -19,7 +19,6 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.http.HttpMethod;
-import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.ProviderManager;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
@@ -149,10 +148,10 @@ public class SecurityConfig {
                                                 UsernamePasswordAuthenticationFilter.class)
                                 // /resource/**
                                 .authorizeHttpRequests((authorize) -> authorize
+                                                // 인증 없이 접근 가능한 경로 설정
                                                 // 정적 리소스
                                                 .requestMatchers("/static/**").permitAll()
                                                 // SWAGGER 설정 부분
-                                                // 인증 없이 접근 가능한 경로 설정
                                                 .requestMatchers(SWAGGER_WHITELIST).permitAll()
                                                 // GET 요청 permitAll
                                                 .requestMatchers(HttpMethod.GET, "/api/token/initial-token").permitAll()
@@ -203,6 +202,9 @@ public class SecurityConfig {
                                                 .successHandler(oAuth2SuccessHandler())
 
                                 );
+
+                return http.build();
+
                 // 아래 AuthenticationEntryPoint를 이용해서 필터에서 발생하는 예외를 중앙화 하여 분기 처리해서 예외 메시지 작성하려
                 // 했으나, 기능은 작동하는데 예외 메시지 분기 처리가 작동하지 않아서 그냥 token filter에서 직접 처리
                 // /api/로 시작하는 url인 경우 + Security Filter Chain에서 발생하는 인증/인가 예외 처리. 401 상태 코드 즉,
@@ -211,18 +213,7 @@ public class SecurityConfig {
                 // .defaultAuthenticationEntryPointFor(
                 // new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED),
                 // new AntPathRequestMatcher("/api/**")));
-                return http.build();
 
         }
-
-        // public SecurityFilterChain securityFilterChain2(HttpSecurity http) throws
-        // Exception {
-        // http.securityMatcher("/api").authorizeHttpRequests(auth ->
-        // auth.anyRequest().authenticated())
-        // .addFilterBefore(tokenAuthenticationFilter(),
-        // UsernamePasswordAuthenticationFilter.class);
-
-        // return http.build();
-        // }
 
 }
