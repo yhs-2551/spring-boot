@@ -14,23 +14,26 @@ import com.yhs.blog.springboot.jpa.domain.post.repository.search.SearchType;
 
 public interface PostRepositoryCustom {
 
-    Page<PostIndexAndIndexSearchResponse> findPostsForUserWithIndexPage(String keyword, SearchType searchType,
-            Pageable pageable, Long userIdFromAuthenticatedBlogUser);
+        Page<PostIndexAndIndexSearchResponse> findPostsForUserWithIndexPage(String keyword, SearchType searchType,
+                        Pageable pageable);
 
-    Page<PostAdminPageResponse> findPostsByUserIdForAdminWithUserPage(Long userId, String keyword,
-            SearchType searchType, Pageable pageable);
-    Page<PostUserPageResponse> findPostsByUserIdForUserWithUserPage(Long userId, String keyword, SearchType searchType,
-            Pageable pageable);
+        Page<PostAdminPageResponse> findPostsByUserIdForAdminWithUserPage(Long userId, String keyword,
+                        SearchType searchType, Pageable pageable);
 
-    Page<PostAdminPageResponse> findPostsByUserIdAndCategoryIdForAdminWithUserPage(Long userId, String categoryUuid,
-            String keyword,
-            SearchType searchType, Pageable pageable);
-            
-    Page<PostUserPageResponse> findPostsByUserIdAndCategoryIdForUserWithUserPage(Long userId, String categoryUuid,
-            String keyword,
-            SearchType searchType, Pageable pageable);
+        Page<PostUserPageResponse> findPostsByUserIdForUserWithUserPage(Long userId, String keyword,
+                        SearchType searchType,
+                        Pageable pageable);
 
-    Optional<PostResponseForDetailPage> findByIdNotWithFeaturedImage(Long postId);
-    Optional<PostResponseForEditPage> findByIdWithFeaturedImage(Long postId);
+        Page<PostAdminPageResponse> findPostsByUserIdAndCategoryIdForAdminWithUserPage(Long userId, String categoryUuid,
+                        String keyword,
+                        SearchType searchType, Pageable pageable);
+
+        Page<PostUserPageResponse> findPostsByUserIdAndCategoryIdForUserWithUserPage(Long userId, String categoryUuid,
+                        String keyword,
+                        SearchType searchType, Pageable pageable);
+
+        Optional<PostResponseForDetailPage> findByIdNotWithFeaturedImage(Long postId);
+
+        Optional<PostResponseForEditPage> findByIdWithFeaturedImage(Long postId);
 
 }

@@ -6,7 +6,8 @@ import org.springframework.stereotype.Component;
 
 import com.yhs.blog.springboot.jpa.domain.auth.token.config.JwtConfig;
 
-import io.jsonwebtoken.Claims; 
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.Jwts;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
@@ -42,6 +43,25 @@ public class ClaimsExtractor {
 
         Claims claims = getClaims(token);
         return claims.get("blogId", String.class);
+
+    }
+
+    public String extractBlogIdFromExpiredToken(String token) {
+
+        log.info("[ClaimsExtractor] getBlogId() 메서드 시작");
+
+        try {
+
+            Claims claims = getClaims(token);
+            return claims.get("blogId", String.class);
+        } catch (ExpiredJwtException e) {
+
+            log.info("[ClaimsExtractor] extractBlogIdFromExpiredToken() 메서드 만료된 토큰에서 블로그 ID 추출");
+
+            return e.getClaims().get("blogId", String.class);
+
+        }
+
     }
 
     public String getUsername(String token) {
@@ -51,7 +71,6 @@ public class ClaimsExtractor {
         Claims claims = getClaims(token);
         return claims.get("username", String.class);
     }
-
 
     public List<String> getRoles(String token) {
 

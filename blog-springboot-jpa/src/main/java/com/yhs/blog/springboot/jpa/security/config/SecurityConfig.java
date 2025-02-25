@@ -1,5 +1,6 @@
 package com.yhs.blog.springboot.jpa.security.config;
 
+import com.yhs.blog.springboot.jpa.domain.auth.token.claims.ClaimsExtractor;
 import com.yhs.blog.springboot.jpa.domain.auth.token.filter.TokenAuthenticationFilter;
 import com.yhs.blog.springboot.jpa.domain.auth.token.provider.AuthenticationProvider;
 import com.yhs.blog.springboot.jpa.domain.auth.token.provider.TokenProvider;
@@ -47,6 +48,7 @@ public class SecurityConfig {
         private final OAuth2UserLoadService oAuth2UserLoadService;
         private final TokenProvider tokenProvider;
         private final TokenValidator tokenValidator;
+        private final ClaimsExtractor claimsExtractor;
         private final AuthenticationProvider authenticationProvider;
         private final TokenCookieManager TokenCookieManager;
         private final UserFindService userFindService;
@@ -120,7 +122,7 @@ public class SecurityConfig {
 
         @Bean
         public TokenAuthenticationFilter tokenAuthenticationFilter() {
-                return new TokenAuthenticationFilter(tokenValidator, authenticationProvider);
+                return new TokenAuthenticationFilter(tokenValidator, authenticationProvider, claimsExtractor);
         }
 
         @Bean

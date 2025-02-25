@@ -6,7 +6,7 @@ import com.yhs.blog.springboot.jpa.common.response.SuccessResponse;
 import com.yhs.blog.springboot.jpa.domain.auth.token.service.TokenService;
 import com.yhs.blog.springboot.jpa.domain.auth.token.validation.TokenValidator;
 
-import io.swagger.v3.oas.annotations.Operation; 
+import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -118,7 +118,7 @@ public class TokenController {
         Cookie cookie = WebUtils.getCookie(request, "refresh_token");
 
         // null, 빈 문자열, 공백 문자열 모두 체크
-        if (!(StringUtils.hasText(cookie.getValue()))) {
+        if (cookie == null || !(StringUtils.hasText(cookie.getValue()))) {
 
             log.warn("[TokenController] createNewAccessByRefreshToken() 요청 refreshToken이 존재하지 않을 때 분기 시작");
 

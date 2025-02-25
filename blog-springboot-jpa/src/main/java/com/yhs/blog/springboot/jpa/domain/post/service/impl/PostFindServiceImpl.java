@@ -55,26 +55,15 @@ public class PostFindServiceImpl implements PostFindService {
 
             if (blogUser != null) {
 
-                String blogIdFromAuthenticatedBlogUser = blogUser.getBlogIdFromToken();
+                log.info("[PostFindServiceImpl] getAllPostsSpecificUser 블로그 주인일 때 분기 진행");
 
-                if (blogIdFromAuthenticatedBlogUser.equals(blogId)) {
-                    log.info("[PostFindServiceImpl] getAllPostsSpecificUser 블로그 주인일 때 분기 진행");
-
-                    return postRepository.findPostsByUserIdAndCategoryIdForAdminWithUserPage(userId, categoryId,
-                            keyword,
-                            searchType, pageable);
-
-                } else {
-
-                    log.info("[PostFindServiceImpl] getAllPostsSpecificUser 블로그 주인이 아닐 때(로그인 사용자) 분기 진행");
-
-                    return postRepository.findPostsByUserIdAndCategoryIdForUserWithUserPage(userId, categoryId, keyword,
-                            searchType, pageable);
-                }
+                return postRepository.findPostsByUserIdAndCategoryIdForAdminWithUserPage(userId, categoryId,
+                        keyword,
+                        searchType, pageable);
 
             } else {
 
-                log.info("[PostFindServiceImpl] getAllPostsSpecificUser 블로그 주인이 아닐 때(비로그인 사용자) 분기 진행");
+                log.info("[PostFindServiceImpl] getAllPostsSpecificUser 블로그 주인이 아닐 때 분기 진행");
 
                 return postRepository.findPostsByUserIdAndCategoryIdForUserWithUserPage(userId, categoryId, keyword,
                         searchType, pageable);
@@ -87,22 +76,13 @@ public class PostFindServiceImpl implements PostFindService {
 
         if (blogUser != null) {
 
-            String blogIdFromAuthenticatedBlogUser = blogUser.getBlogIdFromToken();
+            log.info("[PostFindServiceImpl] getAllPostsSpecificUser 블로그 주인일 때 분기 진행");
 
-            if (blogIdFromAuthenticatedBlogUser.equals(blogId)) {
-
-                log.info("[PostFindServiceImpl] getAllPostsSpecificUser 블로그 주인일 때 분기 진행");
-
-                return postRepository.findPostsByUserIdForAdminWithUserPage(userId, keyword, searchType, pageable);
-            } else {
-                log.info("[PostFindServiceImpl] getAllPostsSpecificUser 블로그 주인이 아닐 때(로그인 사용자) 분기 진행");
-
-                return postRepository.findPostsByUserIdForUserWithUserPage(userId, keyword, searchType, pageable);
-            }
+            return postRepository.findPostsByUserIdForAdminWithUserPage(userId, keyword, searchType, pageable);
 
         } else {
 
-            log.info("[PostFindServiceImpl] getAllPostsSpecificUser 블로그 주인이 아닐 때(비로그인 사용자) 분기 진행");
+            log.info("[PostFindServiceImpl] getAllPostsSpecificUser 블로그 주인이 아닐 때 분기 진행");
 
             return postRepository.findPostsByUserIdForUserWithUserPage(userId, keyword, searchType, pageable);
 
@@ -118,22 +98,7 @@ public class PostFindServiceImpl implements PostFindService {
         log.info("[PostFindServiceImpl] getAllPostsAllUser 메서드 시작: keyword: {}, searchType: {}, pageable: {}", keyword,
                 searchType, pageable);
 
-        if (blogUser != null) {
-
-            Long userIdFromAuthenticatedBlogUser = blogUser.getUserIdFromToken();
-
-            log.info("[PostFindServiceImpl] getAllPostsAllUser 블로그 주인일 때 분기 진행");
-
-            return postRepository.findPostsForUserWithIndexPage(keyword, searchType, pageable,
-                    userIdFromAuthenticatedBlogUser);
-
-        } else {
-
-            log.info("[PostFindServiceImpl] getAllPostsAllUser 블로그 주인이 아닐 때 분기 진행");
-
-            return postRepository.findPostsForUserWithIndexPage(keyword, searchType, pageable, null);
-
-        }
+        return postRepository.findPostsForUserWithIndexPage(keyword, searchType, pageable);
 
     }
 

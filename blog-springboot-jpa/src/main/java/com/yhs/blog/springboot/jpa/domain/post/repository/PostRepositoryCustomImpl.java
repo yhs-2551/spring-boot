@@ -52,7 +52,7 @@ public class PostRepositoryCustomImpl implements PostRepositoryCustom {
         @Override
         public Page<PostIndexAndIndexSearchResponse> findPostsForUserWithIndexPage(String keyword,
                         SearchType searchType,
-                        Pageable pageable, Long userIdFromRefreshToken) {
+                        Pageable pageable) {
 
                 QPost post = QPost.post;
                 QUser user = QUser.user;
@@ -84,11 +84,6 @@ public class PostRepositoryCustomImpl implements PostRepositoryCustom {
                                 BooleanBuilder statusCondition = new BooleanBuilder();
                                 builder.and(searchByType(keyword, searchType));
                                 statusCondition.or(post.postStatus.eq(PostStatus.PUBLIC));
-
-                                if (userIdFromRefreshToken != null) {
-                                        statusCondition.or(post.userId.eq(userIdFromRefreshToken));
-
-                                }
 
                                 builder.and(statusCondition);
 
@@ -123,11 +118,6 @@ public class PostRepositoryCustomImpl implements PostRepositoryCustom {
                         // 모든 사용자의 게시글을 가져오면서, 해당 사용자는 private, public 게시글 모두 가져옴
                         builder.or(post.postStatus.eq(PostStatus.PUBLIC));
 
-                        if (userIdFromRefreshToken != null) {
-                                // 위쪽 .join(user).on(user.id.eq(post.userId))도 같이 쓰여야 한다. User 필드에서 username,
-                                // blogId를 가져오기 때문이다.
-                                builder.or(post.userId.eq(userIdFromRefreshToken));
-                        }
                         return commonQueryDSLQueryForUserWithIndexPage(builder, pageable);
 
                 } catch (Exception e) {

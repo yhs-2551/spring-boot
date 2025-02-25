@@ -96,7 +96,7 @@ public class PostFindServiceImplTest {
         postFindService.getAllPostsAllUser("keyword", SearchType.TITLE, pageable, null);
 
         // then
-        verify(postRepository).findPostsForUserWithIndexPage(anyString(), any(SearchType.class), any(Pageable.class), isNull());
+        verify(postRepository).findPostsForUserWithIndexPage(anyString(), any(SearchType.class), any(Pageable.class));
     }
 
     @Test
