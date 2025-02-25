@@ -36,9 +36,8 @@ public class UserProfileServiceImpl implements UserProfileService {
     private final UserRepository userRepository;
     private final S3Service s3Service;
 
-    private final RedisTemplate<String, UserPublicProfileResponse> userPublicProfileRedisTemplate; 
+    private final RedisTemplate<String, UserPublicProfileResponse> userPublicProfileRedisTemplate;
     private final RedisTemplate<String, Boolean> redisTemplateBoolean;
-
 
     // getUserPublicProfile 은 캐시에서 가져오기 때문에 User 엔티티 자체가 필요한 경우 아니면 여러곳에서 사용 가능
     @Loggable
@@ -50,7 +49,7 @@ public class UserProfileServiceImpl implements UserProfileService {
 
         String cacheKey = "userPublicProfile:" + blogId;
 
-        //UserPublicProfileResponse에서 id값은 JsonIgnore 했기 때문에 id값은 null값으로 저장됨. 
+        // UserPublicProfileResponse에서 id값은 JsonIgnore 했기 때문에 id값은 null값으로 저장됨.
         UserPublicProfileResponse cachedUser = userPublicProfileRedisTemplate.opsForValue().get(cacheKey);
         if (cachedUser != null) {
             log.info("[UserProfileServiceImpl] getUserPublicProfile 메서드 Redis 캐시에 존재하는 경우 분기 시작");
@@ -85,7 +84,6 @@ public class UserProfileServiceImpl implements UserProfileService {
         return userPublicProfileResponseDTO;
     }
 
-    
     @Loggable
     @Transactional(readOnly = true)
     @Override
@@ -126,6 +124,17 @@ public class UserProfileServiceImpl implements UserProfileService {
 
         String oldUsername = user.getUsername();
 
+        TransactionSynchronizationManager.registerSynchronization(
+                new TransactionSynchronization() {
+                    @Override
+                    public void afterCommit() {
+                        // 사용자 정보 변경 시 캐시 무효화. 트랜잭션이 성공적으로 커밋되어야만 redis 캐시 무효화
+                        userPublicProfileRedisTemplate.delete("userPublicProfile:" + blogId);
+                        redisTemplateBoolean.delete("isDuplicateUsername:" + oldUsername);
+                    }
+
+                });
+
         try {
             if (userSettingsRequest.profileImage() != null && !userSettingsRequest.profileImage().isEmpty()) {
 
@@ -148,16 +157,6 @@ public class UserProfileServiceImpl implements UserProfileService {
             // 더티체킹으로 인한 업데이트. 따라서 save 메서드 불필요
             // userRepository.save(user);
 
-            TransactionSynchronizationManager.registerSynchronization(
-                    new TransactionSynchronization() {
-                        @Override
-                        public void afterCommit() {
-                            // 사용자 정보 변경 시 캐시 무효화. 트랜잭션이 성공적으로 커밋되어야만 redis 캐시 무효화
-                            userPublicProfileRedisTemplate.delete("userPublicProfile:" + blogId); 
-                            redisTemplateBoolean.delete("isDuplicateUsername:" + oldUsername);
-                        }
-
-                    });
         } catch (S3Exception e) {
             throw new SystemException(
                     ErrorCode.USER_PROFILE_UPDATE_ERROR,

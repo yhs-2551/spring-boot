@@ -42,6 +42,20 @@ public class CategoryServiceImpl implements CategoryService {
 
         log.info("[CategoryServiceImpl] createCategory 메서드 시작");
 
+        // 이걸 맨 위에 배치해야 아래 if 분기문에서, 모든 캐시에서 적용 됨.
+        // 맨 아래에 배치했더니 categoryRequestPayLoad.getCategories() == null ||
+        // categoryRequestPayLoad.getCategories().isEmpty() 이 부분에서는 캐시 무효화 적용이 안됨
+        // 혹시 문제 생기면 다시 맨밑에 배치하고 위쪽에서 설명한 분기 처리 부분에서 캐시 무효화 추가해주면 됨.
+        TransactionSynchronizationManager.registerSynchronization(
+                new TransactionSynchronization() {
+                    @Override
+                    public void afterCommit() {
+                        // 카테고리 작업 시 캐시 무효화. 트랜잭션이 성공적으로 커밋되어야만 redis 캐시 무효화
+                        categoryResponseRedisTemplate.delete("categories:" + blogUser.getBlogIdFromToken());
+                    }
+
+                });
+
         // 카테고리 삭제 작업
         if (categoryRequestPayLoad.getCategoryToDelete() != null
                 && !categoryRequestPayLoad.getCategoryToDelete().isEmpty()) {
@@ -65,6 +79,7 @@ public class CategoryServiceImpl implements CategoryService {
             log.info("[CategoryServiceImpl] createCategory 메서드 - 새롭게 생성 및 수정할 카테고리가 없는 경우 분기 진행");
 
             return;
+
         }
 
         // 그냥 userId는 메서드 파라미터를 통해 넘기기. 전역 필드를 사용하면 싱글톤에서 공유, 동시성 이슈 등 여러 문제가 발생할 수 있음
@@ -86,16 +101,6 @@ public class CategoryServiceImpl implements CategoryService {
         toBeSavedAllCategories.remove();
 
         // categoryRepository.saveAll(savedCategories);
-
-        TransactionSynchronizationManager.registerSynchronization(
-                new TransactionSynchronization() {
-                    @Override
-                    public void afterCommit() {
-                        // 카테고리 작업 시 캐시 무효화. 트랜잭션이 성공적으로 커밋되어야만 redis 캐시 무효화
-                        categoryResponseRedisTemplate.delete("categories:" + blogUser.getBlogIdFromToken());
-                    }
-
-                });
 
     }
 

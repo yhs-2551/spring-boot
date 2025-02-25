@@ -102,7 +102,8 @@ public class PostOperationServiceImpl implements PostOperationService {
             // 태그 처리
             processPostTagsAndTags(postRequest.getTags(), savedPost.getId());
 
-            log.info("[PostOperationServiceImpl] createNewPost S3 메인 스레드 시작: {}", Thread.currentThread().getName());
+            log.info("[PostOperationServiceImpl] createNewPost S3 메인 스레드 시작: {}",
+                    Thread.currentThread().getName());
 
             // 트랜잭션이 성공되어야만 실행
             TransactionSynchronizationManager.registerSynchronization(
@@ -216,6 +217,7 @@ public class PostOperationServiceImpl implements PostOperationService {
                         }
 
                     });
+
         } catch (DataAccessException ex) {
             throw new SystemException(ErrorCode.POST_CREATE_ERROR, "게시글 업데이트 중 서버 에러가 발생했습니다.",
                     "PostOperationServiceImpl", "updatePostByPostId", ex);
@@ -269,7 +271,6 @@ public class PostOperationServiceImpl implements PostOperationService {
 
             postRepository.delete(foundPost);
 
-            // 트랜잭션이 성공되어야만 실행
             TransactionSynchronizationManager.registerSynchronization(
                     new TransactionSynchronization() {
                         @Override
@@ -280,6 +281,7 @@ public class PostOperationServiceImpl implements PostOperationService {
                         }
 
                     });
+
         } catch (DataAccessException ex) {
             throw new SystemException(ErrorCode.POST_CREATE_ERROR, "게시글 삭제 중 서버 에러가 발생했습니다.",
                     "PostOperationServiceImpl", "deletePostByPostId", ex);
