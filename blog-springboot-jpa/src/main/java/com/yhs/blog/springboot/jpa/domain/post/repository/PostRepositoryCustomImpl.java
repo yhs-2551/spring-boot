@@ -420,9 +420,9 @@ public class PostRepositoryCustomImpl implements PostRepositoryCustom {
 
         }
 
-        // 상세 페이지용
+        // 상세 페이지 해당 블로그 주인 사용자(비공개 글까지 조회 가능)
         @Override
-        public Optional<PostResponseForDetailPage> findByIdNotWithFeaturedImage(Long postId) {
+        public Optional<PostResponseForDetailPage> findByIdForAdminWithDetailPage(Long postId) {
 
                 log.info("[PostRepositoryCustomImpl] findByIdNotWithFeaturedImage() 메서드 시작");
                 QPost post = QPost.post;
@@ -452,22 +452,71 @@ public class PostRepositoryCustomImpl implements PostRepositoryCustom {
                                                                                         file.width,
                                                                                         file.height)),
                                                                         post.postStatus,
-                                                                        user.username,
+                                                                        user.username, 
                                                                         category.name,
                                                                         post.createdAt)));
 
                         return result.isEmpty() ? Optional.empty() : Optional.of(result.get(0));
 
                 } catch (Exception e) {
-                        throw new SystemException(ErrorCode.QUERY_DSL_POSTS_ERROR, "게시글 목록 조회 중 오류가 발생 하였습니다.",
-                                        "PostRepositoryCustomImpl", "findByIdNotWithFeaturedImage", e);
+                        throw new SystemException(ErrorCode.QUERY_DSL_POSTS_ERROR, "공개/비공개 상세 게시글 조회 중 오류가 발생 하였습니다. - 해당 블로그 주인",
+                                        "PostRepositoryCustomImpl", "findByIdForAdminWithDetailPage", e);
+                }
+
+        }
+
+        
+        // 상세 페이지 해당 블로그 주인 사용자(공개 글만 조회 가능)
+        @Override
+        public Optional<PostResponseForDetailPage> findByIdForUserWithDetailPage(Long postId) {
+
+                log.info("[PostRepositoryCustomImpl] findByIdForUserWithDetailPage() 메서드 시작");
+                QPost post = QPost.post;
+                QUser user = QUser.user;
+                QCategory category = QCategory.category;
+                QPostTag postTag = QPostTag.postTag;
+                QTag tag = QTag.tag;
+                QFile file = QFile.file;
+
+                try {
+                        List<PostResponseForDetailPage> result = queryFactory
+                                        .from(post)
+                                        .join(user).on(user.id.eq(post.userId))
+                                        .leftJoin(category).on(category.id.eq(post.categoryId))
+                                        .leftJoin(postTag).on(postTag.postId.eq(post.id))
+                                        .leftJoin(tag).on(postTag.tagId.eq(tag.id))
+                                        .leftJoin(file).on(file.postId.eq(post.id))
+                                        .where(
+                                                post.id.eq(postId)
+                                                .and(post.postStatus.eq(PostStatus.PUBLIC))  // 공개 글만 조회하도록. 
+                                            )
+                                        .transform(GroupBy.groupBy(post.id).list(
+                                                        new QPostResponseForDetailPage(
+                                                                        post.title,
+                                                                        post.content,
+                                                                        GroupBy.list(tag.name),
+                                                                        GroupBy.list(Projections.constructor(
+                                                                                        FileResponse.class,
+                                                                                        file.fileUrl,
+                                                                                        file.width,
+                                                                                        file.height)),
+                                                                        post.postStatus,
+                                                                        user.username, 
+                                                                        category.name,
+                                                                        post.createdAt)));
+
+                        return result.isEmpty() ? Optional.empty() : Optional.of(result.get(0));
+
+                } catch (Exception e) {
+                        throw new SystemException(ErrorCode.QUERY_DSL_POSTS_ERROR, "공개 상세 게시글 조회 중 오류가 발생 하였습니다. - 일반 사용자(비로그인 사용자)",
+                                        "PostRepositoryCustomImpl", "findByIdForUserWithDetailPage", e);
                 }
 
         }
 
         // 수정 페이지 게시글 정보용
         @Override
-        public Optional<PostResponseForEditPage> findByIdWithFeaturedImage(Long postId) {
+        public Optional<PostResponseForEditPage> findByIdForAdminWithEditPage(Long postId) {
 
                 log.info("[PostRepositoryCustomImpl] findByIdWithFeaturedImage() 메서드 시작");
                 QPost post = QPost.post;

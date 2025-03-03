@@ -105,16 +105,31 @@ public class PostFindServiceImpl implements PostFindService {
     @Loggable
     @Override
     @Transactional(readOnly = true)
-    public PostResponseForDetailPage getPostByPostIdForDetailPage(Long postId) {
+    public PostResponseForDetailPage getPostByPostIdForDetailPage(Long postId, BlogUser blogUser) {
 
-        log.info("[PostFindServiceImpl] getPostByPostId 메서드 시작: postId: {}", postId);
+        log.info("[PostFindServiceImpl] getPostByPostIdForDetailPage 메서드 시작: postId: {}", postId);
 
-        PostResponseForDetailPage postResponseForDetailPage = postRepository.findByIdNotWithFeaturedImage(postId)
-                .orElseThrow(() -> new BusinessException(
-                        ErrorCode.POST_NOT_FOUND,
-                        postId + "번 게시글을 찾을 수 없습니다.",
-                        "PostFindServiceImpl",
-                        "getPostByPostIdForDetailPage"));
+        PostResponseForDetailPage postResponseForDetailPage;
+
+        if (blogUser != null) {
+
+            postResponseForDetailPage = postRepository.findByIdForAdminWithDetailPage(postId)
+                    .orElseThrow(() -> new BusinessException(
+                            ErrorCode.POST_NOT_FOUND,
+                            postId + "번 게시글을 찾을 수 없습니다. - 블로그 주인 상세 페이지 데이터",
+                            "PostFindServiceImpl",
+                            "getPostByPostIdForDetailPage"));
+
+        } else {
+
+            postResponseForDetailPage = postRepository.findByIdForUserWithDetailPage(postId)
+                    .orElseThrow(() -> new BusinessException(
+                            ErrorCode.POST_NOT_FOUND,
+                            postId + "번 게시글을 찾을 수 없습니다. - 일반/비로그인 사용자 상세 페이지 데이터",
+                            "PostFindServiceImpl",
+                            "getPostByPostIdForDetailPage"));
+
+        }
 
         return postResponseForDetailPage;
 
@@ -125,12 +140,12 @@ public class PostFindServiceImpl implements PostFindService {
     @Transactional(readOnly = true)
     public PostResponseForEditPage getPostByPostIdForEditPage(Long postId) {
 
-        log.info("[PostFindServiceImpl] getPostByPostId 메서드 시작: postId: {}", postId);
+        log.info("[PostFindServiceImpl] getPostByPostIdForEditPage 메서드 시작: postId: {}", postId);
 
-        PostResponseForEditPage postResponseFroEditPage = postRepository.findByIdWithFeaturedImage(postId)
+        PostResponseForEditPage postResponseFroEditPage = postRepository.findByIdForAdminWithEditPage(postId)
                 .orElseThrow(() -> new BusinessException(
                         ErrorCode.POST_NOT_FOUND,
-                        postId + "번 게시글을 찾을 수 없습니다.",
+                        postId + "번 게시글을 찾을 수 없습니다. - 블로그 주인 수정 페이지 데이터",
                         "PostFindServiceImpl",
                         "getPostByPostId"));
 

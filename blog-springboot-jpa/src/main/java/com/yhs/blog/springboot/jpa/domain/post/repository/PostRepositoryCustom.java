@@ -32,8 +32,9 @@ public interface PostRepositoryCustom {
                         String keyword,
                         SearchType searchType, Pageable pageable);
 
-        Optional<PostResponseForDetailPage> findByIdNotWithFeaturedImage(Long postId);
+        Optional<PostResponseForDetailPage> findByIdForAdminWithDetailPage(Long postId);
+        Optional<PostResponseForDetailPage> findByIdForUserWithDetailPage(Long postId);
 
-        Optional<PostResponseForEditPage> findByIdWithFeaturedImage(Long postId);
+        Optional<PostResponseForEditPage> findByIdForAdminWithEditPage(Long postId);
 
 }

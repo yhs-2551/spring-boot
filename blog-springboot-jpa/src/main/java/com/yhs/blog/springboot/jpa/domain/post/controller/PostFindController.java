@@ -4,7 +4,6 @@ import com.yhs.blog.springboot.jpa.aop.performance.MeasurePerformance;
 import com.yhs.blog.springboot.jpa.common.response.BaseResponse;
 import com.yhs.blog.springboot.jpa.common.response.ErrorResponse;
 import com.yhs.blog.springboot.jpa.common.response.SuccessResponse;
-import com.yhs.blog.springboot.jpa.common.util.cookie.CookieUtil;
 import com.yhs.blog.springboot.jpa.domain.auth.token.provider.user.BlogUser;
 import com.yhs.blog.springboot.jpa.domain.post.dto.response.PageResponse;
 import com.yhs.blog.springboot.jpa.domain.post.dto.response.PostAdminAndUserBaseResponse;
@@ -19,8 +18,8 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
@@ -30,7 +29,9 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.parameters.P;
 import org.springframework.web.bind.annotation.*;
 
 @Tag(name = "게시글 조회", description = "모든 사용자의 게시글, 특정 사용자의 게시글 등 조회 관련 API")
@@ -225,31 +226,38 @@ public class PostFindController {
         @Operation(summary = "특정 사용자의 단일 게시글 조회 요청 처리", description = "사용자가 특정 사용자의 단일 게시글을 조회 요청을 보내면 해당 요청을 처리")
         @ApiResponses(value = {
                         @ApiResponse(responseCode = "200", description = "단일 게시글 응답 성공", content = @Content(schema = @Schema(implementation = SuccessResponse.class))),
+                        @ApiResponse(responseCode = "403", description = "권한 없음", content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
                         @ApiResponse(responseCode = "404", description = "단일 게시글 번호에 대해 찾을 수 없음", content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
 
         })
         @Parameter(name = "postId", description = "단일 게시글 번호", required = true)
+        @Parameter(name = "blogId", description = "사용자 블로그 ID", required = true)
         @GetMapping("/{blogId}/posts/{postId}")
-        public ResponseEntity<BaseResponse> findPostByPostIdForDetailPage(@PathVariable("postId") Long postId) {
+        public ResponseEntity<BaseResponse> findPostByPostIdForDetailPage(@PathVariable("postId") Long postId,
+                        @AuthenticationPrincipal BlogUser blogUser) {
 
                 log.info("[PostFindController] findPostByPostIdForDetailPage() 요청");
 
                 PostResponseForDetailPage postResponseForDetailPage = postFindService
-                                .getPostByPostIdForDetailPage(postId);
+                                .getPostByPostIdForDetailPage(postId, blogUser);
 
                 return ResponseEntity.ok()
                                 .body(new SuccessResponse<>(postResponseForDetailPage, "상세 페이지 게시글 조회 응답에 성공하였습니다."));
         }
 
-        @Operation(summary = "특정 사용자의 수정 페이지에 대한 단일 게시글 정보 조회 요청 처리", description = "사용자가 수정 페이지의 게시글 정보 조회 요청을 보내면 해당 요청을 처리")
+        @Operation(summary = "특정 사용자의 수정 페이지에 대한 단일 게시글 정보 조회 요청 처리", description = "사용자가 수정 페이지의 게시글 정보 조회 요청을 보내면 해당 요청을 처리", security = @SecurityRequirement(name = "bearerAuth"))
         @ApiResponses(value = {
                         @ApiResponse(responseCode = "200", description = "단일 게시글 응답 성공", content = @Content(schema = @Schema(implementation = SuccessResponse.class))),
                         @ApiResponse(responseCode = "404", description = "단일 게시글 번호에 대해 찾을 수 없음", content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
 
         })
         @Parameter(name = "postId", description = "단일 게시글 번호", required = true)
+        @Parameter(name = "blogId", description = "사용자 블로그 ID", required = true)
+        @PreAuthorize("#userBlogId == authentication.name") // 백엔드에서 악의적인 요청 방지, 수정 페이지에 대한 데이터는 블로그 주인만 접근 가능(비공개 데이터도
+                                                            // 포함될 수 있으니)
         @GetMapping("/{blogId}/posts/{postId}/edit")
-        public ResponseEntity<BaseResponse> findPostByPostIdForEditPage(@PathVariable("postId") Long postId) {
+        public ResponseEntity<BaseResponse> findPostByPostIdForEditPage(@PathVariable("postId") Long postId,
+                        @P("userBlogId") @PathVariable("blogId") String blogId) {
 
                 log.info("[PostFindController] findPostByPostIdForEditPage() 요청");
 

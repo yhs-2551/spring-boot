@@ -162,7 +162,6 @@ public class SecurityConfig {
                                                 .requestMatchers(HttpMethod.GET, "/api/*/posts/page/*").permitAll()
                                                 .requestMatchers(HttpMethod.GET, "/api/posts").permitAll()
                                                 .requestMatchers(HttpMethod.GET, "/api/*/posts/*").permitAll()
-                                                .requestMatchers(HttpMethod.GET, "/api/*/posts/*/edit").permitAll()
                                                 .requestMatchers(HttpMethod.GET, "/api/*/categories").permitAll()
                                                 .requestMatchers(HttpMethod.GET, "/api/*/categories/*/posts")
                                                 .permitAll()

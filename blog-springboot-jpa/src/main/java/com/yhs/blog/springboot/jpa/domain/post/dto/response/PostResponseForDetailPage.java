@@ -6,7 +6,6 @@ import java.util.Objects;
 
 import org.springframework.lang.Nullable;
 
-import com.fasterxml.jackson.annotation.JsonFormat;
 import com.querydsl.core.annotations.QueryProjection;
 import com.yhs.blog.springboot.jpa.domain.file.dto.response.FileResponse;
 import com.yhs.blog.springboot.jpa.domain.post.entity.enums.PostStatus;

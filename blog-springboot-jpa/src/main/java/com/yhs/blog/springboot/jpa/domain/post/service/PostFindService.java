@@ -18,7 +18,7 @@ public interface PostFindService {
     Page<PostIndexAndIndexSearchResponse> getAllPostsAllUser(String keyword, SearchType searchType, Pageable pageable,
             BlogUser blogUser);
 
-    PostResponseForDetailPage getPostByPostIdForDetailPage(Long postId);
+    PostResponseForDetailPage getPostByPostIdForDetailPage(Long postId, BlogUser blogUser);
 
     PostResponseForEditPage getPostByPostIdForEditPage(Long postId);
 
