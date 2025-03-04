@@ -33,6 +33,8 @@ public class CategoryServiceImpl implements CategoryService {
     private final UserFindService userFindService;
     private final RedisTemplate<String, List<CategoryWithChildrenResponse>> categoryResponseRedisTemplate;
     // 전역 멤버 변수를 사용하면 동시성 문제가 있을 수 있기 때문에, 메모리를 조금 더 사용하지만 안전하게 ThreadLocal 사용
+    // 서비스 객체는 싱글톤 방식이기 때문에 사용자마다 서로 다른 톰캣 쓰레드를 사용하더라도 해당 객체의 멤버 변수는 모든 쓰레드가 공유함에 따라
+    // 동시성 문제가 발생할 수 있음
     private final ThreadLocal<List<Category>> toBeSavedAllCategories = ThreadLocal.withInitial(ArrayList::new);
     private final ThreadLocal<List<String>> toBeDeletedAllCategories = ThreadLocal.withInitial(ArrayList::new);
 

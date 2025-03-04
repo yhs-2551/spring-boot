@@ -126,7 +126,7 @@
                 </Policies>
                 <!-- 3일간 보관, 최대 10개 파일 -->
                 <DefaultRolloverStrategy max="10">
-                    <Delete basePath="${LOG_DIR}/backup">
+                    <Delete basePath="/logs/backup">
                         <IfLastModified age="3d" />
                     </Delete>
                 </DefaultRolloverStrategy>
@@ -134,8 +134,8 @@
 
             <!-- 에러 로그 별도 저장 -->
             <RollingFile name="ErrorFile"
-                fileName="${LOG_DIR}/error.log"
-                filePattern="${LOG_DIR}/backup/error-%d{yyyy-MM-dd}-%i.log.gz">
+                fileName="/logs/error.log"
+                filePattern="/logs/backup/error-%d{yyyy-MM-dd}-%i.log.gz">
                 <PatternLayout pattern="${LOG_PATTERN}" charset="UTF-8" />
                 <Policies>
                     <TimeBasedTriggeringPolicy />
