@@ -43,7 +43,7 @@ public class Post extends BaseEntity {
     @Column(length = 10, nullable = false)
     private CommentsEnabled commentsEnabled = CommentsEnabled.ALLOW;
 
-    @Column(name = "featured_image_id", nullable = true) // 대표 이미지가 있을 수도, 없을 수도 있음
+    @Column(name = "featured_image_id", nullable = true, unique = true) // 대표 이미지가 있을 수도, 없을 수도 있음, unique = true를 하지 않으면 n:1관계가 됨. 1:1 관계를 위해 필수
     private Long featuredImageId;
 
     @Column(name = "user_id", nullable = false)

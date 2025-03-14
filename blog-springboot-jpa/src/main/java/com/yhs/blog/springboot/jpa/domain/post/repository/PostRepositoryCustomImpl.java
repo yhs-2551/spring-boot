@@ -99,7 +99,7 @@ public class PostRepositoryCustomImpl implements PostRepositoryCustom {
                                                                 featuredImage.fileUrl,
                                                                 post.createdAt))
                                                 .from(post)
-                                                .join(user).on(user.id.eq(post.userId))
+                                                .join(user).on(user.id.eq(post.userId)) // join할때는 post테이블의 user_id가 아닌 조인하는 대상 테이블인 user테이블의 pk id 인덱스 값을 사용. 
                                                 .leftJoin(category).on(category.id.eq(post.categoryId))
                                                 .leftJoin(featuredImage).on(featuredImage.id.eq(post.featuredImageId))
                                                 .where(builder)
