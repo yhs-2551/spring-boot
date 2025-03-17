@@ -9,7 +9,7 @@
 **관련 프론트엔드 프로젝트**
 
 이 백엔드는 다음 프론트엔드 프로젝트와 함께 동작합니다:
-https://github.com/yhs-2551/react-next
+https://github.com/yhs-2551/react-next/tree/main/next-blog
 
 **데모 서비스**
 
