@@ -424,7 +424,7 @@ public class PostRepositoryCustomImpl implements PostRepositoryCustom {
         @Override
         public Optional<PostResponseForDetailPage> findByIdForAdminWithDetailPage(Long postId) {
 
-                log.info("[PostRepositoryCustomImpl] findByIdNotWithFeaturedImage() 메서드 시작");
+                log.info("[PostRepositoryCustomImpl] findByIdForAdminWithDetailPage() 메서드 시작");
                 QPost post = QPost.post;
                 QUser user = QUser.user;
                 QCategory category = QCategory.category;
