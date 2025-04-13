@@ -7,8 +7,6 @@
 
 **관련 프론트 Github 저장소**: [blog-frontend](https://github.com/yhs-2551/react-next/tree/main/next-blog)
 
-**데모 서비스**: [dduhalog](https://dduhalog.duckdns.org/)
-
 **기술 스택**
 
 *   **백엔드 기본**
