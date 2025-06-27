@@ -24,7 +24,7 @@ jar {
 
 java {
     toolchain {
-        languageVersion = JavaLanguageVersion.of(17) // 자바 버전 수정하고 싶으면 윈도우 powershell 관리자로 실행 -> choco install temurin17 명령어 입력 
+        languageVersion = JavaLanguageVersion.of(21) // 자바 버전 수정하고 싶으면 윈도우 powershell 관리자로 실행 -> choco install temurin17 명령어 입력 
     }
 }
 
