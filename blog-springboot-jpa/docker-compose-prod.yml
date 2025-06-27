@@ -1,7 +1,7 @@
 # prod 설정파일 변경 시 ec2에도 적용 필요 
 services:
     app:
-        image: openjdk:17-jdk-slim # 도커 컨테이너에서 사용할 jdk, EC2 서버에는 Amazon Corretto 17 사용하는데, 도커 컨테이너 내부와는 별개이다.
+        image: openjdk:21-jdk-slim # 도커 컨테이너에서 사용할 jdk, EC2 서버에는 Amazon Corretto 17 사용하는데, 도커 컨테이너 내부와는 별개이다.
         container_name: blog-app # 프로메테우스에서 blog_app과 같이 사용하면 즉, _로 사용하면 오류 발생. 호스트 이름은 문자, 숫자, 하이픈(-)만 사용 가능
         ports:
             - "8000:8000"
