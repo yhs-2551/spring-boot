@@ -1,6 +1,6 @@
-# Spring Boot, JPA, 타임리프를 활용한 회원 관리 시스템 (연습)
+# Spring Boot, JPA, 타임리프를 활용한 회원 관리 시스템 
 
-Spring Boot와 JPA를 활용한 회원 관리 시스템 연습 프로젝트
+Spring Boot와 JPA를 활용한 회원 관리 시스템 실습 
 
 ## 기술 스택
 

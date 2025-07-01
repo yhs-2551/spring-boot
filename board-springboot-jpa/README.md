@@ -1,6 +1,6 @@
-# 스프링부트, JPA, 타임리프 기반 간단 게시판 (연습)
+# 스프링부트, JPA, 타임리프 기반 간단 게시판
 
-Spring Boot, JPA, Thymeleaf를 활용한 게시판 연습
+Spring Boot, JPA, Thymeleaf를 활용한 게시판 실습
 
 ## 기술 스택
 

@@ -1,6 +1,6 @@
-# Spring Boot, MyBatis, JSP를 활용한 MVC 패턴 게시판 프로젝트 (연습)
+# Spring Boot, MyBatis, JSP를 활용한 MVC 패턴 게시판 프로젝트  
 
-Spring Boot와 MyBatis, JSP르 활용한 게시판 시스템.
+Spring Boot와 MyBatis, JSP르 활용한 게시판 시스템 실습  
 
 ## 기술 스택
 
