@@ -11,7 +11,7 @@
 -   **설명**: 개인 블로그 서비스를 위한 백엔드 API 시스템
 -   **관련 프론트엔드**: [next-blog](https://github.com/yhs-2551/react-next/tree/main/next-blog)
 
-### 학습 프로젝트
+### 실습 프로젝트
 
 #### board-springboot-jpa
 
